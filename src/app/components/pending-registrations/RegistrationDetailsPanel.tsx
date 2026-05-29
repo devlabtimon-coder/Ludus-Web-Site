@@ -6,12 +6,14 @@ interface RegistrationDetailsPanelProps {
   registration: any | null;
   onApprove: (id: string) => void;
   onReject: (id: string, reason: string) => void;
+  onRequestResendDoc: (id: string, documentName: string) => void;
 }
 
 export function RegistrationDetailsPanel({
   registration,
   onApprove,
   onReject,
+  onRequestResendDoc,
 }: RegistrationDetailsPanelProps) {
   const [reason, setReason] = useState("");
 
@@ -24,6 +26,48 @@ export function RegistrationDetailsPanel({
       </div>
     );
   }
+
+  // Verifica se o usuário já enviou todos os 3 documentos obrigatórios
+  const hasAllDocs = !!(
+    registration.documentFrontImage && 
+    registration.documentBackImage && 
+    registration.addressProof
+  );
+
+  // Função para renderizar o Status corretamente
+  const renderStatusBadge = () => {
+    if (registration.registrationStatus === 'APPROVED') {
+      return (
+        <span className="inline-block mt-2 px-4 py-1 bg-green-100 text-green-700 border border-green-300 rounded-full text-xs font-bold uppercase">
+          Aprovado
+        </span>
+      );
+    }
+
+    if (registration.registrationStatus === 'REJECTED') {
+      return (
+        <span className="inline-block mt-2 px-4 py-1 bg-red-100 text-red-700 border border-red-300 rounded-full text-xs font-bold uppercase">
+          Rejeitado
+        </span>
+      );
+    }
+
+    // Se o status é PENDING mas faltam documentos
+    if (!hasAllDocs) {
+      return (
+        <span className="inline-block mt-2 px-4 py-1 bg-[#FFF9E6] text-[#9A6B00] border border-[#FBBC04] rounded-full text-xs font-bold uppercase">
+          Documentos Pendentes
+        </span>
+      );
+    }
+
+    // Se o status é PENDING e ele já enviou tudo
+    return (
+      <span className="inline-block mt-2 px-4 py-1 bg-blue-100 text-[#04096E] border border-[#04096E]/30 rounded-full text-xs font-bold uppercase">
+        Aguardando Análise
+      </span>
+    );
+  };
 
   const renderDocument = (title: string, url: string | null) => {
     if (url) {
@@ -49,10 +93,17 @@ export function RegistrationDetailsPanel({
       );
     }
 
+    // VISUAL DO DOCUMENTO PENDENTE COM O BOTÃO DE SOLICITAR REENVIO
     return (
       <div key={title} className="bg-[#FFF9E6] border-2 border-dashed border-[#FBBC04] rounded-lg p-4 text-center">
         <Upload className="text-[#B8860B] mx-auto mb-2" size={32} />
-        <p className="text-sm font-bold text-[#9A6B00]">{title} pendente</p>
+        <p className="text-sm font-bold text-[#9A6B00] mb-3">{title} não enviado</p>
+        <button 
+          onClick={() => onRequestResendDoc(registration.id, title)}
+          className="bg-[#FBBC04] hover:bg-[#E5AA00] text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors"
+        >
+          Solicitar Reenvio
+        </button>
       </div>
     );
   };
@@ -60,17 +111,22 @@ export function RegistrationDetailsPanel({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full flex flex-col">
       <div className="flex-1 overflow-y-auto pr-2">
-        {/* Cabeçalho com Avatar */}
+        {/* Cabeçalho com Avatar Real, CPF e Status Dinâmico */}
         <div className="text-center mb-6">
-          <Avatar name={registration.name} color="#04096E" size="lg" />
+          <Avatar 
+            name={registration.name} 
+            src={registration.avatar || registration.picture} 
+            color="#04096E" 
+            size="lg" 
+          />
           <h2 className="text-xl font-bold text-gray-900 mt-3">{registration.name}</h2>
           <p className="text-sm text-gray-500">{registration.email}</p>
-          <span className="inline-block mt-2 px-4 py-1 bg-[#FFF9E6] text-[#9A6B00] border border-[#FBBC04] rounded-full text-xs font-bold uppercase">
-            Aguardando Análise
-          </span>
+          
+          {/* BADGE DINÂMICO APLICADO AQUI */}
+          {renderStatusBadge()}
         </div>
 
-        {/* Dados Pessoais */}
+        {/* Dados Pessoais (Agora com CPF e Endereço) */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <User className="text-gray-600" size={20} />
@@ -78,8 +134,18 @@ export function RegistrationDetailsPanel({
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
+              <span className="text-gray-600">CPF:</span>
+              <span className="font-medium text-gray-900">{registration.cpf || 'Não informado'}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-gray-600">Telefone:</span>
               <span className="font-medium text-gray-900">{registration.phone || 'Não informado'}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Endereço:</span>
+              <p className="text-xs font-medium text-gray-900 mt-1 leading-relaxed">
+                {registration.address || 'Não informado'}
+              </p>
             </div>
           </div>
         </div>
@@ -120,7 +186,12 @@ export function RegistrationDetailsPanel({
       <div className="flex gap-3 pt-4 border-t border-gray-100 shrink-0">
         <button
           onClick={() => onApprove(registration.id)}
-          className="flex-1 bg-[#22C55E] hover:bg-green-600 text-white font-bold py-3 rounded-lg transition-colors h-11"
+          disabled={!hasAllDocs}
+          className={`flex-1 font-bold py-3 rounded-lg transition-colors h-11 ${
+            hasAllDocs 
+              ? 'bg-[#22C55E] hover:bg-green-600 text-white' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
         >
           Aprovar
         </button>

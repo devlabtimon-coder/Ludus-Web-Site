@@ -37,19 +37,29 @@ export function RegistrationMetricCard({
     red: 'bg-[#E62325]/10 text-[#E62325]',
   };
 
+  // Cores adaptadas para servirem como marca d'água de fundo
   const iconColors = {
     dark: 'text-white',
-    white: iconColor || 'text-green-500',
+    white: iconColor || 'text-gray-300', 
     yellow: iconColor || 'text-[#04096E]',
   };
 
+  // Níveis de transparência para cada cor de fundo
+  const watermarkOpacities = {
+    dark: 'opacity-10',
+    white: 'opacity-[0.15]',
+    yellow: 'opacity-10',
+  };
+
   return (
-    <div className={`${variants[variant]} rounded-xl p-6 relative shadow-sm`}>
-      <div className="absolute top-6 right-6">
-        <Icon className={iconColors[variant]} size={32} />
+    <div className={`${variants[variant]} rounded-xl p-6 relative shadow-sm overflow-hidden`}>
+      {/* Ícone gigante no fundo (Estilo Ludus) */}
+      <div className={`absolute -right-6 -bottom-6 pointer-events-none transition-transform duration-300 group-hover:scale-110 ${watermarkOpacities[variant]}`}>
+        <Icon className={iconColors[variant]} size={140} strokeWidth={1.5} />
       </div>
 
-      <div className="space-y-3">
+      {/* Conteúdo (z-10 para garantir que fica por cima do ícone) */}
+      <div className="relative z-10 space-y-3">
         <p className={`text-xs font-bold uppercase tracking-wide ${labelColors[variant]}`}>
           {label}
         </p>

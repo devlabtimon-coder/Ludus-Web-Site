@@ -1,4 +1,4 @@
-import { Check, X, AlertCircle } from 'lucide-react';
+import { Check, X, AlertCircle, MapPin, IdCard } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 
 interface PendingRegistrationCardProps {
@@ -45,14 +45,42 @@ export function PendingRegistrationCard({
       }`}
     >
       <div className="flex items-start gap-4">
-        {/* Avatar e Informações */}
-        <Avatar name={user.name} color="#04096E" size="md" />
+        {/* Avatar com a foto real (caso exista) e fallback para Iniciais */}
+        <Avatar 
+          name={user.name} 
+          src={user.avatar || user.picture} 
+          color="#04096E" 
+          size="md" 
+        />
 
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-gray-900 truncate">{user.name}</h3>
           <p className="text-sm text-gray-600 truncate">{user.email}</p>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs text-[#04096E] font-semibold">{user.phone || 'Sem telefone'}</span>
+          
+          {/* Container das Novas Informações */}
+          <div className="flex flex-col gap-1.5 mt-2">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[#04096E] font-semibold">
+                {user.phone || 'Sem telefone'}
+              </span>
+              
+              {user.cpf && (
+                <span className="flex items-center gap-1 text-xs text-gray-600 font-medium border-l border-gray-300 pl-3">
+                  <IdCard size={12} className="text-gray-400" />
+                  {user.cpf}
+                </span>
+              )}
+            </div>
+
+            {user.address && (
+              <div 
+                className="flex items-center gap-1.5 text-xs text-gray-500 truncate" 
+                title={user.address}
+              >
+                <MapPin size={12} className="shrink-0 text-gray-400" />
+                <span className="truncate">{user.address}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -75,8 +103,8 @@ export function PendingRegistrationCard({
         </div>
       </div>
 
-      {/* Indicadores de Documentos (Abaixo das infos) */}
-      <div className="flex gap-1 mt-3 flex-wrap">
+      {/* Indicadores de Documentos */}
+      <div className="flex gap-1 mt-4 flex-wrap pt-3 border-t border-gray-200">
         {getDocumentBadge(user.documentFrontImage, 'RG Frente')}
         {getDocumentBadge(user.documentBackImage, 'RG Verso')}
         {getDocumentBadge(user.addressProof, 'Comp. Endereço')}
