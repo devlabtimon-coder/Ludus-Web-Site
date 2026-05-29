@@ -5,6 +5,7 @@ import { RentalsPage } from './pages/RentalsPage';
 import { CollectionPage } from './pages/CollectionPage';
 import { UsersPage } from './pages/UsersPage';
 import { LoginPage } from './pages/LoginPage';
+import { PendingRegistrationsPage } from './pages/PendingRegistrationsPage';
 
 type PageType =
   | 'dashboard'
@@ -110,6 +111,14 @@ export default function App() {
       case 'usuarios':
         return (
           <UsersPage
+            onNavigate={setCurrentPage}
+            onLogout={handleLogout}
+          />
+        );
+
+      case 'cadastro':
+        return (
+          <PendingRegistrationsPage
             onNavigate={setCurrentPage}
             onLogout={handleLogout}
           />
