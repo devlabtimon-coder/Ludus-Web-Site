@@ -50,7 +50,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             <MetricCard
               title="Jogos Totais"
               value={metrics?.totalGames || 0}
-              subtext="+4 este mês"
+              subtext="+4 este mês mentira"
               icon={<Plus size={96} strokeWidth={1.5} />}
               variant="yellow"
             />
