@@ -21,7 +21,6 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
 
   const fetchUsers = async () => {
     try {
-      // Supondo a rota do seu backend que lista os usuários pendentes
       const res = await api.get('/admin/users'); 
       const pendings = res.data.filter((u: any) => u.registrationStatus === 'PENDING');
       setPendingUsers(pendings);
@@ -60,10 +59,23 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
     }
   };
 
+  // 👇 NOVA FUNÇÃO ADICIONADA AQUI 👇
+  const handleRequestResendDoc = async (id: string, documentName: string) => {
+    try {
+      await api.post(`/admin/users/${id}/request-doc`, { documentName });
+      alert(`Solicitação de reenvio (${documentName}) enviada ao aplicativo do usuário!`);
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao enviar notificação de reenvio.");
+    }
+  };
+
   const selectedRegistration = pendingUsers.find(u => u.id === selectedId) || null;
 
-  // Calculando métricas dinâmicas
-  const completos = pendingUsers.filter(u => u.documentFrontImage && u.documentBackImage && u.addressProof).length;
+  // Calculando métricas dinâmicas (agora validando as 4 fotos)
+  const completos = pendingUsers.filter(
+    u => u.documentFrontImage && u.documentBackImage && u.addressProof && u.selfieWithId
+  ).length;
   const incompletos = pendingUsers.length - completos;
 
   return (
@@ -122,7 +134,6 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
             {/* Coluna Esquerda - Lista de Cadastros */}
             <div className="xl:col-span-2">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 h-full min-h-[500px] flex flex-col">
-                {/* Header da Tabela */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6 gap-3">
                   <h2 className="text-lg md:text-xl font-bold text-gray-900">Cadastros Aguardando Aprovação</h2>
                   <div className="flex gap-2">
@@ -132,7 +143,6 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
                   </div>
                 </div>
 
-                {/* Lista de Cadastros */}
                 <div className="space-y-3 flex-1 overflow-y-auto pr-2">
                   {pendingUsers.length === 0 ? (
                     <div className="text-center text-gray-500 py-10 font-bold">Nenhum cadastro pendente no momento!</div>
@@ -161,6 +171,7 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
                 registration={selectedRegistration}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                onRequestResendDoc={handleRequestResendDoc} // 👇 PASSANDO A FUNÇÃO AQUI 👇
               />
             </div>
 

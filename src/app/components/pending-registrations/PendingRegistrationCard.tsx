@@ -18,20 +18,23 @@ export function PendingRegistrationCard({
 }: PendingRegistrationCardProps) {
   
   const getBorderColor = () => {
-    if (user.documentFrontImage && user.documentBackImage && user.addressProof) return 'border-l-[#22C55E]';
+    // 👇 ATUALIZADO: Exige as 4 fotos para ficar verde
+    if (user.documentFrontImage && user.documentBackImage && user.addressProof && user.selfieWithId) {
+        return 'border-l-[#22C55E]';
+    }
     return 'border-l-[#FBBC04]'; // Amarelo Ludus para incompletos
   };
 
   const getDocumentBadge = (url: string | null, label: string) => {
     if (url) {
       return (
-        <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-semibold">
+        <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-semibold shrink-0">
           <Check size={12} /> {label}
         </span>
       );
     }
     return (
-      <span className="flex items-center gap-1 px-2 py-1 bg-[#FFF9E6] text-[#9A6B00] rounded text-[10px] font-semibold">
+      <span className="flex items-center gap-1 px-2 py-1 bg-[#FFF9E6] text-[#9A6B00] rounded text-[10px] font-semibold shrink-0">
         <AlertCircle size={12} /> {label}
       </span>
     );
@@ -103,8 +106,10 @@ export function PendingRegistrationCard({
         </div>
       </div>
 
-      {/* Indicadores de Documentos */}
-      <div className="flex gap-1 mt-4 flex-wrap pt-3 border-t border-gray-200">
+      {/* Indicadores de Documentos - Scroll horizontal se ficar apertado */}
+      <div className="flex gap-1.5 mt-4 pt-3 border-t border-gray-200 overflow-x-auto pb-1 scrollbar-hide">
+        {/* 👇 ADICIONADO A SELFIE AQUI 👇 */}
+        {getDocumentBadge(user.selfieWithId, 'Selfie')}
         {getDocumentBadge(user.documentFrontImage, 'RG Frente')}
         {getDocumentBadge(user.documentBackImage, 'RG Verso')}
         {getDocumentBadge(user.addressProof, 'Comp. Endereço')}

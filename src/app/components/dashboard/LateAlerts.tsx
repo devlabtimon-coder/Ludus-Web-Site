@@ -9,6 +9,8 @@ interface LateAlert {
   user?: {
     name: string;
     email: string;
+    avatar?: string | null;  // 👇 ADICIONADO AQUI
+    picture?: string | null; // 👇 ADICIONADO AQUI
   };
 }
 
@@ -58,6 +60,7 @@ export function LateAlerts({ alerts }: LateAlertsProps) {
                 <div className="flex items-center gap-3">
                   <Avatar
                     name={alert.user?.name || 'Usuário'}
+                    src={alert.user?.avatar || alert.user?.picture} // 👇 PROPRIEDADE DA FOTO ADICIONADA AQUI
                     color={getAvatarColor(alert.user?.email || 'default@email.com')}
                     size="sm"
                   />
