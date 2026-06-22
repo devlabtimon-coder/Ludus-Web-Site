@@ -1,4 +1,4 @@
-import { Edit, Trash2, EyeOff, Eye } from 'lucide-react';
+import { Edit, Trash2, EyeOff, Eye, Layers } from 'lucide-react';
 import { Game } from '../../../types/api';
 import { CategoryBadge } from './CategoryBadge';
 import { StatusIndicator } from './StatusIndicator';
@@ -8,9 +8,17 @@ interface GamesCatalogTableProps {
   onEditClick: (game: Game) => void;
   onDeleteClick?: (game: Game) => void;
   onInactivateClick?: (game: Game) => void;
+  onManageCopiesClick: (game: Game) => void;
 }
 
-export function GamesCatalogTable({ games, onEditClick, onDeleteClick, onInactivateClick }: GamesCatalogTableProps) {
+// 👇 CORREÇÃO: onManageCopiesClick adicionado aqui dentro das chaves { ... }
+export function GamesCatalogTable({ 
+  games, 
+  onEditClick, 
+  onDeleteClick, 
+  onInactivateClick, 
+  onManageCopiesClick 
+}: GamesCatalogTableProps) {
   
   const getStatus = (game: Game): 'Disponível' | 'Alugado' | 'Manutenção' => {
     // Ajuste "isActive" para a propriedade real do seu banco caso seja diferente
@@ -59,6 +67,15 @@ export function GamesCatalogTable({ games, onEditClick, onDeleteClick, onInactiv
                   </td>
                   <td className="py-4 px-5">
                     <div className="flex items-center gap-2">
+
+                      <button 
+                        onClick={() => onManageCopiesClick(game)} 
+                        title="Gerenciar Exemplares (Cópias Físicas)"
+                        className="bg-indigo-50 hover:bg-indigo-100 text-[#31358B] p-2.5 rounded-lg transition-colors font-semibold"
+                      >
+                        <Layers size={16} />
+                      </button>
+
                       <button 
                         onClick={() => onEditClick(game)} 
                         title="Editar Jogo"

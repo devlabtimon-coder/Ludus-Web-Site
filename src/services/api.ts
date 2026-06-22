@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Configuração da baseURL - será localhost inicialmente
-const baseURL = import.meta.env.VITE_API_URL || 'http://10.24.9.147:3000';
+const baseURL = import.meta.env.VITE_API_URL || 'http://110.24.8.226:3000';
 
 export const api = axios.create({
   baseURL,

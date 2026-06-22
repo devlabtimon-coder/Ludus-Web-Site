@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../../services/api';
 import { Game, GameTier } from '../../../types/api';
-import { X, Trash2, Save, Package } from 'lucide-react';
+import { X, Trash2, Save, Package, RefreshCw, Loader2 } from 'lucide-react';
 import { GameComponentsModal } from './GameComponentsModal';
+import { toast } from 'sonner';
 
 interface EditGameModalProps {
   game: Game | null;
@@ -28,6 +29,7 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
   
   const [isComponentsOpen, setIsComponentsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false); // Novo estado pro loading de sincronização
 
   useEffect(() => {
     if (game) {
@@ -57,10 +59,11 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
         await api.patch(`/categories/games/${game.id}/tier`, { tier });
       }
 
+      toast.success("Jogo atualizado com sucesso!");
       onSaved();
       onClose();
     } catch (e) {
-      alert("Erro ao salvar jogo.");
+      toast.error("Erro ao salvar jogo.");
     } finally {
       setLoading(false);
     }
@@ -72,13 +75,35 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
       setLoading(true);
       try {
         await api.delete(`/games/${game.id}`);
+        toast.success("Jogo excluído.");
         onSaved();
         onClose();
       } catch (e) {
-        alert("Erro ao excluir jogo.");
+        toast.error("Erro ao excluir jogo.");
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  // Função que vai no backend buscar a tradução novamente
+  const handleRefetchDescription = async () => {
+    if (!game) return;
+    setIsSyncing(true);
+    try {
+      // Faz um POST para a sua rota de sincronização (veja explicação abaixo)
+      const res = await api.post(`/games/${game.id}/sync-description`);
+      
+      if (res.data?.description) {
+        setDescription(res.data.description);
+        toast.success("Tradução refeita! Edite o que precisar e clique em Salvar.");
+      } else {
+        toast.info("Nenhuma descrição encontrada na BGG/Ludopedia.");
+      }
+    } catch (e) {
+      toast.error("Erro ao puxar dados externos. Verifique se a API externa está respondendo.");
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -140,8 +165,28 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
 
             {/* Descrição */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-[#31358B]">Descrição</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold resize-none" placeholder="Escreva sobre o jogo..." />
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold text-[#31358B]">Descrição</label>
+                
+                {/* Botão de Refetch */}
+                <button 
+                  onClick={handleRefetchDescription}
+                  disabled={isSyncing}
+                  className="text-[12px] font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg"
+                  title="Tentar puxar a tradução novamente da BGG/Ludopedia"
+                >
+                  {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                  {isSyncing ? "Buscando..." : "Refazer Tradução"}
+                </button>
+
+              </div>
+              <textarea 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                rows={5} 
+                className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-medium resize-none leading-relaxed" 
+                placeholder="Escreva sobre o jogo..." 
+              />
             </div>
 
             {/* Componentes */}
