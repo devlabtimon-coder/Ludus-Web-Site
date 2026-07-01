@@ -29,7 +29,9 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
   
   const [isComponentsOpen, setIsComponentsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false); // Novo estado pro loading de sincronização
+  
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingMechanics, setIsSyncingMechanics] = useState(false); // 👈 Novo estado para as mecânicas
 
   useEffect(() => {
     if (game) {
@@ -86,12 +88,10 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
     }
   };
 
-  // Função que vai no backend buscar a tradução novamente
   const handleRefetchDescription = async () => {
     if (!game) return;
     setIsSyncing(true);
     try {
-      // Faz um POST para a sua rota de sincronização (veja explicação abaixo)
       const res = await api.post(`/games/${game.id}/sync-description`);
       
       if (res.data?.description) {
@@ -104,6 +104,21 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
       toast.error("Erro ao puxar dados externos. Verifique se a API externa está respondendo.");
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  // 👇 NOVA FUNÇÃO: Sincronizar Mecânicas
+  const handleSyncMechanics = async () => {
+    if (!game) return;
+    setIsSyncingMechanics(true);
+    try {
+      await api.post(`/games/${game.id}/sync-mechanics`);
+      toast.success("Mecânicas sincronizadas com sucesso!");
+      onSaved(); // Força a atualização da lista por trás do modal, se necessário
+    } catch (e: any) {
+      toast.error(e.response?.data?.error || "Erro ao puxar mecânicas. Este jogo tem ID da Ludopedia?");
+    } finally {
+      setIsSyncingMechanics(false);
     }
   };
 
@@ -168,7 +183,6 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
               <div className="flex items-center justify-between">
                 <label className="text-sm font-bold text-[#31358B]">Descrição</label>
                 
-                {/* Botão de Refetch */}
                 <button 
                   onClick={handleRefetchDescription}
                   disabled={isSyncing}
@@ -178,7 +192,6 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
                   {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                   {isSyncing ? "Buscando..." : "Refazer Tradução"}
                 </button>
-
               </div>
               <textarea 
                 value={description} 
@@ -189,11 +202,25 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
               />
             </div>
 
-            {/* Componentes */}
-            <button onClick={() => setIsComponentsOpen(true)} className="w-full flex items-center justify-between bg-[#FBBC04] p-4 rounded-xl font-bold text-[#31358B] hover:brightness-105 transition">
-              <span className="flex items-center gap-2"><Package size={20} /> Gerenciar Componentes</span>
-              <span>&rarr;</span>
-            </button>
+            {/* Componentes e Mecânicas */}
+            <div className="space-y-3 pt-2">
+              <button onClick={() => setIsComponentsOpen(true)} className="w-full flex items-center justify-between bg-[#FBBC04] p-4 rounded-xl font-bold text-[#31358B] hover:brightness-105 transition">
+                <span className="flex items-center gap-2"><Package size={20} /> Gerenciar Componentes</span>
+                <span>&rarr;</span>
+              </button>
+
+              {/* 👇 NOVO BOTÃO: SINCRONIZAR MECÂNICAS 👇 */}
+              <button 
+                onClick={handleSyncMechanics} 
+                disabled={isSyncingMechanics}
+                className="w-full flex items-center justify-center bg-[#F0F2FF] border border-[#31358B]/10 p-4 rounded-xl font-bold text-[#31358B] hover:bg-[#E2E6FF] transition disabled:opacity-50"
+              >
+                <span className="flex items-center gap-2">
+                  {isSyncingMechanics ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
+                  {isSyncingMechanics ? "Buscando Mecânicas..." : "Sincronizar Mecânicas (Ludopedia)"}
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="p-6 border-t border-gray-100 flex gap-4 bg-gray-50">
