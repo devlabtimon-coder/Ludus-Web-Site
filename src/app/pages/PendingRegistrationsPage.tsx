@@ -15,16 +15,17 @@ interface PendingRegistrationsPageProps {
 export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegistrationsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
   // Integração com API
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
+
+  const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
   const fetchUsers = async () => {
     try {
       const res = await api.get('/admin/users'); 
       const pendings = res.data.filter((u: any) => u.registrationStatus === 'PENDING');
       setPendingUsers(pendings);
-
       if (pendings.length > 0 && !selectedId) {
         setSelectedId(pendings[0].id);
       }
@@ -59,7 +60,6 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
     }
   };
 
-  // 👇 NOVA FUNÇÃO ADICIONADA AQUI 👇
   const handleRequestResendDoc = async (id: string, documentName: string) => {
     try {
       await api.post(`/admin/users/${id}/request-doc`, { documentName });
@@ -72,10 +72,13 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
 
   const selectedRegistration = pendingUsers.find(u => u.id === selectedId) || null;
 
-  // Calculando métricas dinâmicas (agora validando as 4 fotos)
-  const completos = pendingUsers.filter(
-    u => u.documentFrontImage && u.documentBackImage && u.addressProof && u.selfieWithId
+  // Calculando métricas dinâmicas com a verificação IFMA mode
+  const completos = pendingUsers.filter(u => 
+    isIfmaMode
+      ? u.enrollmentProof && u.documentFrontImage && u.documentBackImage
+      : u.documentFrontImage && u.documentBackImage && u.addressProof && u.selfieWithId
   ).length;
+
   const incompletos = pendingUsers.length - completos;
 
   return (
@@ -171,10 +174,9 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
                 registration={selectedRegistration}
                 onApprove={handleApprove}
                 onReject={handleReject}
-                onRequestResendDoc={handleRequestResendDoc} // 👇 PASSANDO A FUNÇÃO AQUI 👇
+                onRequestResendDoc={handleRequestResendDoc}
               />
             </div>
-
           </div>
         </main>
       </div>

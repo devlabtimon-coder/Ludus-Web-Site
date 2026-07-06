@@ -16,8 +16,9 @@ export function RegistrationDetailsPanel({
   onRequestResendDoc,
 }: RegistrationDetailsPanelProps) {
   const [reason, setReason] = useState("");
-  // Estado para controlar a imagem em tela cheia (Modal)
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
+
+  const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
   if (!registration) {
     return (
@@ -29,13 +30,19 @@ export function RegistrationDetailsPanel({
     );
   }
 
-  // Verifica se o usuário já enviou todos os 4 documentos obrigatórios
-  const hasAllDocs = !!(
-    registration.documentFrontImage && 
-    registration.documentBackImage && 
-    registration.addressProof &&
-    registration.selfieWithId
-  );
+  // Verifica se o usuário já enviou todos os documentos exigidos para o modo atual
+  const hasAllDocs = isIfmaMode
+    ? !!(
+        registration.enrollmentProof &&
+        registration.documentFrontImage &&
+        registration.documentBackImage
+      )
+    : !!(
+        registration.documentFrontImage &&
+        registration.documentBackImage &&
+        registration.addressProof &&
+        registration.selfieWithId
+      );
 
   // Função para renderizar o Status corretamente
   const renderStatusBadge = () => {
@@ -46,7 +53,6 @@ export function RegistrationDetailsPanel({
         </span>
       );
     }
-
     if (registration.registrationStatus === 'REJECTED') {
       return (
         <span className="inline-block mt-2 px-4 py-1 bg-red-100 text-red-700 border border-red-300 rounded-full text-xs font-bold uppercase">
@@ -54,8 +60,6 @@ export function RegistrationDetailsPanel({
         </span>
       );
     }
-
-    // Se o status é PENDING mas faltam documentos
     if (!hasAllDocs) {
       return (
         <span className="inline-block mt-2 px-4 py-1 bg-[#FFF9E6] text-[#9A6B00] border border-[#FBBC04] rounded-full text-xs font-bold uppercase">
@@ -63,8 +67,6 @@ export function RegistrationDetailsPanel({
         </span>
       );
     }
-
-    // Se o status é PENDING e ele já enviou tudo
     return (
       <span className="inline-block mt-2 px-4 py-1 bg-blue-100 text-[#04096E] border border-[#04096E]/30 rounded-full text-xs font-bold uppercase">
         Aguardando Análise
@@ -85,24 +87,21 @@ export function RegistrationDetailsPanel({
             <Check className="text-green-500" size={24} />
           </div>
           <div className="flex gap-2">
-            {/* Em vez de target="_blank", agora abre o Modal */}
-            <button 
-              onClick={() => setPreviewImage(url)}
+            <button
+              onClick={() => setPreviewFile(url)}
               className="flex-1 bg-[#04096E]/10 text-[#04096E] px-3 py-2 rounded-lg text-xs font-bold hover:bg-[#04096E]/20 transition-colors text-center flex justify-center items-center gap-1"
             >
-              <ExternalLink size={14} /> Abrir Imagem
+              <ExternalLink size={14} /> Abrir Arquivo
             </button>
           </div>
         </div>
       );
     }
-
-    // VISUAL DO DOCUMENTO PENDENTE COM O BOTÃO DE SOLICITAR REENVIO
     return (
       <div key={title} className="bg-[#FFF9E6] border-2 border-dashed border-[#FBBC04] rounded-lg p-4 text-center">
         <Upload className="text-[#B8860B] mx-auto mb-2" size={32} />
         <p className="text-sm font-bold text-[#9A6B00] mb-3">{title} não enviado</p>
-        <button 
+        <button
           onClick={() => onRequestResendDoc && onRequestResendDoc(registration.id, title)}
           className="bg-[#FBBC04] hover:bg-[#E5AA00] text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors"
         >
@@ -112,17 +111,19 @@ export function RegistrationDetailsPanel({
     );
   };
 
+  const isPdf = previewFile?.toLowerCase().includes('.pdf');
+
   return (
     <>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full flex flex-col relative z-0">
         <div className="flex-1 overflow-y-auto pr-2">
-          {/* Cabeçalho com Avatar Real, CPF e Status Dinâmico */}
+          {/* Cabeçalho */}
           <div className="text-center mb-6">
-            <Avatar 
-              name={registration.name} 
-              src={registration.avatar || registration.picture} 
-              color="#04096E" 
-              size="lg" 
+            <Avatar
+              name={registration.name}
+              src={registration.avatar || registration.picture}
+              color="#04096E"
+              size="lg"
             />
             <h2 className="text-xl font-bold text-gray-900 mt-3">{registration.name}</h2>
             <p className="text-sm text-gray-500">{registration.email}</p>
@@ -136,6 +137,12 @@ export function RegistrationDetailsPanel({
               <h3 className="font-bold text-gray-900">Dados Pessoais</h3>
             </div>
             <div className="space-y-2 text-sm">
+              {isIfmaMode && registration.matricula && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Matrícula:</span>
+                  <span className="font-bold text-[#04096E]">{registration.matricula}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600">CPF:</span>
                 <span className="font-medium text-gray-900">{registration.cpf || 'Não informado'}</span>
@@ -144,12 +151,14 @@ export function RegistrationDetailsPanel({
                 <span className="text-gray-600">Telefone:</span>
                 <span className="font-medium text-gray-900">{registration.phone || 'Não informado'}</span>
               </div>
-              <div>
-                <span className="text-gray-600">Endereço:</span>
-                <p className="text-xs font-medium text-gray-900 mt-1 leading-relaxed">
-                  {registration.address || 'Não informado'}
-                </p>
-              </div>
+              {!isIfmaMode && (
+                <div>
+                  <span className="text-gray-600">Endereço:</span>
+                  <p className="text-xs font-medium text-gray-900 mt-1 leading-relaxed">
+                    {registration.address || 'Não informado'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -162,10 +171,20 @@ export function RegistrationDetailsPanel({
               <h3 className="font-bold text-gray-900">Documentos Anexados</h3>
             </div>
             <div className="space-y-3">
-              {renderDocument("1. Selfie c/ Documento", registration.selfieWithId)}
-              {renderDocument("2. Frente do RG/CNH", registration.documentFrontImage)}
-              {renderDocument("3. Verso do RG/CNH", registration.documentBackImage)}
-              {renderDocument("4. Comprovante de Endereço", registration.addressProof)}
+              {isIfmaMode ? (
+                <>
+                  {renderDocument("1. Comprovante SUAP", registration.enrollmentProof)}
+                  {renderDocument("2. Frente do RG/CNH", registration.documentFrontImage)}
+                  {renderDocument("3. Verso do RG/CNH", registration.documentBackImage)}
+                </>
+              ) : (
+                <>
+                  {renderDocument("1. Selfie c/ Documento", registration.selfieWithId)}
+                  {renderDocument("2. Frente do RG/CNH", registration.documentFrontImage)}
+                  {renderDocument("3. Verso do RG/CNH", registration.documentBackImage)}
+                  {renderDocument("4. Comprovante de Endereço", registration.addressProof)}
+                </>
+              )}
             </div>
           </div>
 
@@ -179,7 +198,7 @@ export function RegistrationDetailsPanel({
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Descreva o motivo caso rejeite as fotos..."
+              placeholder="Descreva o motivo caso rejeite os documentos..."
               className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#04096E] focus:border-transparent resize-none"
               rows={3}
             />
@@ -192,8 +211,8 @@ export function RegistrationDetailsPanel({
             onClick={() => onApprove(registration.id)}
             disabled={!hasAllDocs}
             className={`flex-1 font-bold py-3 rounded-lg transition-colors h-11 ${
-              hasAllDocs 
-                ? 'bg-[#22C55E] hover:bg-green-600 text-white' 
+              hasAllDocs
+                ? 'bg-[#22C55E] hover:bg-green-600 text-white'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
@@ -201,7 +220,7 @@ export function RegistrationDetailsPanel({
           </button>
           <button
             onClick={() => {
-              if(!reason.trim()) return alert("Preencha o motivo!");
+              if(!reason.trim()) return alert("Preencha o motivo para rejeitar!");
               onReject(registration.id, reason);
               setReason("");
             }}
@@ -212,21 +231,27 @@ export function RegistrationDetailsPanel({
         </div>
       </div>
 
-      {/* MODAL DE IMAGEM AMPLIADA */}
-      {previewImage && (
+      {/* MODAL DE IMAGEM/PDF AMPLIADO */}
+      {previewFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <button 
-            onClick={() => setPreviewImage(null)}
+          <button
+            onClick={() => setPreviewFile(null)}
             className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-50"
           >
             <X size={28} />
           </button>
-          
-          <img 
-            src={previewImage} 
-            alt="Preview do Documento" 
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl relative z-40"
-          />
+          {isPdf ? (
+            <iframe 
+              src={previewFile} 
+              className="w-full max-w-4xl h-[85vh] rounded-xl bg-white relative z-40" 
+            />
+          ) : (
+            <img
+              src={previewFile}
+              alt="Preview do Documento"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl relative z-40"
+            />
+          )}
         </div>
       )}
     </>

@@ -16,10 +16,14 @@ export function PendingRegistrationCard({
   onApprove,
   onReject,
 }: PendingRegistrationCardProps) {
-  
+  const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
+
   const getBorderColor = () => {
-    // 👇 ATUALIZADO: Exige as 4 fotos para ficar verde
-    if (user.documentFrontImage && user.documentBackImage && user.addressProof && user.selfieWithId) {
+    const hasAllDocs = isIfmaMode
+      ? user.enrollmentProof && user.documentFrontImage && user.documentBackImage
+      : user.documentFrontImage && user.documentBackImage && user.addressProof && user.selfieWithId;
+
+    if (hasAllDocs) {
         return 'border-l-[#22C55E]';
     }
     return 'border-l-[#FBBC04]'; // Amarelo Ludus para incompletos
@@ -48,19 +52,18 @@ export function PendingRegistrationCard({
       }`}
     >
       <div className="flex items-start gap-4">
-        {/* Avatar com a foto real (caso exista) e fallback para Iniciais */}
-        <Avatar 
-          name={user.name} 
-          src={user.avatar || user.picture} 
-          color="#04096E" 
-          size="md" 
-        />
-
+        <Avatar
+           name={user.name}
+           src={user.avatar || user.picture}
+           color="#04096E"
+           size="md"
+         />
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-gray-900 truncate">{user.name}</h3>
-          <p className="text-sm text-gray-600 truncate">{user.email}</p>
+          <p className="text-sm text-gray-600 truncate">
+            {isIfmaMode && user.matricula ? `Matrícula: ${user.matricula}` : user.email}
+          </p>
           
-          {/* Container das Novas Informações */}
           <div className="flex flex-col gap-1.5 mt-2">
             <div className="flex items-center gap-3">
               <span className="text-xs text-[#04096E] font-semibold">
@@ -74,11 +77,10 @@ export function PendingRegistrationCard({
                 </span>
               )}
             </div>
-
-            {user.address && (
-              <div 
-                className="flex items-center gap-1.5 text-xs text-gray-500 truncate" 
-                title={user.address}
+            {!isIfmaMode && user.address && (
+              <div
+                 className="flex items-center gap-1.5 text-xs text-gray-500 truncate"
+                 title={user.address}
               >
                 <MapPin size={12} className="shrink-0 text-gray-400" />
                 <span className="truncate">{user.address}</span>
@@ -86,8 +88,8 @@ export function PendingRegistrationCard({
             )}
           </div>
         </div>
-
-        {/* Ações */}
+        
+        {/* Ações rápidas */}
         <div className="flex gap-2">
           <button
             onClick={(e) => { e.stopPropagation(); onApprove(); }}
@@ -106,13 +108,22 @@ export function PendingRegistrationCard({
         </div>
       </div>
 
-      {/* Indicadores de Documentos - Scroll horizontal se ficar apertado */}
+      {/* Indicadores de Documentos */}
       <div className="flex gap-1.5 mt-4 pt-3 border-t border-gray-200 overflow-x-auto pb-1 scrollbar-hide">
-        {/* 👇 ADICIONADO A SELFIE AQUI 👇 */}
-        {getDocumentBadge(user.selfieWithId, 'Selfie')}
-        {getDocumentBadge(user.documentFrontImage, 'RG Frente')}
-        {getDocumentBadge(user.documentBackImage, 'RG Verso')}
-        {getDocumentBadge(user.addressProof, 'Comp. Endereço')}
+        {isIfmaMode ? (
+          <>
+            {getDocumentBadge(user.enrollmentProof, 'SUAP')}
+            {getDocumentBadge(user.documentFrontImage, 'RG Frente')}
+            {getDocumentBadge(user.documentBackImage, 'RG Verso')}
+          </>
+        ) : (
+          <>
+            {getDocumentBadge(user.selfieWithId, 'Selfie')}
+            {getDocumentBadge(user.documentFrontImage, 'RG Frente')}
+            {getDocumentBadge(user.documentBackImage, 'RG Verso')}
+            {getDocumentBadge(user.addressProof, 'Endereço')}
+          </>
+        )}
       </div>
     </div>
   );
