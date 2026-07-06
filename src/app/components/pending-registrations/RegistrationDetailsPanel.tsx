@@ -16,7 +16,9 @@ export function RegistrationDetailsPanel({
   onRequestResendDoc,
 }: RegistrationDetailsPanelProps) {
   const [reason, setReason] = useState("");
-  const [previewFile, setPreviewFile] = useState<string | null>(null);
+  
+  // 👇 Estado atualizado para armazenar a URL e se é PDF
+  const [previewFile, setPreviewFile] = useState<{ url: string; isPdf: boolean } | null>(null);
 
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
@@ -30,7 +32,6 @@ export function RegistrationDetailsPanel({
     );
   }
 
-  // Verifica se o usuário já enviou todos os documentos exigidos para o modo atual
   const hasAllDocs = isIfmaMode
     ? !!(
         registration.enrollmentProof &&
@@ -44,7 +45,6 @@ export function RegistrationDetailsPanel({
         registration.selfieWithId
       );
 
-  // Função para renderizar o Status corretamente
   const renderStatusBadge = () => {
     if (registration.registrationStatus === 'APPROVED') {
       return (
@@ -76,6 +76,9 @@ export function RegistrationDetailsPanel({
 
   const renderDocument = (title: string, url: string | null) => {
     if (url) {
+      // Verifica se a URL termina em PDF
+      const isActuallyPdf = url.toLowerCase().includes('.pdf');
+
       return (
         <div key={title} className="bg-gray-100 rounded-lg p-4">
           <div className="flex items-center gap-3 mb-3">
@@ -88,7 +91,7 @@ export function RegistrationDetailsPanel({
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setPreviewFile(url)}
+              onClick={() => setPreviewFile({ url, isPdf: isActuallyPdf })}
               className="flex-1 bg-[#04096E]/10 text-[#04096E] px-3 py-2 rounded-lg text-xs font-bold hover:bg-[#04096E]/20 transition-colors text-center flex justify-center items-center gap-1"
             >
               <ExternalLink size={14} /> Abrir Arquivo
@@ -97,6 +100,7 @@ export function RegistrationDetailsPanel({
         </div>
       );
     }
+    
     return (
       <div key={title} className="bg-[#FFF9E6] border-2 border-dashed border-[#FBBC04] rounded-lg p-4 text-center">
         <Upload className="text-[#B8860B] mx-auto mb-2" size={32} />
@@ -110,8 +114,6 @@ export function RegistrationDetailsPanel({
       </div>
     );
   };
-
-  const isPdf = previewFile?.toLowerCase().includes('.pdf');
 
   return (
     <>
@@ -240,14 +242,34 @@ export function RegistrationDetailsPanel({
           >
             <X size={28} />
           </button>
-          {isPdf ? (
-            <iframe 
-              src={previewFile} 
-              className="w-full max-w-4xl h-[85vh] rounded-xl bg-white relative z-40" 
-            />
+          
+          {previewFile.isPdf ? (
+            <div className="w-full max-w-4xl h-[85vh] bg-white rounded-xl relative z-40 flex flex-col overflow-hidden shadow-2xl">
+               {/* Cabeçalho do Leitor de PDF */}
+               <div className="bg-gray-100 p-3 flex justify-between items-center border-b border-gray-200">
+                 <span className="font-bold text-[#04096E] text-sm flex items-center gap-2">
+                   <FileText size={18} /> Visualizador de PDF
+                 </span>
+                 <a 
+                   href={previewFile.url} 
+                   target="_blank" 
+                   rel="noopener noreferrer" 
+                   className="text-white bg-[#04096E] px-3 py-1.5 rounded-lg hover:bg-blue-900 text-xs font-bold flex items-center gap-1 transition"
+                 >
+                   <ExternalLink size={14} /> Abrir em nova aba
+                 </a>
+               </div>
+               
+               {/* Usando Google Docs Viewer para forçar a renderização do PDF */}
+               <iframe 
+                 src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`} 
+                 className="w-full flex-1" 
+                 title="PDF Viewer"
+               />
+            </div>
           ) : (
             <img
-              src={previewFile}
+              src={previewFile.url}
               alt="Preview do Documento"
               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl relative z-40"
             />
