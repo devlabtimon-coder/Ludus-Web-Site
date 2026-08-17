@@ -7,15 +7,14 @@ import {
   FileText,
   ArrowLeftRight,
   LogOut,
-  Plus,
-  X
+  X,
+  Tags
 } from 'lucide-react';
 
 import { Avatar } from '../shared/Avatar';
 import { LogoutConfirmModal } from '../shared/LogoutConfirmModal';
 
-import logoFull from "../../../assets/images/logo-full.png";
-
+import logoFull from '../../../assets/logo-full.png';
 type PageType =
   | 'dashboard'
   | 'acervo'
@@ -23,6 +22,7 @@ type PageType =
   | 'usuarios'
   | 'cadastro'
   | 'relatorios'
+  | 'mecanicas'
   | 'login';
 
 interface MenuItem {
@@ -49,15 +49,13 @@ export function Sidebar({
 }: SidebarProps) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
-  // Estado para armazenar os dados do usuário real
   const [userData, setUserData] = useState<{ 
-  name: string; 
-  email: string; 
-  avatar?: string | null; 
-  picture?: string | null; 
-} | null>(null);
+    name: string; 
+    email: string; 
+    avatar?: string | null; 
+    picture?: string | null; 
+  } | null>(null);
 
-  // Busca os dados do usuário logado no localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -69,7 +67,6 @@ export function Sidebar({
     }
   }, []);
 
-  // Define os valores dinâmicos com um fallback (plano B) caso dê erro
   const userName = 'Admin';
   const userEmail = userData?.email || 'admin@ludus.com';
 
@@ -108,6 +105,12 @@ export function Sidebar({
       page: 'acervo'
     },
     {
+      icon: <Tags size={19} />,
+      label: 'Mecânicas',
+      active: activePage === 'mecanicas',
+      page: 'mecanicas'
+    },
+    {
       icon: <ArrowLeftRight size={19} />,
       label: 'Empréstimos',
       active: activePage === 'emprestimos',
@@ -135,7 +138,6 @@ export function Sidebar({
 
   const sidebarContent = (
     <>
-      {/* TOPO */}
       <div className="mb-10">
         <img
           src={logoFull}
@@ -144,7 +146,6 @@ export function Sidebar({
         />
       </div>
 
-      {/* MENU */}
       <nav className="flex-1">
         <ul className="space-y-2">
           {menuItems.map((item, index) => (
@@ -152,7 +153,6 @@ export function Sidebar({
               key={index}
               className="relative"
             >
-              {/* LINHA AMARELA */}
               {item.active && (
                 <div className="absolute left-0 top-1/2 h-8 w-[4px] -translate-y-1/2 rounded-r-full bg-[#FFC928]" />
               )}
@@ -177,7 +177,6 @@ export function Sidebar({
                   }
                 `}
               >
-                {/* ICON */}
                 <div
                   className={`
                     ${
@@ -190,7 +189,6 @@ export function Sidebar({
                   {item.icon}
                 </div>
 
-                {/* LABEL */}
                 <span className="text-[15px] font-medium">
                   {item.label}
                 </span>
@@ -200,17 +198,9 @@ export function Sidebar({
         </ul>
       </nav>
 
-      {/* FOOTER */}
       <div className="mt-auto pt-4">
-
-        {/* BOTAO */}
-        
-
-        {/* USER */}
         <div className="border-t border-white/10 pt-4">
           <div className="flex items-center justify-between">
-
-            {/* ESQUERDA */}
             <div className="flex items-center gap-3">
               <Avatar
                 name={userName}
@@ -230,7 +220,6 @@ export function Sidebar({
               </div>
             </div>
 
-            {/* LOGOUT */}
             <button
               onClick={() => setShowLogoutModal(true)}
               className="
@@ -256,12 +245,11 @@ export function Sidebar({
   );
 
   useEffect(() => {
-  console.log("Avatar src final:", userData?.avatar || userData?.picture);
-}, [userData]);
+    console.log("Avatar src final:", userData?.avatar || userData?.picture);
+  }, [userData]);
 
   return (
     <>
-      {/* DESKTOP */}
       <aside
         className="
           hidden
@@ -278,7 +266,6 @@ export function Sidebar({
         {sidebarContent}
       </aside>
 
-      {/* TABLET */}
       <aside
         className="
           hidden
@@ -296,10 +283,8 @@ export function Sidebar({
         {sidebarContent}
       </aside>
 
-      {/* MOBILE */}
       {isOpen && (
         <>
-          {/* OVERLAY */}
           <div
             className="
               fixed
@@ -311,7 +296,6 @@ export function Sidebar({
             onClick={onClose}
           />
 
-          {/* DRAWER */}
           <aside
             className="
               fixed
@@ -329,7 +313,6 @@ export function Sidebar({
               md:hidden
             "
           >
-            {/* CLOSE */}
             <button
               onClick={onClose}
               className="
@@ -356,7 +339,6 @@ export function Sidebar({
         </>
       )}
 
-      {/* MODAL LOGOUT */}
       <LogoutConfirmModal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}

@@ -9,15 +9,14 @@ import { Loading } from '../components/shared/Loading';
 import { ErrorMessage } from '../components/shared/ErrorMessage';
 import { Plus, Info, Bell, Users } from 'lucide-react';
 
-// 👉 IMPORTANTE: Mantendo o hook da API real em vez do mockData!
 import { useDashboard } from '../../hooks';
 
 interface DashboardPageProps {
-  onNavigate?: (page: 'dashboard' | 'acervo' | 'emprestimos' | 'usuarios' | 'cadastro' | 'relatorios') => void;
+  onNavigate?: (page: any) => void;
+  onLogout?: () => void;
 }
 
-export function DashboardPage({ onNavigate }: DashboardPageProps) {
-  // Puxa os dados verdadeiros do backend
+export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
   const {
     metrics,
     recentRentals,
@@ -39,10 +38,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar activePage="dashboard" onNavigate={onNavigate} />
+      <Sidebar activePage="dashboard" onNavigate={onNavigate} onLogout={onLogout} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        <Header onLogout={onLogout} />
 
         <main className="flex-1 overflow-y-auto p-8">
           

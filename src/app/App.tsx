@@ -6,7 +6,7 @@ import { CollectionPage } from './pages/CollectionPage';
 import { UsersPage } from './pages/UsersPage';
 import { LoginPage } from './pages/LoginPage';
 import { PendingRegistrationsPage } from './pages/PendingRegistrationsPage';
-// 👇 IMPORTAÇÃO DA NOVA PÁGINA ADICIONADA 👇
+import { MechanicsPage } from './pages/MechanicsPage';
 import { ReportsPage } from './pages/ReportsPage'; 
 
 type PageType =
@@ -16,25 +16,23 @@ type PageType =
   | 'usuarios'
   | 'cadastro'
   | 'relatorios'
+  | 'mecanicas'
   | 'login';
 
 export default function App() {
-  // VERIFICA TOKEN
+ 
   const getInitialPage = (): PageType => {
     const token = localStorage.getItem('token');
-
-    // SEM TOKEN = LOGIN
+    
     if (!token) {
       return 'login';
     }
-
-    // COM TOKEN = DASHBOARD
+   
     return 'dashboard';
   };
 
   const [currentPage, setCurrentPage] = useState<PageType>(getInitialPage());
-
-  // SINCRONIZA URL
+  
   useEffect(() => {
     if (currentPage === 'login') {
       window.history.pushState({}, '', '/login');
@@ -42,20 +40,16 @@ export default function App() {
       window.history.pushState({}, '', '/');
     }
   }, [currentPage]);
-
-  // LOGIN
+  
   const handleLogin = () => {
     setCurrentPage('dashboard');
   };
-
-  // LOGOUT REAL
+  
   const handleLogout = () => {
-    // LIMPA AUTH
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     sessionStorage.clear();
-
-    // REDIRECIONA
+   
     setCurrentPage('login');
   };
 
@@ -65,26 +59,28 @@ export default function App() {
         return <LoginPage onLogin={handleLogin} />;
 
       case 'dashboard':
-        return <DashboardPage onNavigate={setCurrentPage} onLogout={handleLogout} />;
+        return <DashboardPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
 
       case 'acervo':
-        return <CollectionPage onNavigate={setCurrentPage} onLogout={handleLogout} />;
+        return <CollectionPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
 
       case 'emprestimos':
-        return <RentalsPage onNavigate={setCurrentPage} onLogout={handleLogout} />;
+        return <RentalsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
 
       case 'usuarios':
-        return <UsersPage onNavigate={setCurrentPage} onLogout={handleLogout} />;
+        return <UsersPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
 
       case 'cadastro':
-        return <PendingRegistrationsPage onNavigate={setCurrentPage} onLogout={handleLogout} />;
+        return <PendingRegistrationsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
 
-      // 👇 NOVA ROTA ADICIONADA AQUI 👇
       case 'relatorios':
-        return <ReportsPage onNavigate={setCurrentPage} onLogout={handleLogout} />;
+        return <ReportsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
+
+      case 'mecanicas':
+        return <MechanicsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
 
       default:
-        return <DashboardPage onNavigate={setCurrentPage} onLogout={handleLogout} />;
+        return <DashboardPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
     }
   };
 
