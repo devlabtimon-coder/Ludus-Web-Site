@@ -2,7 +2,7 @@ import { api } from './api';
 import { Rental, RentalStatus } from '../types/api';
 
 export const rentalsService = {
-  // Listar aluguéis (admin) com filtros
+
   getAdminRentals: async (params?: {
     status?: RentalStatus | 'ALL';
     q?: string;
@@ -19,21 +19,20 @@ export const rentalsService = {
     return response.data;
   },
 
-  // Atualizar status do aluguel (admin)
+  
   updateRentalStatus: async (id: string, status: RentalStatus) => {
     const response = await api.patch<Rental>(`/admin/rentals/${id}/status`, {
       status,
     });
     return response.data;
   },
-
-  // Listar meus aluguéis (usuário)
+  
   getMyRentals: async () => {
     const response = await api.get<Rental[]>('/rentals');
     return response.data;
   },
 
-  // Criar novo aluguel (usuário)
+ 
   createRental: async (data: { gameId: string; copyId?: string }) => {
     const response = await api.post<Rental>('/rentals', data);
     return response.data;

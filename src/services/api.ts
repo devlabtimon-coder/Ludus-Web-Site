@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Configuração da baseURL - será localhost inicialmente
+
 const baseURL = import.meta.env.VITE_API_URL || 'http://110.24.8.226:3000';
 
 export const api = axios.create({
@@ -10,7 +10,7 @@ export const api = axios.create({
   },
 });
 
-// Interceptor de requisição para adicionar token
+
 api.interceptors.request.use(
   async (config) => {
     const token = localStorage.getItem('token');
@@ -24,7 +24,7 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor de resposta para tratamento de erros
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -38,30 +38,29 @@ api.interceptors.response.use(
       url.includes('/auth/verify-phone') ||
       url.includes('/auth/resend-code');
 
-    // 👉 NOVA VERIFICAÇÃO AQUI: Identifica se a requisição foi para a rota de login
+   
     const isLoginRequest = url.includes('/login') || url.includes('/auth/login');
 
-    // Tratamento de erro 401 - Não autorizado
-    // 👉 AGORA ELE SÓ RECARREGA A PÁGINA SE NÃO FOR UM ERRO DE LOGIN
+
     if (status === 401 && !isLoginRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Redirecionar para login
+
       window.location.href = '/login';
     }
 
-    // Tratamento de erro 403 - Verificação pendente
+    
     if (status === 403 && !isVerifyRelated) {
       const storedUser = localStorage.getItem('user');
       const user = storedUser ? JSON.parse(storedUser) : null;
 
       if (code === 'EMAIL_NOT_VERIFIED') {
-        // Redirecionar para verificação de email
+       
         console.warn('Email não verificado:', user?.email);
       }
 
       if (code === 'PHONE_NOT_VERIFIED') {
-        // Redirecionar para verificação de telefone
+   
         console.warn('Telefone não verificado:', user?.phone);
       }
     }

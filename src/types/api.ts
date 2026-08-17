@@ -47,7 +47,7 @@ export interface Game {
   minTime: number;
   maxTime?: number;
   
-  // Campos calculados pela sua API:
+
   copiesCount: number;
   availableCopiesCount: number;
   isAvailableNow: boolean;
@@ -133,4 +133,16 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+
+export interface Mechanic {
+  id: string;
+  namePt: string;
+  nameEn?: string | null;
+  category: string;
+  definition: string;
+  icon: string;
+  active: boolean;
+  games?: { id: string; title: string }[];
 }
