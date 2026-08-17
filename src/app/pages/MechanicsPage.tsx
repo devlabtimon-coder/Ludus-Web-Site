@@ -1,5 +1,3 @@
-
-
 import { useState } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
@@ -7,10 +5,15 @@ import { MechanicsTable } from '../components/mechanics/MechanicsTable';
 import { Loading } from '../components/shared/Loading';
 import { ErrorMessage } from '../components/shared/ErrorMessage';
 import { useMechanics } from '../../hooks/useMechanics';
-import { Plus } from 'lucide-react';
+
+import { Plus, Database } from 'lucide-react';
 import { Mechanic } from '../../types/api';
 import { MechanicModal } from '../components/mechanics/MechanicModal';
 import { toast } from 'sonner';
+
+import { mechanicService } from '../../services/mechanicService';
+
+import { MECANICAS } from '../data/mockData'; 
 
 interface MechanicsPageProps {
   onNavigate: (page: any) => void;
@@ -31,6 +34,9 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMechanic, setEditingMechanic] = useState<Mechanic | null>(null);
+  
+  
+  const [loadingBulk, setLoadingBulk] = useState(false);
 
   const handleAddClick = () => {
     setEditingMechanic(null);
@@ -63,6 +69,33 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
     }
   };
 
+  const handleBulkLoad = async () => {
+    if (!window.confirm('Tem certeza que deseja carregar TODAS as 130 mecânicas em massa?')) return;
+    
+   
+    const payloadParaOBackend = MECANICAS.map(m => ({
+      namePt: m.namePt,
+      nameEn: m.nameEn,
+      category: m.category,
+      chip: m.category, 
+      definition: m.definition,
+      icon: m.icon 
+    }));
+
+    try {
+      setLoadingBulk(true);
+      const res = await mechanicService.bulkCreate(payloadParaOBackend);
+      toast.success(`Sucesso! ${res.count} mecânicas foram processadas.`);
+      
+      await refetch(); 
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Falha ao realizar a carga em massa.");
+    } finally {
+      setLoadingBulk(false);
+    }
+  };
+
   if (loading) return <Loading />;
   if (error) return <ErrorMessage message={error} onRetry={refetch} />;
 
@@ -85,13 +118,25 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
               <p className="text-gray-500 mt-1">Gerencie o dicionário de mecânicas e tags do aplicativo</p>
             </div>
             
-            <button 
-              onClick={handleAddClick}
-              className="bg-[#04096D] hover:bg-[#070e99] text-white px-5 py-3 rounded-xl font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-[#04096D]/20 whitespace-nowrap"
-            >
-              <Plus size={18} strokeWidth={3} />
-              Nova Mecânica
-            </button>
+            <div className="flex items-center gap-3">
+              
+              <button 
+                onClick={handleBulkLoad}
+                disabled={loadingBulk}
+                className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-5 py-3 rounded-xl font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm whitespace-nowrap disabled:opacity-50"
+              >
+                <Database size={18} strokeWidth={3} />
+                {loadingBulk ? 'Carregando...' : 'Carga em Massa'}
+              </button>
+
+              <button 
+                onClick={handleAddClick}
+                className="bg-[#04096D] hover:bg-[#070e99] text-white px-5 py-3 rounded-xl font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-[#04096D]/20 whitespace-nowrap"
+              >
+                <Plus size={18} strokeWidth={3} />
+                Nova Mecânica
+              </button>
+            </div>
           </div>
 
           <MechanicsTable 

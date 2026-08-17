@@ -14,7 +14,7 @@ import {
 import { Avatar } from '../shared/Avatar';
 import { LogoutConfirmModal } from '../shared/LogoutConfirmModal';
 
-import logoFull from '../../../assets/logo-full.png';
+import logoFull from '../../../assets/images/logo-full.png';
 type PageType =
   | 'dashboard'
   | 'acervo'

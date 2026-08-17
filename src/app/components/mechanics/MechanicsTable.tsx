@@ -1,4 +1,6 @@
 import { Edit, Trash2, EyeOff, Eye, Settings } from 'lucide-react';
+
+import * as LucideIcons from 'lucide-react';
 import { Mechanic } from '../../../types/api';
 
 interface MechanicsTableProps {
@@ -31,62 +33,70 @@ export function MechanicsTable({ mechanics, onEditClick, onDeleteClick }: Mechan
                 <td colSpan={5} className="py-12 text-center text-gray-500 font-medium">Nenhuma mecânica cadastrada.</td>
               </tr>
             ) : (
-              mechanics.map((mechanic) => (
-                <tr key={mechanic.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors bg-white">
-                  <td className="py-4 px-5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#F0F2FF] text-[#31358B] flex items-center justify-center border border-[#31358B]/10">
-                       
-                        <Settings size={20} />
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900">{mechanic.namePt}</p>
-                        {mechanic.nameEn && <p className="text-xs text-gray-500">{mechanic.nameEn}</p>}
-                      </div>
-                    </div>
-                  </td>
-                  
-                  <td className="py-4 px-5">
-                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                      {mechanic.category}
-                    </span>
-                  </td>
+              mechanics.map((mechanic) => {
+                
+             
+                const IconComponent = mechanic.icon && (LucideIcons as any)[mechanic.icon] 
+                  ? (LucideIcons as any)[mechanic.icon] 
+                  : Settings;
 
-                  <td className="py-4 px-5">
-                    <span className="text-sm font-bold text-[#04096D]">
-                      {mechanic.games?.length || 0} jogos
-                    </span>
-                  </td>
-
-                  <td className="py-4 px-5">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${mechanic.active ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                      <span className={`text-sm font-medium text-gray-700`}>
-                        {mechanic.active ? 'Ativa' : 'Inativa'}
+                return (
+                  <tr key={mechanic.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors bg-white">
+                    <td className="py-4 px-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#F0F2FF] text-[#31358B] flex items-center justify-center border border-[#31358B]/10">
+                         
+                          <IconComponent size={20} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900">{mechanic.namePt}</p>
+                          {mechanic.nameEn && <p className="text-xs text-gray-500">{mechanic.nameEn}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    
+                    <td className="py-4 px-5">
+                      <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                        {mechanic.category}
                       </span>
-                    </div>
-                  </td>
+                    </td>
 
-                  <td className="py-4 px-5">
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => onEditClick(mechanic)} 
-                        title="Editar Mecânica"
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-2.5 rounded-lg transition-colors font-semibold"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button 
-                        onClick={() => onDeleteClick(mechanic)} 
-                        title="Excluir Mecânica"
-                        className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-lg transition-colors font-semibold"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    <td className="py-4 px-5">
+                      <span className="text-sm font-bold text-[#04096D]">
+                        {mechanic.games?.length || 0} jogos
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-5">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${mechanic.active ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                        <span className={`text-sm font-medium text-gray-700`}>
+                          {mechanic.active ? 'Ativa' : 'Inativa'}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-5">
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => onEditClick(mechanic)} 
+                          title="Editar Mecânica"
+                          className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-2.5 rounded-lg transition-colors font-semibold"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => onDeleteClick(mechanic)} 
+                          title="Excluir Mecânica"
+                          className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-lg transition-colors font-semibold"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
