@@ -1,5 +1,4 @@
 import { Edit, Trash2, EyeOff, Eye, Settings } from 'lucide-react';
-
 import * as LucideIcons from 'lucide-react';
 import { Mechanic } from '../../../types/api';
 
@@ -15,7 +14,6 @@ export function MechanicsTable({ mechanics, onEditClick, onDeleteClick }: Mechan
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Dicionário de Mecânicas</h2>
       </div>
-
       <div className="rounded-xl overflow-hidden border border-gray-100">
         <table className="w-full">
           <thead className="bg-[#F7F8FF]">
@@ -34,10 +32,8 @@ export function MechanicsTable({ mechanics, onEditClick, onDeleteClick }: Mechan
               </tr>
             ) : (
               mechanics.map((mechanic) => {
-                
-             
-                const IconComponent = mechanic.icon && (LucideIcons as any)[mechanic.icon] 
-                  ? (LucideIcons as any)[mechanic.icon] 
+                const IconComponent = mechanic.icon && (LucideIcons as any)[mechanic.icon]
+                  ? (LucideIcons as any)[mechanic.icon]
                   : Settings;
 
                 return (
@@ -45,7 +41,6 @@ export function MechanicsTable({ mechanics, onEditClick, onDeleteClick }: Mechan
                     <td className="py-4 px-5">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-[#F0F2FF] text-[#31358B] flex items-center justify-center border border-[#31358B]/10">
-                         
                           <IconComponent size={20} />
                         </div>
                         <div>
@@ -61,10 +56,24 @@ export function MechanicsTable({ mechanics, onEditClick, onDeleteClick }: Mechan
                       </span>
                     </td>
 
-                    <td className="py-4 px-5">
-                      <span className="text-sm font-bold text-[#04096D]">
-                        {mechanic.games?.length || 0} jogos
-                      </span>
+                   
+                    <td className="py-4 px-5 max-w-[280px]">
+                      {mechanic.games && mechanic.games.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {mechanic.games.map((game, index) => (
+                            <span 
+                              key={index} 
+                              className="bg-[#F0F2FF] text-[#31358B] border border-[#31358B]/20 px-2 py-1 rounded-md text-[11px] font-bold whitespace-nowrap"
+                            >
+                              {game}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                          Nenhum jogo
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-4 px-5">
@@ -78,15 +87,15 @@ export function MechanicsTable({ mechanics, onEditClick, onDeleteClick }: Mechan
 
                     <td className="py-4 px-5">
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => onEditClick(mechanic)} 
+                        <button
+                          onClick={() => onEditClick(mechanic)}
                           title="Editar Mecânica"
                           className="bg-blue-50 hover:bg-blue-100 text-blue-600 p-2.5 rounded-lg transition-colors font-semibold"
                         >
                           <Edit size={16} />
                         </button>
-                        <button 
-                          onClick={() => onDeleteClick(mechanic)} 
+                        <button
+                          onClick={() => onDeleteClick(mechanic)}
                           title="Excluir Mecânica"
                           className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-lg transition-colors font-semibold"
                         >
