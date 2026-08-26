@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { PendingRegistrationsPage } from './pages/PendingRegistrationsPage';
 import { MechanicsPage } from './pages/MechanicsPage';
 import { ReportsPage } from './pages/ReportsPage'; 
+import { ForgotPassword } from './pages/ForgotPassword'; // 🔥 Importação da nova tela
 
 type PageType =
   | 'dashboard'
@@ -17,7 +18,8 @@ type PageType =
   | 'cadastro'
   | 'relatorios'
   | 'mecanicas'
-  | 'login';
+  | 'login'
+  | 'forgot-password'; // 🔥 Novo tipo adicionado
 
 export default function App() {
  
@@ -25,6 +27,10 @@ export default function App() {
     const token = localStorage.getItem('token');
     
     if (!token) {
+      // Se a URL estiver no esqueci a senha, mantém lá ao recarregar
+      if (window.location.pathname === '/forgot-password') {
+        return 'forgot-password';
+      }
       return 'login';
     }
    
@@ -36,6 +42,8 @@ export default function App() {
   useEffect(() => {
     if (currentPage === 'login') {
       window.history.pushState({}, '', '/login');
+    } else if (currentPage === 'forgot-password') {
+      window.history.pushState({}, '', '/forgot-password'); // 🔥 Atualiza a URL do navegador
     } else {
       window.history.pushState({}, '', '/');
     }
@@ -56,7 +64,16 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'login':
-        return <LoginPage onLogin={handleLogin} />;
+        return (
+          <LoginPage 
+            onLogin={handleLogin} 
+            onForgotPassword={() => setCurrentPage('forgot-password')} 
+          />
+        );
+
+      case 'forgot-password':
+        // 🔥 Renderiza a nova tela passando a função de voltar
+        return <ForgotPassword onBack={() => setCurrentPage('login')} />;
 
       case 'dashboard':
         return <DashboardPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
