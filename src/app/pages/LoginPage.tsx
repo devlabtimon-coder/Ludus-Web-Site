@@ -47,6 +47,12 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
         senha: cleanedPassword,
       });
 
+      if (response?.user?.role !== "ADMIN") {
+        setError("Acesso restrito. Apenas administradores têm permissão para acessar este painel.");
+        setLoading(false);
+        return;
+      }
+
       if (response?.token) localStorage.setItem("token", response.token);
       if (response?.user) localStorage.setItem("user", JSON.stringify(response.user));
       
@@ -66,6 +72,12 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
       
       try {
         const response = await authService.loginWithGoogle(codeResponse.access_token);
+
+        if (response?.user?.role !== "ADMIN") {
+          setError("Acesso restrito. Apenas administradores têm permissão para acessar este painel.");
+          setIsGoogleLoading(false);
+          return;
+        }
 
         if (response?.token) localStorage.setItem("token", response.token);
         if (response?.user) localStorage.setItem("user", JSON.stringify(response.user));
@@ -182,7 +194,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
               {error && (
                 <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-600">
                   <AlertCircle size={18} />
-                  <span className="text-sm font-medium">{error}</span>
+                  <span className="text-sm font-medium leading-tight">{error}</span>
                 </div>
               )}
             </form>
