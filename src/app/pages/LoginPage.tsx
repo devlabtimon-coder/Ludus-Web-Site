@@ -3,13 +3,13 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useGoogleLogin } from '@react-oauth/google';
 import { authService } from "../../services";
 
+import logoLudus from "../../assets/images/logo-full.png";
+import logoLudusDice from "../../assets/images/logo-dice.png";
+
 interface LoginPageProps {
   onLogin?: () => void;
   onForgotPassword?: () => void; 
 }
-
-import logoLudus from "../../assets/images/logo-full.png";
-import logoLudusDice from "../../assets/images/logo-dice.png";
 
 export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) { 
   const [email, setEmail] = useState("");
@@ -53,7 +53,6 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
       setLoading(false);
       if (onLogin) onLogin();
     } catch (err: any) {
-      console.error(err);
       const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
       setError(apiMessage || "E-mail ou senha incorretos.");
       setLoading(false);
@@ -73,21 +72,20 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
 
         if (onLogin) onLogin();
       } catch (err: any) {
-        console.error(err);
         const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
         setError(apiMessage || "Erro ao fazer login com o Google.");
       } finally {
         setIsGoogleLoading(false);
       }
     },
-    onError: (error) => {
-      console.error('Login Failed:', error);
+    onError: () => {
       setError("Falha ao comunicar com o Google.");
     }
   });
 
   return (
     <div className="flex min-h-screen overflow-hidden bg-white">
+      
       <div className="relative hidden w-[42%] overflow-hidden bg-[#37379B] lg:flex items-center justify-center">
         <div className="absolute -right-36 -top-36 h-[340px] w-[340px] rounded-full bg-[#FBBC04]/35" />
         <div className="absolute -right-20 -top-20 h-[240px] w-[240px] rounded-full bg-[#FBBC04]/45" />
@@ -102,6 +100,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
       </div>
 
       <div className="relative flex w-full items-end justify-center overflow-hidden bg-[#f3f6ff] px-4 pt-10 lg:w-[58%] lg:items-center lg:px-10">
+        
         <div className="absolute inset-0">
           <div className="absolute right-[-100px] top-[-100px] h-[260px] w-[260px] rounded-full bg-[#31358B]/10 blur-3xl" />
           <div className="absolute bottom-[10%] right-[10%] h-[180px] w-[180px] rounded-full bg-[#FBBC04]/10 blur-3xl" />
@@ -109,11 +108,13 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
         </div>
 
         <div className="relative z-10 w-full max-w-lg">
+          
           <div className="mb-8 flex justify-center lg:hidden">
             <img src={logoLudusDice} alt="Ludus" className="w-[230px]" />
           </div>
 
           <div className="rounded-t-[38px] border border-white/60 bg-white px-7 pb-8 pt-8 shadow-[0_-10px_50px_rgba(49,53,139,0.08)] lg:rounded-[38px]">
+            
             <div className="mb-8">
               <h1 className="text-[36px] font-black leading-tight text-[#31358B]">
                 Bem-vindo de volta!
@@ -124,6 +125,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[#535353]">E-mail</label>
                 <div className="flex items-center rounded-2xl border border-[#dfe3f2] bg-[#fafbff] px-4 transition-all focus-within:border-[#FBBC04] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#FBBC04]/20">
@@ -137,7 +139,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
                   />
                 </div>
               </div>
-
+    
               <div>
                 <label className="mb-2 block text-sm font-semibold text-[#535353]">Senha</label>
                 <div className="flex items-center rounded-2xl border border-[#dfe3f2] bg-[#fafbff] px-4 transition-all focus-within:border-[#FBBC04] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#FBBC04]/20">
