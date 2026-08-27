@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useGoogleLogin } from '@react-oauth/google';
 import { authService } from "../../services";
 
 interface LoginPageProps {
@@ -13,31 +14,27 @@ import logoLudusDice from "../../assets/images/logo-dice.png";
 export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) { 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError("");
     setLoading(true);
 
     const cleanedEmail = email.trim().toLowerCase();
     const cleanedPassword = password.trim();
 
-   
     if (!cleanedEmail || !cleanedPassword) {
       setError("Preencha e-mail e senha.");
       setLoading(false);
       return;
     }
 
-   
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     if (!emailRegex.test(cleanedEmail)) {
       setError("Digite um e-mail válido.");
       setLoading(false);
@@ -50,86 +47,73 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
         senha: cleanedPassword,
       });
 
-  
-      if (response?.token) {
-        localStorage.setItem("token", response.token);
-      }
-
+      if (response?.token) localStorage.setItem("token", response.token);
+      if (response?.user) localStorage.setItem("user", JSON.stringify(response.user));
       
-      if (response?.user) {
-        localStorage.setItem("user", JSON.stringify(response.user));
-      }
-
       setLoading(false);
-
-      if (onLogin) {
-        onLogin();
-      }
+      if (onLogin) onLogin();
     } catch (err: any) {
       console.error(err);
-
-      const apiMessage =
-        err?.response?.data?.message || err?.response?.data?.error;
-
+      const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
       setError(apiMessage || "E-mail ou senha incorretos.");
       setLoading(false);
     }
   };
 
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (codeResponse) => {
+      setIsGoogleLoading(true);
+      setError("");
+      
+      try {
+        const response = await authService.loginWithGoogle(codeResponse.access_token);
+
+        if (response?.token) localStorage.setItem("token", response.token);
+        if (response?.user) localStorage.setItem("user", JSON.stringify(response.user));
+
+        if (onLogin) onLogin();
+      } catch (err: any) {
+        console.error(err);
+        const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
+        setError(apiMessage || "Erro ao fazer login com o Google.");
+      } finally {
+        setIsGoogleLoading(false);
+      }
+    },
+    onError: (error) => {
+      console.error('Login Failed:', error);
+      setError("Falha ao comunicar com o Google.");
+    }
+  });
+
   return (
     <div className="flex min-h-screen overflow-hidden bg-white">
-      
       <div className="relative hidden w-[42%] overflow-hidden bg-[#37379B] lg:flex items-center justify-center">
-       
         <div className="absolute -right-36 -top-36 h-[340px] w-[340px] rounded-full bg-[#FBBC04]/35" />
         <div className="absolute -right-20 -top-20 h-[240px] w-[240px] rounded-full bg-[#FBBC04]/45" />
         <div className="absolute -bottom-44 -left-44 h-[420px] w-[420px] rounded-full bg-[#FC090D]/35" />
         <div className="absolute -bottom-24 -left-24 h-[300px] w-[300px] rounded-full bg-[#FC090D]/50" />
-
-     
         <div className="absolute -right-28 top-10 h-[240px] w-[240px] rounded-full border-[3px] border-dashed border-white/15" />
-
-      
         <div className="absolute -left-24 bottom-10 h-[240px] w-[240px] rounded-full border-[3px] border-dashed border-white/15" />
         
         <div className="relative z-10 flex flex-col items-center px-10">
-      
-          <img
-            src={logoLudus}
-            alt="Ludus"
-            className="w-[380px] max-w-full drop-shadow-2xl"
-          />
+          <img src={logoLudus} alt="Ludus" className="w-[380px] max-w-full drop-shadow-2xl" />
         </div>
       </div>
 
-    
       <div className="relative flex w-full items-end justify-center overflow-hidden bg-[#f3f6ff] px-4 pt-10 lg:w-[58%] lg:items-center lg:px-10">
-        
-      
         <div className="absolute inset-0">
-    
           <div className="absolute right-[-100px] top-[-100px] h-[260px] w-[260px] rounded-full bg-[#31358B]/10 blur-3xl" />
-          
           <div className="absolute bottom-[10%] right-[10%] h-[180px] w-[180px] rounded-full bg-[#FBBC04]/10 blur-3xl" />
-     
           <div className="absolute left-[-80px] top-[30%] h-[220px] w-[220px] rounded-full bg-[#FC090D]/10 blur-3xl" />
         </div>
 
         <div className="relative z-10 w-full max-w-lg">
-          
-     
           <div className="mb-8 flex justify-center lg:hidden">
-            <img
-              src={logoLudusDice}
-              alt="Ludus"
-              className="w-[230px]"
-            />
+            <img src={logoLudusDice} alt="Ludus" className="w-[230px]" />
           </div>
 
-         
           <div className="rounded-t-[38px] border border-white/60 bg-white px-7 pb-8 pt-8 shadow-[0_-10px_50px_rgba(49,53,139,0.08)] lg:rounded-[38px]">
-            
-          
             <div className="mb-8">
               <h1 className="text-[36px] font-black leading-tight text-[#31358B]">
                 Bem-vindo de volta!
@@ -139,13 +123,9 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
               </p>
             </div>
 
-         
             <form onSubmit={handleSubmit} className="space-y-5">
-            
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#535353]">
-                  E-mail
-                </label>
+                <label className="mb-2 block text-sm font-semibold text-[#535353]">E-mail</label>
                 <div className="flex items-center rounded-2xl border border-[#dfe3f2] bg-[#fafbff] px-4 transition-all focus-within:border-[#FBBC04] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#FBBC04]/20">
                   <Mail size={19} className="mr-3 text-[#7b8199]" />
                   <input
@@ -158,11 +138,8 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
                 </div>
               </div>
 
-           
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#535353]">
-                  Senha
-                </label>
+                <label className="mb-2 block text-sm font-semibold text-[#535353]">Senha</label>
                 <div className="flex items-center rounded-2xl border border-[#dfe3f2] bg-[#fafbff] px-4 transition-all focus-within:border-[#FBBC04] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#FBBC04]/20">
                   <Lock size={19} className="mr-3 text-[#7b8199]" />
                   <input
@@ -182,7 +159,6 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
                 </div>
               </div>
 
-     
               <div className="flex justify-end">
                 <button
                   type="button"
@@ -193,17 +169,12 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
                 </button>
               </div>
 
-              
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || isGoogleLoading}
                 className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-[#31358B] text-[15px] font-bold text-white shadow-lg shadow-[#31358B]/20 transition-all hover:scale-[1.01] hover:bg-[#272b73] disabled:opacity-60"
               >
-                {loading ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                ) : (
-                  'Entrar'
-                )}
+                {loading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : 'Entrar'}
               </button>
 
               {error && (
@@ -220,12 +191,22 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
               <div className="h-px flex-1 bg-[#e5e7eb]" />
             </div>
 
-        
-            <button className="flex h-14 w-full items-center justify-center rounded-2xl border border-[#dfe3f2] bg-white font-semibold text-[#31358B] transition-all hover:bg-[#f8faff]">
-              Continuar com Google
+            <button 
+              type="button"
+              onClick={() => loginWithGoogle()}
+              disabled={isGoogleLoading || loading}
+              className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe3f2] bg-white font-semibold text-[#31358B] transition-all hover:bg-[#f8faff] disabled:opacity-60"
+            >
+              {isGoogleLoading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#31358B] border-t-transparent" />
+              ) : (
+                <>
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
+                  Continuar com Google
+                </>
+              )}
             </button>
 
-    
             <div className="mt-8 text-center">
               <p className="text-sm text-[#666]">
                 Não possui uma conta?{' '}
@@ -234,6 +215,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
                 </button>
               </p>
             </div>
+
           </div>
         </div>
       </div>
