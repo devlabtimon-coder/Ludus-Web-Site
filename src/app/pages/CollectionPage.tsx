@@ -11,7 +11,7 @@ import { Game } from "../../../types/api";
 import { api } from "../../services/api";
 import { toast } from "sonner";
 import { GameCopiesModal } from "../components/collection/GameCopiesModal";
-// Modais e Filtros
+
 import {
   CollectionFiltersBar,
   GameCategory,
@@ -40,13 +40,13 @@ interface CollectionPageProps {
 export function CollectionPage({ onNavigate }: CollectionPageProps) {
   const { metrics, games, loading, error, refetch } = useGames();
 
-  // Controle de estado dos Modais
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [deletingGame, setDeletingGame] = useState<Game | null>(null);
   const [inactivatingGame, setInactivatingGame] = useState<Game | null>(null);
 
-  // Controle de estado dos Filtros
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] =
     useState<GameCategory>("todos");
@@ -57,26 +57,26 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
     null,
   );
 
-  // Lógica de Filtro e Ordenação
+
   const filteredGames = useMemo(() => {
     if (!games) return [];
     let filtered = [...games];
 
-    // Busca
+  
     if (searchTerm) {
       filtered = filtered.filter((game) =>
         game.title?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
-    // Categoria/Tier
+   
     if (selectedCategory !== "todos") {
       filtered = filtered.filter(
         (game) => game.tier?.toLowerCase() === selectedCategory,
       );
     }
 
-    // Status baseado nas flags reais da sua API
+   
     if (selectedStatus !== "todos") {
       if (selectedStatus === "disponivel") {
         filtered = filtered.filter((g) => g.isActive && g.isAvailableNow);
@@ -85,14 +85,14 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
       } else if (selectedStatus === "inativo") {
         filtered = filtered.filter((g) => !g.isActive);
       } else if (selectedStatus === "manutencao") {
-        // Exemplo: se você usar o campo "available" como false manual mas isActive=true
+        
         filtered = filtered.filter(
           (g) => g.isActive && g.available === false && !g.isAvailableNow,
         );
       }
     }
 
-    // Ordenação
+  
     filtered.sort((a, b) => {
       const titleA = a.title || "";
       const titleB = b.title || "";
@@ -117,22 +117,20 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
     setSelectedSort("az");
   };
 
-  // ==========================================
-  // FUNÇÕES DE AÇÃO NA API
-  // ==========================================
+
 
   const handleDeleteConfirm = async () => {
     if (!deletingGame) return;
 
     try {
-      await api.delete(`/games/${deletingGame.id}`); //[cite: 1]
+      await api.delete(`/games/${deletingGame.id}`); 
       toast.success("Jogo excluído permanentemente!");
       setDeletingGame(null);
-      refetch(); // Recarrega a tabela[cite: 1]
+      refetch(); 
     } catch (err: any) {
-      // Retorna 409 se houver aluguéis ativos[cite: 1]
+  
       if (err.response?.status === 409) {
-        toast.error("Não é possível excluir: jogo possui aluguéis ativos."); //[cite: 1]
+        toast.error("Não é possível excluir: jogo possui aluguéis ativos."); 
       } else {
         toast.error("Erro ao excluir o jogo do acervo.");
       }
@@ -142,14 +140,14 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
   const handleInactivateConfirm = async (reason: string) => {
     if (!inactivatingGame) return;
 
-    // Se o jogo está inativo, a ação será ativá-lo (true), e vice-versa
+
     const willBeActive = inactivatingGame.isActive === false;
 
     try {
       await api.patch(`/games/${inactivatingGame.id}`, {
-        //[cite: 1]
-        isActive: willBeActive, //[cite: 1]
-        isVisible: willBeActive, // Esconde do app também[cite: 1]
+  
+        isActive: willBeActive,
+        isVisible: willBeActive, 
       });
 
       toast.success(
@@ -158,7 +156,7 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
           : "Jogo inativado com sucesso!",
       );
       setInactivatingGame(null);
-      refetch(); // Recarrega a tabela
+      refetch(); 
     } catch (err) {
       toast.error("Erro ao alterar o status do jogo.");
     }
@@ -211,7 +209,7 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
             />
           </div>
 
-          {/* Barra de Filtros Nova */}
+         
           <CollectionFiltersBar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -225,7 +223,7 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
             onAddGame={() => setIsAddOpen(true)}
           />
 
-          {/* Tabela de Jogos */}
+      
           <GamesCatalogTable
             games={filteredGames}
             onEditClick={(game) => setEditingGame(game)}
@@ -236,7 +234,7 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
         </main>
       </div>
 
-      {/* Renderização dos Modais */}
+     
 
       <GameCopiesModal
   isOpen={!!managingCopiesGame}
@@ -263,7 +261,7 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
         onClose={() => setDeletingGame(null)}
         onConfirm={handleDeleteConfirm}
         gameName={deletingGame?.title || ""}
-        // Na sua API o jogo retorna activeRentalsCount? Se não, deixe como 0 e o erro 409 cuida da trava visual
+
         activeRentalsCount={0}
       />
 
@@ -273,7 +271,7 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
         onConfirm={handleInactivateConfirm}
         gameName={inactivatingGame?.title || ""}
         activeRentalsCount={0}
-        isActive={inactivatingGame?.isActive !== false} // Passa o status real atual para o Modal
+        isActive={inactivatingGame?.isActive !== false} 
       />
     </div>
   );

@@ -8,7 +8,7 @@ import { Loading } from '../components/shared/Loading';
 import { ErrorMessage } from '../components/shared/ErrorMessage';
 import { PlaySquare, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 
-// 👉 Aqui está o pulo do gato: puxando a API real!
+
 import { useRentals } from '../../hooks';
 
 interface RentalsPageProps {
@@ -21,10 +21,10 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
   const [selectedStatus, setSelectedStatus] = useState<VisualRentalStatus>('todos');
   const [selectedSort, setSelectedSort] = useState<SortOption>('recent');
 
-  // Variáveis da API Real
+  
   const { metrics, rentals, loading, error, refetch, updateStatus } = useRentals();
 
-  // Aplica o filtro e ordenação da UI em cima dos dados que vieram do banco
+  
   const filteredAndSortedRentals = useMemo(() => {
     if (!rentals) return [];
     
@@ -84,7 +84,6 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
         <main className="flex-1 overflow-y-auto p-4 md:p-6 xl:p-8">
           <h1 className="text-2xl md:text-3xl font-bold text-[#02096D] mb-6 md:mb-8">Empréstimos</h1>
 
-          {/* Cards usando as métricas do banco de dados */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
             <RentalMetricCard
               title="Ativos"

@@ -8,13 +8,14 @@ import {
   ArrowLeftRight,
   LogOut,
   X,
-  Tags
+  Tags,
+  Trophy,
+  Calendar
 } from 'lucide-react';
-
 import { Avatar } from '../shared/Avatar';
 import { LogoutConfirmModal } from '../shared/LogoutConfirmModal';
-
 import logoFull from '../../../assets/images/logo-full.png';
+
 type PageType =
   | 'dashboard'
   | 'acervo'
@@ -23,6 +24,8 @@ type PageType =
   | 'cadastro'
   | 'relatorios'
   | 'mecanicas'
+  | 'temporadas'
+  | 'ranking'
   | 'login';
 
 interface MenuItem {
@@ -48,12 +51,11 @@ export function Sidebar({
   onClose
 }: SidebarProps) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  
-  const [userData, setUserData] = useState<{ 
-    name: string; 
-    email: string; 
-    avatar?: string | null; 
-    picture?: string | null; 
+  const [userData, setUserData] = useState<{
+    name: string;
+    email: string;
+    avatar?: string | null;
+    picture?: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -74,15 +76,11 @@ export function Sidebar({
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     sessionStorage.clear();
-
     setShowLogoutModal(false);
-
     if (onLogout) {
       onLogout();
     }
-
     window.history.pushState({}, '', '/login');
-
     onNavigate?.('login');
   };
 
@@ -129,6 +127,18 @@ export function Sidebar({
       page: 'cadastro'
     },
     {
+      icon: <Trophy size={19} />,
+      label: 'Ranking',
+      active: activePage === 'ranking',
+      page: 'ranking'
+    },
+    {
+      icon: <Calendar size={19} />,
+      label: 'Temporadas',
+      active: activePage === 'temporadas',
+      page: 'temporadas'
+    },
+    {
       icon: <FileText size={19} />,
       label: 'Relatórios',
       active: activePage === 'relatorios',
@@ -156,7 +166,6 @@ export function Sidebar({
               {item.active && (
                 <div className="absolute left-0 top-1/2 h-8 w-[4px] -translate-y-1/2 rounded-r-full bg-[#FFC928]" />
               )}
-
               <button
                 onClick={() => handleNavigate(item.page)}
                 className={`
@@ -169,7 +178,6 @@ export function Sidebar({
                   px-4
                   transition-all
                   duration-200
-
                   ${
                     item.active
                       ? 'bg-[#1A1AB3] text-white shadow-md'
@@ -188,7 +196,6 @@ export function Sidebar({
                 >
                   {item.icon}
                 </div>
-
                 <span className="text-[15px] font-medium">
                   {item.label}
                 </span>
@@ -208,18 +215,15 @@ export function Sidebar({
                 size="sm"
                 src={userData?.avatar || userData?.picture}
               />
-
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">
                   {userName}
                 </p>
-
                 <p className="truncate text-xs text-white/55">
                   {userEmail}
                 </p>
               </div>
             </div>
-
             <button
               onClick={() => setShowLogoutModal(true)}
               className="
@@ -243,10 +247,6 @@ export function Sidebar({
       </div>
     </>
   );
-
-  useEffect(() => {
-    console.log("Avatar src final:", userData?.avatar || userData?.picture);
-  }, [userData]);
 
   return (
     <>
@@ -295,7 +295,6 @@ export function Sidebar({
             "
             onClick={onClose}
           />
-
           <aside
             className="
               fixed
@@ -333,7 +332,6 @@ export function Sidebar({
             >
               <X size={20} />
             </button>
-
             {sidebarContent}
           </aside>
         </>

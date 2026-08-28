@@ -4,7 +4,6 @@ import { Avatar } from '../shared/Avatar';
 import { RentalStatus } from '../../../types/api';
 import type { Rental as BaseRental } from '../../../types/api';
 
-
 export interface Rental extends BaseRental {
   user: BaseRental['user'] & {
     avatar?: string | null;
@@ -31,13 +30,18 @@ export function RentalsTable({ rentals, onUpdateStatus }: RentalsTableProps) {
 
   const getRentalStatusInfo = (rental: Rental) => {
     const now = Date.now();
-    const isOverdue = (rental.status === 'PENDING' || rental.status === 'ACTIVE') && new Date(rental.endDate).getTime() < now;
     
+   
+    const isOverdue = rental.status === 'ACTIVE' && new Date(rental.endDate).getTime() < now;
     if (isOverdue) return { label: 'Atrasado', color: 'text-red-600 font-bold' };
+
+    
+    const isNoShow = rental.status === 'PENDING' && new Date(rental.endDate).getTime() < now;
+    if (isNoShow) return { label: 'Não Retirado (Expirado)', color: 'text-amber-600 font-bold' };
     
     const statusMap: Record<string, { label: string, color: string }> = {
-      'PENDING': { label: 'Pendente', color: 'text-blue-600' },
-      'ACTIVE': { label: 'Ativo', color: 'text-indigo-600' },
+      'PENDING': { label: 'Pendente (Aguardando Retirada)', color: 'text-blue-600' },
+      'ACTIVE': { label: 'Ativo (Com o Aluno)', color: 'text-indigo-600' },
       'RETURNED': { label: 'Devolvido', color: 'text-green-600' },
       'CANCELED': { label: 'Cancelado', color: 'text-red-800' }
     };
