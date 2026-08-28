@@ -23,11 +23,9 @@ interface PendingApprovalsProps {
 }
 
 export function PendingApprovals({ approvals, onActionComplete }: PendingApprovalsProps) {
-  // 1. Estado local para manter a lista e permitir remoção imediata
   const [localApprovals, setLocalApprovals] = useState<PendingRental[]>(approvals);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  // 2. Sincroniza com as props sempre que a lista do pai mudar
   useEffect(() => {
     setLocalApprovals(approvals);
   }, [approvals]);
@@ -38,14 +36,11 @@ export function PendingApprovals({ approvals, onActionComplete }: PendingApprova
       await api.patch(`/admin/rentals/${id}/status`, { status });
       toast.success(status === 'ACTIVE' ? 'Aluguel aprovado!' : 'Aluguel rejeitado.');
       
-      // 3. Remove o item da tela imediatamente
       setLocalApprovals(prev => prev.filter(item => item.id !== id));
-      
-      // Notifica o pai para atualizar outros dados se necessário
       if (onActionComplete) onActionComplete();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao atualizar status:", error);
-      toast.error("Erro ao processar aluguel.");
+      toast.error(error?.response?.data?.error || "Erro ao processar aluguel.");
     } finally {
       setLoadingId(null);
     }
@@ -53,13 +48,20 @@ export function PendingApprovals({ approvals, onActionComplete }: PendingApprova
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
   const getAvatarColor = (email: string) => {
     const colors = ['#B4A7D6', '#FFDAC1', '#FFB6B9', '#95E1D3', '#FFE66D'];
     const index = email.charCodeAt(0) % colors.length;
     return colors[index];
+  };
+
+  const isTooEarlyToApprove = (startDate: string) => {
+    const startMs = new Date(startDate).getTime();
+    const nowMs = Date.now();
+    const fifteenMinutesMs = 15 * 60 * 1000;
+    return nowMs < startMs - fifteenMinutesMs;
   };
 
   if (!localApprovals || localApprovals.length === 0) {
@@ -82,46 +84,55 @@ export function PendingApprovals({ approvals, onActionComplete }: PendingApprova
       </div>
 
       <div className="space-y-3">
-        {localApprovals.slice(0, 3).map((approval) => (
-          <div key={approval.id} className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3 flex-1">
-                <Avatar
-                  name={approval.user?.name || 'Usuário'}
-                  color={getAvatarColor(approval.user?.email || 'default@email.com')}
-                  src={approval.user?.avatar || approval.user?.picture}
-                  size="sm"
-                />
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{approval.user?.name || 'Usuário'}</p>
-                  <p className="text-sm text-gray-600">{approval.gameTitleSnapshot}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Solicitado em {formatDate(approval.startDate)}
-                  </p>
+        {localApprovals.slice(0, 3).map((approval) => {
+          const tooEarly = isTooEarlyToApprove(approval.startDate);
+          
+          return (
+            <div key={approval.id} className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3 flex-1">
+                  <Avatar
+                    name={approval.user?.name || 'Usuário'}
+                    color={getAvatarColor(approval.user?.email || 'default@email.com')}
+                    src={approval.user?.avatar || approval.user?.picture}
+                    size="sm"
+                  />
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">{approval.user?.name || 'Usuário'}</p>
+                    <p className="text-sm text-gray-600">{approval.gameTitleSnapshot}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Agendado: {formatDate(approval.startDate)}
+                    </p>
+                  </div>
                 </div>
               </div>
+              
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleStatusChange(approval.id, 'ACTIVE')}
+                  disabled={loadingId === approval.id || tooEarly}
+                  title={tooEarly ? "Aprovação liberada 15 min antes do horário agendado" : "Aprovar retirada"}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold transition-colors ${
+                    tooEarly || loadingId === approval.id 
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  {loadingId === approval.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                  Aprovar
+                </button>
+                <button 
+                  onClick={() => handleStatusChange(approval.id, 'CANCELED')}
+                  disabled={loadingId === approval.id}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 disabled:opacity-50 px-3 py-2 rounded-lg font-semibold transition-colors"
+                >
+                  {loadingId === approval.id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
+                  Rejeitar
+                </button>
+              </div>
             </div>
-            
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleStatusChange(approval.id, 'ACTIVE')}
-                disabled={loadingId === approval.id}
-                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white px-3 py-2 rounded-lg font-semibold transition-colors"
-              >
-                {loadingId === approval.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                Aprovar
-              </button>
-              <button 
-                onClick={() => handleStatusChange(approval.id, 'CANCELED')}
-                disabled={loadingId === approval.id}
-                className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 py-2 rounded-lg font-semibold transition-colors"
-              >
-                {loadingId === approval.id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
-                Rejeitar
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
