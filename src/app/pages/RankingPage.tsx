@@ -26,7 +26,8 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
   const [activeTab, setActiveTab] = useState<Tab>('usuarios');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  const [period, setPeriod] = useState('all');
+  const [seasons, setSeasons] = useState<any[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState('current');
 
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
@@ -35,12 +36,25 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
   const [catFilter, setCatFilter] = useState('all');
   const [sortBy, setSortBy] = useState('rating');
 
+ 
+  useEffect(() => {
+    api.get('/admin/seasons')
+      .then(res => setSeasons(res.data))
+      .catch(() => {});
+  }, []);
+
+  
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        let usersEndpoint = '/admin/users';
+        if (selectedSeasonId !== 'current') {
+          usersEndpoint = `/admin/seasons/${selectedSeasonId}/ranking`;
+        }
+
         const [usersRes, gamesRes] = await Promise.all([
-          api.get('/admin/users'),
+          api.get(usersEndpoint),
           api.get('/games') 
         ]);
 
@@ -65,7 +79,15 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
     };
 
     fetchData();
-  }, []);
+  }, [selectedSeasonId]);
+
+  const seasonOptions = useMemo(() => {
+    const options = [{ value: 'current', label: 'Temporada Atual (Ativa)' }];
+    seasons.forEach(s => {
+      options.push({ value: s.id, label: `${s.name} (${s.status.toUpperCase()})` });
+    });
+    return options;
+  }, [seasons]);
 
   const topUsers = useMemo(() => {
     return users.map((u, index) => {
@@ -108,7 +130,7 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
       return {
         pos: index + 1,
         name: g.title,
-        cover: g.cover, // Passando a imagem real do jogo
+        cover: g.cover,
         maker: g.mechanics?.[0] || 'Jogo de Tabuleiro',
         category: tier,
         catColor: TIER_COLORS[tier] || '#9CA3AF',
@@ -146,7 +168,7 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
   }, [games]);
 
   const INSIGHTS = [
-    { icon: Trophy, value: TOP3[0]?.name || 'N/A', sub: TOP3[0]?.category || '-', label: 'Usuário TOP 1', color: '#FBBC04' },
+    { icon: Trophy, value: TOP3[0]?.name || 'N/A', sub: TOP3[0]?.category || '-', label: 'Líder do Período', color: '#FBBC04' },
     { icon: Gamepad2, value: processedGames[0]?.name || 'N/A', sub: `${(processedGames[0]?.rating || 0).toFixed(1)} de nota`, label: 'Jogo Melhor Avaliado', color: '#04096D' },
     { icon: Tag, value: USER_CAT_BARS[0]?.label || 'N/A', sub: `${USER_CAT_BARS[0]?.count || 0} usuários`, label: 'Categoria Dominante', color: '#10B981' },
     { icon: Users, value: users.length.toString(), sub: 'Alunos ativos', label: 'Total de Jogadores', color: '#31358B' },
@@ -162,12 +184,12 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="font-black" style={{ fontSize: 32, color: '#04096D', lineHeight: 1.2 }}>Ranking Geral</h1>
-              <p className="mt-1 text-sm font-medium text-gray-500">Acompanhe a liderança dos usuários e popularidade dos jogos</p>
+              <h1 className="font-black" style={{ fontSize: 32, color: '#04096D', lineHeight: 1.2 }}>Ranking de Temporadas</h1>
+              <p className="mt-1 text-sm font-medium text-gray-500">Consulte o desempenho dos alunos na temporada atual ou em ciclos anteriores</p>
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
-              <Select label="Período" options={[{ value: 'all', label: 'Histórico Total (All-time)' }]} value={period} onChange={setPeriod} />
+              <Select label="Temporada" options={seasonOptions} value={selectedSeasonId} onChange={setSelectedSeasonId} />
               <button className="flex items-center gap-2 h-9 px-5 rounded-lg font-bold text-sm transition-all hover:bg-[#04096D] hover:text-white bg-white text-[#04096D] border border-[#04096D] shadow-sm">
                 <Download size={15} strokeWidth={2.5} /> Exportar
               </button>
