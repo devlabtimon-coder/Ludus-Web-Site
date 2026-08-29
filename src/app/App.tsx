@@ -9,7 +9,7 @@ import { PendingRegistrationsPage } from './pages/PendingRegistrationsPage';
 import { MechanicsPage } from './pages/MechanicsPage';
 import { ReportsPage } from './pages/ReportsPage'; 
 import { ForgotPassword } from './pages/ForgotPassword';
-
+import { TemporadasPage } from './pages/TemporadasPage';
 import { RankingPage } from './pages/RankingPage';
 
 type PageType =
@@ -82,7 +82,8 @@ export default function App() {
         return <ReportsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
       case 'mecanicas':
         return <MechanicsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-  
+      case 'temporadas':
+        return <TemporadasPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
       case 'ranking':
         return <RankingPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
       default:
