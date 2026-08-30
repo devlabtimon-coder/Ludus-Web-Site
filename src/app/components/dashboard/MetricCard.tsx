@@ -31,23 +31,23 @@ export function MetricCard({ title, value, subtext, icon, variant = 'white' }: M
   };
 
   return (
-    <div className={`${cardStyles[variant]} rounded-2xl p-6 h-[139px] flex flex-col justify-between relative overflow-hidden font-sans select-none`}>
+    <div className={`${cardStyles[variant]} rounded-2xl p-5 sm:p-6 min-h-[120px] sm:h-[139px] flex flex-col justify-between relative overflow-hidden font-sans select-none shadow-sm transition-all`}>
       
       <div className="flex flex-col gap-1 z-10">
-        <h3 className={`${titleStyles[variant]} text-[10px] font-bold tracking-wider uppercase`}>
+        <h3 className={`${titleStyles[variant]} text-[10px] sm:text-[11px] font-bold tracking-wider uppercase line-clamp-1`}>
           {title}
         </h3>
         
-        <p className="font-bold text-[36px] leading-[40px]">
+        <p className="font-bold text-3xl sm:text-[36px] leading-tight sm:leading-[40px]">
           {value}
         </p>
       </div>
 
-      <p className={`${subtextStyles[variant]} text-[10px] font-bold z-10`}>
+      <p className={`${subtextStyles[variant]} text-[10px] sm:text-[11px] font-bold z-10 mt-2 sm:mt-0`}>
         {subtext}
       </p>
 
-      <div className="absolute right-[-15px] bottom-[-15px] text-current opacity-10 pointer-events-none z-0">
+      <div className="absolute right-[-10px] bottom-[-10px] sm:right-[-15px] sm:bottom-[-15px] text-current opacity-10 pointer-events-none z-0 scale-75 sm:scale-100 transition-transform">
         {icon}
       </div>
     </div>

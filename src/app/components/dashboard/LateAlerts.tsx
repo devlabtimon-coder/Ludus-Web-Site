@@ -1,6 +1,5 @@
 import { AlertCircle } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
-import { Button } from '../shared/Button';
 
 interface LateAlert {
   id: string;
@@ -9,8 +8,8 @@ interface LateAlert {
   user?: {
     name: string;
     email: string;
-    avatar?: string | null;  // 👇 ADICIONADO AQUI
-    picture?: string | null; // 👇 ADICIONADO AQUI
+    avatar?: string | null;
+    picture?: string | null;
   };
 }
 
@@ -34,48 +33,50 @@ export function LateAlerts({ alerts }: LateAlertsProps) {
 
   if (!alerts || alerts.length === 0) {
     return (
-      <div className="bg-red-50 rounded-xl border-2 border-red-200 p-6">
+      <div className="bg-red-50 rounded-xl border border-red-200 p-5 sm:p-6 h-full flex flex-col">
         <div className="flex items-center gap-2 mb-4">
-          <AlertCircle className="text-red-600" size={24} />
-          <h2 className="text-xl font-bold text-red-900">Alertas de Atraso</h2>
+          <AlertCircle className="text-red-600" size={20} />
+          <h2 className="text-lg sm:text-xl font-bold text-red-900">Alertas de Atraso</h2>
         </div>
-        <p className="text-red-700 text-sm text-center py-4">Nenhum aluguel atrasado</p>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-red-700 text-sm text-center">Nenhum aluguel atrasado</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-red-50 rounded-xl border-2 border-red-200 p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <AlertCircle className="text-red-600" size={24} />
-        <h2 className="text-xl font-bold text-red-900">Alertas de Atraso</h2>
+    <div className="bg-red-50 rounded-xl border border-red-200 p-5 sm:p-6 h-full flex flex-col">
+      <div className="flex items-center gap-2 mb-5">
+        <AlertCircle className="text-red-600" size={20} />
+        <h2 className="text-lg sm:text-xl font-bold text-red-900">Alertas de Atraso</h2>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 flex-1">
         {alerts.slice(0, 3).map((alert) => {
           const daysLate = getDaysLate(alert.endDate);
           return (
-            <div key={alert.id} className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
+            <div key={alert.id} className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
+              <div className="flex items-start justify-between mb-3 gap-2">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar
                     name={alert.user?.name || 'Usuário'}
-                    src={alert.user?.avatar || alert.user?.picture} // 👇 PROPRIEDADE DA FOTO ADICIONADA AQUI
+                    src={alert.user?.avatar || alert.user?.picture}
                     color={getAvatarColor(alert.user?.email || 'default@email.com')}
                     size="sm"
                   />
-                  <div>
-                    <p className="font-semibold text-gray-900">{alert.gameTitleSnapshot}</p>
-                    <p className="text-sm text-gray-600">{alert.user?.name || 'Usuário'}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm text-gray-900 truncate">{alert.gameTitleSnapshot}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">{alert.user?.name || 'Usuário'}</p>
                   </div>
                 </div>
-                <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded">
+                <span className="bg-red-100 text-red-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded shrink-0 uppercase tracking-wider">
                   {daysLate} {daysLate === 1 ? 'dia' : 'dias'}
                 </span>
               </div>
-              <Button variant="danger" size="sm" fullWidth>
-                Notificar Usuário
-              </Button>
+              <button className="w-full bg-[#E62325] hover:bg-red-700 text-white font-bold py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm transition-colors mt-1">
+                Notificar Aluno
+              </button>
             </div>
           );
         })}
