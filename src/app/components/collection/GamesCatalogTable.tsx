@@ -1,4 +1,4 @@
-import { Edit, Trash2, EyeOff, Eye, Layers } from 'lucide-react';
+import { Edit, Trash2, EyeOff, Eye, Layers, Smartphone } from 'lucide-react';
 import { Game } from '../../../types/api';
 import { CategoryBadge } from './CategoryBadge';
 import { StatusIndicator } from './StatusIndicator';
@@ -9,6 +9,7 @@ interface GamesCatalogTableProps {
   onDeleteClick?: (game: Game) => void;
   onInactivateClick?: (game: Game) => void;
   onManageCopiesClick: (game: Game) => void;
+  onPreviewClick?: (game: Game) => void; // <-- Nova propriedade adicionada
 }
 
 export function GamesCatalogTable({ 
@@ -16,7 +17,8 @@ export function GamesCatalogTable({
   onEditClick, 
   onDeleteClick, 
   onInactivateClick,
-  onManageCopiesClick
+  onManageCopiesClick,
+  onPreviewClick // <-- Recebendo a nova propriedade
 }: GamesCatalogTableProps) {
   const getStatus = (game: Game): 'Disponível' | 'Alugado' | 'Manutenção' => {
     if (!game.isActive) return 'Manutenção';
@@ -50,14 +52,36 @@ export function GamesCatalogTable({
                 games.map((game) => (
                   <tr key={game.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors bg-white">
                     <td className="py-3 sm:py-4 px-4 sm:px-5">
-                      <div className="flex items-center gap-3">
-                        {game.cover && <img src={game.cover} alt="Capa" className="w-10 h-10 rounded-lg object-cover shadow-sm flex-shrink-0" />}
+                      {/* ÁREA CLICÁVEL PARA PRÉVIA DO APP */}
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer group"
+                        onClick={() => onPreviewClick && onPreviewClick(game)}
+                        title="Ver prévia no Aplicativo"
+                      >
+                        <div className="relative flex-shrink-0">
+                          {game.cover ? (
+                            <img src={game.cover} alt="Capa" className="w-10 h-10 rounded-lg object-cover shadow-sm transition-opacity group-hover:opacity-80" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-gray-200" />
+                          )}
+                          {/* Overlay escuro com ícone de celular no hover */}
+                          <div className="absolute inset-0 bg-[#31358B]/70 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Smartphone size={18} className="text-white" />
+                          </div>
+                        </div>
+                        
                         <div className="min-w-0">
-                          <p className="font-bold text-gray-900 truncate">{game.title}</p>
-                          <p className="text-xs text-gray-500">{game.minPlayers}-{game.maxPlayers || '+'} jogadores</p>
+                          <p className="font-bold text-gray-900 truncate transition-colors group-hover:text-[#31358B]">{game.title}</p>
+                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                            {game.minPlayers}-{game.maxPlayers || '+'} jogadores
+                            <span className="opacity-0 group-hover:opacity-100 text-[#31358B] font-bold text-[10px] ml-1 transition-opacity">
+                              • VER APP
+                            </span>
+                          </p>
                         </div>
                       </div>
                     </td>
+                    
                     <td className="py-3 sm:py-4 px-4 sm:px-5"><CategoryBadge category={game.tier} /></td>
                     <td className="py-3 sm:py-4 px-4 sm:px-5"><StatusIndicator status={getStatus(game)} /></td>
                     <td className="py-3 sm:py-4 px-4 sm:px-5">

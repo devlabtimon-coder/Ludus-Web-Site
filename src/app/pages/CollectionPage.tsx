@@ -7,10 +7,11 @@ import { Loading } from "../components/shared/Loading";
 import { ErrorMessage } from "../components/shared/ErrorMessage";
 import { useGames } from "../../hooks";
 import { Library, CheckCircle2, PackageMinus, Wrench } from "lucide-react";
-import { Game } from "../../../types/api";
+import { Game } from "../../types/api";
 import { api } from "../../services/api";
 import { toast } from "sonner";
 import { GameCopiesModal } from "../components/collection/GameCopiesModal";
+import { GamePreviewModal } from "../components/collection/GamePreviewModal"; 
 
 import {
   CollectionFiltersBar,
@@ -45,16 +46,16 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [deletingGame, setDeletingGame] = useState<Game | null>(null);
   const [inactivatingGame, setInactivatingGame] = useState<Game | null>(null);
+  
+
+  const [previewingGame, setPreviewingGame] = useState<Game | null>(null);
+  const [managingCopiesGame, setManagingCopiesGame] = useState<Game | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] =
-    useState<GameCategory>("todos");
+  const [selectedCategory, setSelectedCategory] = useState<GameCategory>("todos");
   const [selectedStatus, setSelectedStatus] = useState<GameStatus>("todos");
   const [selectedSort, setSelectedSort] = useState<SortOption>("az");
 
-  const [managingCopiesGame, setManagingCopiesGame] = useState<Game | null>(
-    null,
-  );
 
   const filteredGames = useMemo(() => {
     if (!games) return [];
@@ -156,7 +157,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       
-      {/* Sidebar Responsiva (Fixa em desktop, Gaveta no mobile) */}
       <Sidebar
         activePage="acervo"
         onNavigate={onNavigate}
@@ -166,7 +166,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header com gatilho para o menu mobile */}
         <Header 
           onMenuToggle={() => setIsSidebarOpen(true)} 
         />
@@ -176,7 +175,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
             Acervo Digital
           </h1>
 
-          {/* Métricas (Grid responsivo de 1 a 4 colunas) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <CollectionMetricCard
               title="Total de Títulos"
@@ -208,7 +206,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
             />
           </div>
 
-          {/* Barra de Filtros */}
           <CollectionFiltersBar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -222,16 +219,23 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
             onAddGame={() => setIsAddOpen(true)}
           />
 
-          {/* Tabela de Jogos */}
           <GamesCatalogTable
             games={filteredGames}
             onEditClick={(game) => setEditingGame(game)}
             onManageCopiesClick={(game) => setManagingCopiesGame(game)}
             onDeleteClick={(game) => setDeletingGame(game)}
             onInactivateClick={(game) => setInactivatingGame(game)}
+            onPreviewClick={(game) => setPreviewingGame(game)}
           />
         </main>
       </div>
+
+     
+      <GamePreviewModal
+        isOpen={!!previewingGame}
+        onClose={() => setPreviewingGame(null)}
+        game={previewingGame}
+      />
 
       <GameCopiesModal
         isOpen={!!managingCopiesGame}
