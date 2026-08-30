@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../../../services/api';
 import { Game, GameTier } from '../../../types/api';
-import { X, Trash2, Save, Package, RefreshCw, Loader2 } from 'lucide-react';
+import { X, Trash2, Save, Package, RefreshCw, Loader2, Tags, ChevronDown } from 'lucide-react';
 import { GameComponentsModal } from './GameComponentsModal';
+import { useMechanics } from '../../../hooks/useMechanics';
 import { toast } from 'sonner';
 
 interface EditGameModalProps {
@@ -20,6 +21,8 @@ const TIERS: { value: GameTier; label: string; color: string }[] = [
 ];
 
 export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
+  const { mechanics: dbMechanics, loading: loadingAllMechanics } = useMechanics();
+  
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [tier, setTier] = useState<GameTier>("BRONZE");
@@ -27,11 +30,17 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
   const [description, setDescription] = useState("");
   const [howToPlayUrl, setHowToPlayUrl] = useState("");
   
+  const [mechanicsInput, setMechanicsInput] = useState("");
+  const [mechanicsList, setMechanicsList] = useState<string[]>([]);
+  const [showMechanicsDropdown, setShowMechanicsDropdown] = useState(false);
+  
   const [isComponentsOpen, setIsComponentsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isSyncingMechanics, setIsSyncingMechanics] = useState(false); // 👈 Novo estado para as mecânicas
+  const [isSyncingMechanics, setIsSyncingMechanics] = useState(false);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (game) {
@@ -41,14 +50,29 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
       setAvailable(game.available !== false);
       setDescription(game.description || "");
       setHowToPlayUrl(game.howToPlayUrl || "");
+
+      const gameMechanics = (game as any).mechanics || [];
+      const parsedMechanics = gameMechanics.map((m: any) => typeof m === 'string' ? m : m.namePt || m.name);
+      setMechanicsList(parsedMechanics);
     }
   }, [game]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowMechanicsDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSave = async () => {
     if (!game) return;
     setLoading(true);
     try {
       const numPrice = parseFloat(price.replace(',', '.'));
+      
       await api.patch(`/games/${game.id}`, {
         title,
         price: isNaN(numPrice) ? 0 : numPrice,
@@ -60,6 +84,9 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
       if (tier !== game.tier) {
         await api.patch(`/categories/games/${game.id}/tier`, { tier });
       }
+
+      const validMechanics = mechanicsList.map(m => m.trim()).filter(Boolean);
+      await api.put(`/games/${game.id}/mechanics`, { mechanics: validMechanics });
 
       toast.success("Jogo atualizado com sucesso!");
       onSaved();
@@ -101,26 +128,59 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
         toast.info("Nenhuma descrição encontrada na BGG/Ludopedia.");
       }
     } catch (e) {
-      toast.error("Erro ao puxar dados externos. Verifique se a API externa está respondendo.");
+      toast.error("Erro ao puxar dados externos.");
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // 👇 NOVA FUNÇÃO: Sincronizar Mecânicas
   const handleSyncMechanics = async () => {
     if (!game) return;
     setIsSyncingMechanics(true);
     try {
-      await api.post(`/games/${game.id}/sync-mechanics`);
+      const res = await api.post(`/games/${game.id}/sync-mechanics`);
       toast.success("Mecânicas sincronizadas com sucesso!");
-      onSaved(); // Força a atualização da lista por trás do modal, se necessário
+      
+      if (res.data && res.data.mechanics) {
+         const newMechanics = res.data.mechanics.map((m: any) => typeof m === 'string' ? m : m.namePt || m.name);
+         setMechanicsList(newMechanics);
+      } else {
+         onSaved();
+      }
     } catch (e: any) {
-      toast.error(e.response?.data?.error || "Erro ao puxar mecânicas. Este jogo tem ID da Ludopedia?");
+      toast.error(e.response?.data?.error || "Erro ao puxar mecânicas.");
     } finally {
       setIsSyncingMechanics(false);
     }
   };
+
+  const addMechanic = (mechanic: string) => {
+    const val = mechanic.trim();
+    if (val && !mechanicsList.includes(val)) {
+      setMechanicsList([...mechanicsList, val]);
+    }
+    setMechanicsInput("");
+    setShowMechanicsDropdown(false);
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addMechanic(mechanicsInput);
+    }
+  };
+
+  const removeMechanic = (mechanicToRemove: string) => {
+    setMechanicsList(mechanicsList.filter(m => m !== mechanicToRemove));
+  };
+
+  const allMechanics = dbMechanics.map(m => m.namePt || m.name).filter(Boolean) as string[];
+
+  const filteredMechanics = allMechanics.filter(m => 
+    m && typeof m === 'string' &&
+    m.toLowerCase().includes(mechanicsInput.toLowerCase()) && 
+    !mechanicsList.includes(m)
+  );
 
   if (!game) return null;
 
@@ -138,32 +198,30 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-5">
-            {/* Título e Preço */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 space-y-2">
                 <label className="text-sm font-bold text-[#31358B]">Título do Jogo</label>
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold" />
+                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold focus:ring-2 focus:ring-[#31358B]/20 transition-all" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-[#31358B]">Preço (R$/dia)</label>
-                <input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold" />
+                <input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold focus:ring-2 focus:ring-[#31358B]/20 transition-all" />
               </div>
             </div>
 
-            {/* Tier */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-[#31358B]">Categoria (Tier)</label>
               <div className="flex flex-wrap gap-2">
                 {TIERS.map(t => (
-                  <button key={t.value} onClick={() => setTier(t.value)} className={`px-4 py-2 rounded-xl font-bold text-sm border-2 transition-all ${tier === t.value ? 'text-white' : 'bg-transparent'}`} style={{ backgroundColor: tier === t.value ? t.color : 'transparent', borderColor: t.color, color: tier === t.value ? '#fff' : t.color }}>
+                  <button key={t.value} onClick={() => setTier(t.value)} className={`px-4 py-2 rounded-xl font-bold text-sm border-2 transition-all ${tier === t.value ? 'text-white' : 'bg-transparent hover:bg-gray-50'}`} style={{ backgroundColor: tier === t.value ? t.color : 'transparent', borderColor: t.color, color: tier === t.value ? '#fff' : t.color }}>
                     {t.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Switch e URL */}
             <div className="grid grid-cols-2 gap-4 items-end">
               <div className="bg-[#F7F8FF] p-4 rounded-xl flex items-center justify-between border border-[#31358B]/10">
                 <span className="font-bold text-[#31358B]">Disponível para Aluguel</span>
@@ -174,11 +232,10 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-[#31358B]">Vídeo Tutorial (URL)</label>
-                <input type="text" value={howToPlayUrl} onChange={e => setHowToPlayUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold text-sm" />
+                <input type="text" value={howToPlayUrl} onChange={e => setHowToPlayUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold text-sm focus:ring-2 focus:ring-[#31358B]/20 transition-all" />
               </div>
             </div>
 
-            {/* Descrição */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-bold text-[#31358B]">Descrição</label>
@@ -187,7 +244,6 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
                   onClick={handleRefetchDescription}
                   disabled={isSyncing}
                   className="text-[12px] font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg"
-                  title="Tentar puxar a tradução novamente da BGG/Ludopedia"
                 >
                   {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                   {isSyncing ? "Buscando..." : "Refazer Tradução"}
@@ -196,39 +252,108 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
               <textarea 
                 value={description} 
                 onChange={e => setDescription(e.target.value)} 
-                rows={5} 
-                className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-medium resize-none leading-relaxed" 
+                rows={4} 
+                className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-medium resize-none leading-relaxed focus:ring-2 focus:ring-[#31358B]/20 transition-all" 
                 placeholder="Escreva sobre o jogo..." 
               />
             </div>
 
-            {/* Componentes e Mecânicas */}
-            <div className="space-y-3 pt-2">
-              <button onClick={() => setIsComponentsOpen(true)} className="w-full flex items-center justify-between bg-[#FBBC04] p-4 rounded-xl font-bold text-[#31358B] hover:brightness-105 transition">
-                <span className="flex items-center gap-2"><Package size={20} /> Gerenciar Componentes</span>
+            <div className="space-y-3 bg-[#F9FAFB] p-5 rounded-2xl border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Tags size={18} className="text-[#31358B]" />
+                  <label className="text-sm font-bold text-[#31358B]">Mecânicas</label>
+                </div>
+                
+                <button 
+                  onClick={handleSyncMechanics} 
+                  disabled={isSyncingMechanics}
+                  className="text-[12px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg disabled:opacity-50"
+                >
+                  {isSyncingMechanics ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                  {isSyncingMechanics ? "Sincronizando..." : "Sincronizar (Ludopedia)"}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-2 min-h-[32px]">
+                {mechanicsList.length === 0 ? (
+                  <span className="text-sm text-gray-400 italic">Nenhuma mecânica vinculada.</span>
+                ) : (
+                  mechanicsList.map((mech, index) => (
+                    <div key={index} className="flex items-center gap-1.5 bg-[#E2E6FF] text-[#31358B] px-3 py-1.5 rounded-lg text-sm font-bold border border-[#31358B]/10">
+                      {mech}
+                      <button onClick={() => removeMechanic(mech)} className="text-[#31358B]/60 hover:text-[#31358B] transition-colors ml-1">
+                        <X size={14} strokeWidth={3} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="relative" ref={dropdownRef}>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={mechanicsInput} 
+                    onChange={e => {
+                      setMechanicsInput(e.target.value);
+                      setShowMechanicsDropdown(true);
+                    }} 
+                    onFocus={() => setShowMechanicsDropdown(true)}
+                    onKeyDown={handleInputKeyDown}
+                    placeholder="Selecione ou digite uma mecânica..." 
+                    className="w-full bg-white border border-gray-200 rounded-xl pl-4 pr-10 py-2.5 outline-none text-[#222] font-semibold text-sm focus:ring-2 focus:ring-[#31358B]/20 transition-all" 
+                  />
+                  <div 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400"
+                    onClick={() => setShowMechanicsDropdown(!showMechanicsDropdown)}
+                  >
+                    <ChevronDown size={18} />
+                  </div>
+                </div>
+
+                {showMechanicsDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                    {loadingAllMechanics ? (
+                      <div className="px-4 py-3 text-sm text-gray-500 italic flex items-center gap-2">
+                        <Loader2 size={14} className="animate-spin" /> Carregando dicionário...
+                      </div>
+                    ) : filteredMechanics.length > 0 ? (
+                      filteredMechanics.map((mech, idx) => (
+                        <div 
+                          key={idx}
+                          className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-sm font-medium text-gray-700 transition-colors border-b border-gray-50 last:border-none"
+                          onClick={() => addMechanic(mech)}
+                        >
+                          {mech}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-500 italic">
+                        {mechanicsInput ? `Pressione Enter para adicionar "${mechanicsInput}"` : "Nenhuma mecânica no dicionário"}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-1">
+              <button onClick={() => setIsComponentsOpen(true)} className="w-full flex items-center justify-between bg-[#FBBC04] p-4 rounded-xl font-bold text-[#31358B] hover:brightness-105 transition shadow-sm">
+                <span className="flex items-center gap-2"><Package size={20} /> Gerenciar Componentes Físicos</span>
                 <span>&rarr;</span>
               </button>
-
-              {/* 👇 NOVO BOTÃO: SINCRONIZAR MECÂNICAS 👇 */}
-              <button 
-                onClick={handleSyncMechanics} 
-                disabled={isSyncingMechanics}
-                className="w-full flex items-center justify-center bg-[#F0F2FF] border border-[#31358B]/10 p-4 rounded-xl font-bold text-[#31358B] hover:bg-[#E2E6FF] transition disabled:opacity-50"
-              >
-                <span className="flex items-center gap-2">
-                  {isSyncingMechanics ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
-                  {isSyncingMechanics ? "Buscando Mecânicas..." : "Sincronizar Mecânicas (Ludopedia)"}
-                </span>
-              </button>
             </div>
+            
           </div>
 
           <div className="p-6 border-t border-gray-100 flex gap-4 bg-gray-50">
             <button onClick={handleDelete} disabled={loading} className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-600 font-bold py-3.5 rounded-xl transition disabled:opacity-50">
               <Trash2 size={18}/> Excluir
             </button>
-            <button onClick={handleSave} disabled={loading} className="flex-[2] flex items-center justify-center gap-2 bg-[#31358B] hover:bg-[#25286b] text-white font-bold py-3.5 rounded-xl transition disabled:opacity-50">
-              <Save size={18}/> Salvar Alterações
+            <button onClick={handleSave} disabled={loading} className="flex-[2] flex items-center justify-center gap-2 bg-[#31358B] hover:bg-[#25286b] text-white font-bold py-3.5 rounded-xl transition disabled:opacity-50 shadow-lg shadow-[#31358B]/20">
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18}/>} 
+              {loading ? "Salvando..." : "Salvar Alterações"}
             </button>
           </div>
         </div>
