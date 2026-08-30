@@ -11,7 +11,6 @@ import { Mechanic } from '../../types/api';
 import { MechanicModal } from '../components/mechanics/MechanicModal';
 import { toast } from 'sonner';
 
-
 import { MechanicCard } from '../components/mechanics/MechanicCard';
 
 interface MechanicsPageProps {
@@ -34,17 +33,14 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMechanic, setEditingMechanic] = useState<Mechanic | null>(null);
 
-
   const totalMecanicas = mechanics.length;
   const totalAtivas = mechanics.filter(m => m.active).length;
-  
   
   const mostUsed = useMemo(() => {
     if (mechanics.length === 0) return null;
     return [...mechanics].sort((a, b) => (b.games?.length || 0) - (a.games?.length || 0))[0];
   }, [mechanics]);
 
-  
   const totalJogosUnicos = useMemo(() => {
     const gamesSet = new Set<string>();
     mechanics.forEach(m => {
@@ -55,7 +51,6 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
     return gamesSet.size;
   }, [mechanics]);
   
-
   const handleAddClick = () => {
     setEditingMechanic(null);
     setIsModalOpen(true);
@@ -91,7 +86,9 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
   if (error) return <ErrorMessage message={error} onRetry={refetch} />;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      
+      
       <Sidebar 
         activePage="mecanicas" 
         onNavigate={onNavigate} 
@@ -99,14 +96,17 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+  
         <Header onLogout={onLogout} onMenuToggle={() => setIsSidebarOpen(true)} />
         
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-[#04096D]">Gestão de Mecânicas</h1>
-              <p className="text-gray-500 mt-1">Gerencie o dicionário de mecânicas e tags do aplicativo</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#04096D]">Gestão de Mecânicas</h1>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">Gerencie o dicionário de mecânicas e tags do aplicativo</p>
             </div>
             
             <button 
@@ -118,14 +118,14 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
             </button>
           </div>
 
-          {/* ─── CAIXINHAS DE MÉTRICAS (KPIs) ─── */}
-          <div className="flex gap-4 mb-8 flex-wrap">
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <MechanicCard 
               variant="dark" 
               title="Total de Mecânicas" 
               value={totalMecanicas} 
               subtext={`${totalAtivas} ativas no sistema`} 
-              icon={<BookOpen size={96} />} 
+              icon={<BookOpen size={80} />} 
             />
             
             <MechanicCard 
@@ -133,7 +133,7 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
               title="Mecânica Mais Usada" 
               value={mostUsed ? (mostUsed.games?.length || 0) : 0} 
               subtext={mostUsed ? mostUsed.namePt : 'Nenhuma'} 
-              icon={<Trophy size={96} />} 
+              icon={<Trophy size={80} />} 
             />
             
             <MechanicCard 
@@ -141,7 +141,7 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
               title="Jogos Mapeados" 
               value={totalJogosUnicos} 
               subtext="No acervo com mecânicas" 
-              icon={<Gamepad2 size={96} />} 
+              icon={<Gamepad2 size={80} />} 
             />
           </div>
 
