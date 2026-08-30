@@ -96,8 +96,9 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
   });
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-white">
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-white">
       
+     
       <div className="relative hidden w-[42%] overflow-hidden bg-[#37379B] lg:flex items-center justify-center">
         <div className="absolute -right-36 -top-36 h-[340px] w-[340px] rounded-full bg-[#FBBC04]/35" />
         <div className="absolute -right-20 -top-20 h-[240px] w-[240px] rounded-full bg-[#FBBC04]/45" />
@@ -111,62 +112,64 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
         </div>
       </div>
 
-      <div className="relative flex w-full items-end justify-center overflow-hidden bg-[#f3f6ff] px-4 pt-10 lg:w-[58%] lg:items-center lg:px-10">
+   
+      <div className="relative flex w-full items-center justify-center overflow-hidden bg-[#f3f6ff] px-4 py-8 sm:px-6 lg:w-[58%] lg:px-10">
         
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 pointer-events-none">
           <div className="absolute right-[-100px] top-[-100px] h-[260px] w-[260px] rounded-full bg-[#31358B]/10 blur-3xl" />
           <div className="absolute bottom-[10%] right-[10%] h-[180px] w-[180px] rounded-full bg-[#FBBC04]/10 blur-3xl" />
           <div className="absolute left-[-80px] top-[30%] h-[220px] w-[220px] rounded-full bg-[#FC090D]/10 blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full max-w-lg">
+        <div className="relative z-10 w-full max-w-md lg:max-w-lg">
           
-          <div className="mb-8 flex justify-center lg:hidden">
-            <img src={logoLudusDice} alt="Ludus" className="w-[230px]" />
+         
+          <div className="mb-6 flex justify-center lg:hidden">
+            <img src={logoLudusDice} alt="Ludus" className="w-[180px] sm:w-[230px]" />
           </div>
 
-          <div className="rounded-t-[38px] border border-white/60 bg-white px-7 pb-8 pt-8 shadow-[0_-10px_50px_rgba(49,53,139,0.08)] lg:rounded-[38px]">
+          <div className="rounded-[28px] sm:rounded-[38px] border border-white/60 bg-white px-5 py-6 sm:px-7 sm:py-8 shadow-[0_-10px_50px_rgba(49,53,139,0.08)]">
             
-            <div className="mb-8">
-              <h1 className="text-[36px] font-black leading-tight text-[#31358B]">
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-[28px] sm:text-[36px] font-black leading-tight text-[#31358B]">
                 Bem-vindo de volta!
               </h1>
-              <p className="mt-3 text-[15px] leading-relaxed text-[#666]">
+              <p className="mt-2 sm:mt-3 text-[14px] sm:text-[15px] leading-relaxed text-[#666]">
                 Entre com sua conta para acessar o sistema administrativo da Ludus.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#535353]">E-mail</label>
+                <label className="mb-1.5 sm:mb-2 block text-sm font-semibold text-[#535353]">E-mail</label>
                 <div className="flex items-center rounded-2xl border border-[#dfe3f2] bg-[#fafbff] px-4 transition-all focus-within:border-[#FBBC04] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#FBBC04]/20">
-                  <Mail size={19} className="mr-3 text-[#7b8199]" />
+                  <Mail size={19} className="mr-3 text-[#7b8199] shrink-0" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Seu e-mail"
-                    className="h-14 w-full bg-transparent text-[#333] outline-none placeholder:text-[#9ca3af]"
+                    className="h-12 sm:h-14 w-full bg-transparent text-sm sm:text-base text-[#333] outline-none placeholder:text-[#9ca3af]"
                   />
                 </div>
               </div>
     
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[#535353]">Senha</label>
+                <label className="mb-1.5 sm:mb-2 block text-sm font-semibold text-[#535353]">Senha</label>
                 <div className="flex items-center rounded-2xl border border-[#dfe3f2] bg-[#fafbff] px-4 transition-all focus-within:border-[#FBBC04] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#FBBC04]/20">
-                  <Lock size={19} className="mr-3 text-[#7b8199]" />
+                  <Lock size={19} className="mr-3 text-[#7b8199] shrink-0" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Sua senha"
-                    className="h-14 w-full bg-transparent text-[#333] outline-none placeholder:text-[#9ca3af]"
+                    className="h-12 sm:h-14 w-full bg-transparent text-sm sm:text-base text-[#333] outline-none placeholder:text-[#9ca3af]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-[#7b8199] transition hover:text-[#31358B]"
+                    className="text-[#7b8199] transition hover:text-[#31358B] shrink-0 pl-2"
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -177,7 +180,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
                 <button
                   type="button"
                   onClick={onForgotPassword} 
-                  className="text-sm font-semibold text-[#31358B] transition hover:opacity-70"
+                  className="text-xs sm:text-sm font-semibold text-[#31358B] transition hover:opacity-70"
                 >
                   Esqueceu sua senha?
                 </button>
@@ -186,22 +189,22 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
               <button
                 type="submit"
                 disabled={loading || isGoogleLoading}
-                className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-[#31358B] text-[15px] font-bold text-white shadow-lg shadow-[#31358B]/20 transition-all hover:scale-[1.01] hover:bg-[#272b73] disabled:opacity-60"
+                className="mt-2 flex h-12 sm:h-14 w-full items-center justify-center rounded-2xl bg-[#31358B] text-[14px] sm:text-[15px] font-bold text-white shadow-lg shadow-[#31358B]/20 transition-all hover:scale-[1.01] hover:bg-[#272b73] disabled:opacity-60"
               >
                 {loading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : 'Entrar'}
               </button>
 
               {error && (
                 <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-600">
-                  <AlertCircle size={18} />
-                  <span className="text-sm font-medium leading-tight">{error}</span>
+                  <AlertCircle size={18} className="shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium leading-tight">{error}</span>
                 </div>
               )}
             </form>
 
-            <div className="my-7 flex items-center gap-4">
+            <div className="my-5 sm:my-7 flex items-center gap-4">
               <div className="h-px flex-1 bg-[#e5e7eb]" />
-              <span className="text-sm text-[#9ca3af]">ou</span>
+              <span className="text-xs sm:text-sm text-[#9ca3af]">ou</span>
               <div className="h-px flex-1 bg-[#e5e7eb]" />
             </div>
 
@@ -209,20 +212,20 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
               type="button"
               onClick={() => loginWithGoogle()}
               disabled={isGoogleLoading || loading}
-              className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe3f2] bg-white font-semibold text-[#31358B] transition-all hover:bg-[#f8faff] disabled:opacity-60"
+              className="flex h-12 sm:h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe3f2] bg-white text-sm sm:text-base font-semibold text-[#31358B] transition-all hover:bg-[#f8faff] disabled:opacity-60"
             >
               {isGoogleLoading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#31358B] border-t-transparent" />
               ) : (
                 <>
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
-                  Continuar com Google
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5 shrink-0" />
+                  <span>Continuar com Google</span>
                 </>
               )}
             </button>
 
-            <div className="mt-8 text-center">
-              <p className="text-sm text-[#666]">
+            <div className="mt-6 sm:mt-8 text-center">
+              <p className="text-xs sm:text-sm text-[#666]">
                 Não possui uma conta?{' '}
                 <button className="font-bold text-[#31358B] underline-offset-4 hover:underline">
                   Solicitar acesso
