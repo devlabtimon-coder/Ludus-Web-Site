@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Gamepad2,
@@ -6,14 +5,11 @@ import {
   UserPlus,
   FileText,
   ArrowLeftRight,
-  LogOut,
   X,
   Tags,
   Trophy,
   Calendar
 } from 'lucide-react';
-import { Avatar } from '../shared/Avatar';
-import { LogoutConfirmModal } from '../shared/LogoutConfirmModal';
 import logoFull from '../../../assets/images/logo-full.png';
 
 type PageType =
@@ -46,44 +42,9 @@ interface SidebarProps {
 export function Sidebar({
   activePage = 'dashboard',
   onNavigate,
-  onLogout,
   isOpen,
   onClose
 }: SidebarProps) {
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [userData, setUserData] = useState<{
-    name: string;
-    email: string;
-    avatar?: string | null;
-    picture?: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUserData(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Erro ao ler dados do usuário:', e);
-      }
-    }
-  }, []);
-
-  const userName = 'Admin';
-  const userEmail = userData?.email || 'admin@ludus.com';
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.clear();
-    setShowLogoutModal(false);
-    if (onLogout) {
-      onLogout();
-    }
-    window.history.pushState({}, '', '/login');
-    onNavigate?.('login');
-  };
-
   const handleNavigate = (page: PageType) => {
     onNavigate?.(page);
     onClose?.();
@@ -148,16 +109,16 @@ export function Sidebar({
 
   const sidebarContent = (
     <>
-      <div className="mb-10">
+      <div className="mb-8 sm:mb-10 pt-2">
         <img
           src={logoFull}
           alt="Ludus"
-          className="w-[190px] object-contain mx-auto"
+          className="w-[160px] sm:w-[190px] object-contain mx-auto"
         />
       </div>
 
-      <nav className="flex-1">
-        <ul className="space-y-2">
+      <nav className="flex-1 overflow-y-auto scrollbar-hide pr-1">
+        <ul className="space-y-1.5 sm:space-y-2">
           {menuItems.map((item, index) => (
             <li
               key={index}
@@ -170,7 +131,8 @@ export function Sidebar({
                 onClick={() => handleNavigate(item.page)}
                 className={`
                   flex
-                  h-[52px]
+                  h-[48px]
+                  sm:h-[52px]
                   w-full
                   items-center
                   gap-3
@@ -196,7 +158,7 @@ export function Sidebar({
                 >
                   {item.icon}
                 </div>
-                <span className="text-[15px] font-medium">
+                <span className="text-[14px] sm:text-[15px] font-medium">
                   {item.label}
                 </span>
               </button>
@@ -204,47 +166,6 @@ export function Sidebar({
           ))}
         </ul>
       </nav>
-
-      <div className="mt-auto pt-4">
-        <div className="border-t border-white/10 pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar
-                name={userName}
-                color="#2563EB"
-                size="sm"
-                src={userData?.avatar || userData?.picture}
-              />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">
-                  {userName}
-                </p>
-                <p className="truncate text-xs text-white/55">
-                  {userEmail}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowLogoutModal(true)}
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                text-red-300
-                transition-all
-                hover:bg-red-500/10
-                hover:text-red-200
-              "
-              title="Sair"
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        </div>
-      </div>
     </>
   );
 
@@ -253,31 +174,17 @@ export function Sidebar({
       <aside
         className="
           hidden
-          xl:flex
-          w-[260px]
-          min-w-[260px]
-          h-screen
-          flex-col
-          bg-[#05058C]
-          px-5
-          py-6
-        "
-      >
-        {sidebarContent}
-      </aside>
-
-      <aside
-        className="
-          hidden
           md:flex
-          xl:hidden
           w-[260px]
           min-w-[260px]
           h-screen
+          sticky
+          top-0
           flex-col
           bg-[#05058C]
           px-5
           py-6
+          z-30
         "
       >
         {sidebarContent}
@@ -291,6 +198,7 @@ export function Sidebar({
               inset-0
               z-40
               bg-black/50
+              backdrop-blur-xs
               md:hidden
             "
             onClick={onClose}
@@ -310,6 +218,7 @@ export function Sidebar({
               py-6
               shadow-2xl
               md:hidden
+              animate-in slide-in-from-left duration-200
             "
           >
             <button
@@ -336,12 +245,6 @@ export function Sidebar({
           </aside>
         </>
       )}
-
-      <LogoutConfirmModal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={handleLogout}
-      />
     </>
   );
 }
