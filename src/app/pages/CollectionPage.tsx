@@ -37,15 +37,14 @@ interface CollectionPageProps {
   onLogout?: () => void;
 }
 
-export function CollectionPage({ onNavigate }: CollectionPageProps) {
+export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
   const { metrics, games, loading, error, refetch } = useGames();
 
-
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [deletingGame, setDeletingGame] = useState<Game | null>(null);
   const [inactivatingGame, setInactivatingGame] = useState<Game | null>(null);
-
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] =
@@ -57,26 +56,22 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
     null,
   );
 
-
   const filteredGames = useMemo(() => {
     if (!games) return [];
     let filtered = [...games];
 
-  
     if (searchTerm) {
       filtered = filtered.filter((game) =>
         game.title?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
-   
     if (selectedCategory !== "todos") {
       filtered = filtered.filter(
         (game) => game.tier?.toLowerCase() === selectedCategory,
       );
     }
 
-   
     if (selectedStatus !== "todos") {
       if (selectedStatus === "disponivel") {
         filtered = filtered.filter((g) => g.isActive && g.isAvailableNow);
@@ -85,14 +80,12 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
       } else if (selectedStatus === "inativo") {
         filtered = filtered.filter((g) => !g.isActive);
       } else if (selectedStatus === "manutencao") {
-        
         filtered = filtered.filter(
           (g) => g.isActive && g.available === false && !g.isAvailableNow,
         );
       }
     }
 
-  
     filtered.sort((a, b) => {
       const titleA = a.title || "";
       const titleB = b.title || "";
@@ -117,8 +110,6 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
     setSelectedSort("az");
   };
 
-
-
   const handleDeleteConfirm = async () => {
     if (!deletingGame) return;
 
@@ -128,7 +119,6 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
       setDeletingGame(null);
       refetch(); 
     } catch (err: any) {
-  
       if (err.response?.status === 409) {
         toast.error("Não é possível excluir: jogo possui aluguéis ativos."); 
       } else {
@@ -140,12 +130,10 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
   const handleInactivateConfirm = async (reason: string) => {
     if (!inactivatingGame) return;
 
-
     const willBeActive = inactivatingGame.isActive === false;
 
     try {
       await api.patch(`/games/${inactivatingGame.id}`, {
-  
         isActive: willBeActive,
         isVisible: willBeActive, 
       });
@@ -166,50 +154,61 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
   if (error) return <ErrorMessage message={error} onRetry={refetch} />;
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar activePage="acervo" onNavigate={onNavigate} />
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      
+      {/* Sidebar Responsiva (Fixa em desktop, Gaveta no mobile) */}
+      <Sidebar
+        activePage="acervo"
+        onNavigate={onNavigate}
+        onLogout={onLogout}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header com gatilho para o menu mobile */}
+        <Header 
+          onMenuToggle={() => setIsSidebarOpen(true)} 
+        />
 
-        <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="text-3xl font-bold text-[#04096D] mb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#04096D] mb-6 sm:mb-8">
             Acervo Digital
           </h1>
 
-          {/* Métricas */}
-          <div className="grid grid-cols-4 gap-6 mb-8">
+          {/* Métricas (Grid responsivo de 1 a 4 colunas) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <CollectionMetricCard
               title="Total de Títulos"
               value={(metrics?.totalTitles || 0).toLocaleString("pt-BR")}
               tag="Em catálogo"
-              icon={<Library size={96} strokeWidth={1.5} />}
+              icon={<Library size={80} strokeWidth={1.5} />}
               variant="dark-blue"
             />
             <CollectionMetricCard
               title="Disponíveis"
               value={metrics?.available || 0}
               tag="Prontos para jogo"
-              icon={<CheckCircle2 size={96} strokeWidth={1.5} />}
+              icon={<CheckCircle2 size={80} strokeWidth={1.5} />}
               variant="white-orange"
             />
             <CollectionMetricCard
               title="Alugados"
               value={metrics?.rented || 0}
               tag="Em circulação"
-              icon={<PackageMinus size={96} strokeWidth={1.5} />}
+              icon={<PackageMinus size={80} strokeWidth={1.5} />}
               variant="yellow"
             />
             <CollectionMetricCard
               title="Manutenção"
               value={metrics?.maintenance || 0}
               tag="Requer atenção"
-              icon={<Wrench size={96} strokeWidth={1.5} />}
+              icon={<Wrench size={80} strokeWidth={1.5} />}
               variant="white-red"
             />
           </div>
 
-         
+          {/* Barra de Filtros */}
           <CollectionFiltersBar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -223,26 +222,24 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
             onAddGame={() => setIsAddOpen(true)}
           />
 
-      
+          {/* Tabela de Jogos */}
           <GamesCatalogTable
             games={filteredGames}
             onEditClick={(game) => setEditingGame(game)}
-            onManageCopiesClick={(game) => setManagingCopiesGame(game)} // <--- AQUI
+            onManageCopiesClick={(game) => setManagingCopiesGame(game)}
             onDeleteClick={(game) => setDeletingGame(game)}
             onInactivateClick={(game) => setInactivatingGame(game)}
           />
         </main>
       </div>
 
-     
-
       <GameCopiesModal
-  isOpen={!!managingCopiesGame}
-  gameId={managingCopiesGame?.id || ''}
-  gameTitle={managingCopiesGame?.title || ''}
-  gameCover={managingCopiesGame?.cover}
-  onClose={() => setManagingCopiesGame(null)}
-/>
+        isOpen={!!managingCopiesGame}
+        gameId={managingCopiesGame?.id || ''}
+        gameTitle={managingCopiesGame?.title || ''}
+        gameCover={managingCopiesGame?.cover}
+        onClose={() => setManagingCopiesGame(null)}
+      />
 
       <AddGameModal
         isOpen={isAddOpen}
@@ -261,7 +258,6 @@ export function CollectionPage({ onNavigate }: CollectionPageProps) {
         onClose={() => setDeletingGame(null)}
         onConfirm={handleDeleteConfirm}
         gameName={deletingGame?.title || ""}
-
         activeRentalsCount={0}
       />
 
