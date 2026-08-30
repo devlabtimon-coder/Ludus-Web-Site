@@ -17,7 +17,7 @@ export const NIVEL_EMOJIS: Record<Nivel, string> = {
   starter: '🌱',
   family: '🏠',
   expert: '⚔️',
-  ultragamer: '👑',
+  ultragamer: '💎',
 };
 
 export const NIVEL_COLORS: Record<Nivel, { bg: string; text: string; border: string; primary: string }> = {
@@ -32,14 +32,14 @@ export const SEASONAL_LEVELS: Record<number, string> = {
   2: 'Explorador',
   3: 'Estrategista',
   4: 'Campeão',
-  5: 'Lenda'
+  5: 'Lenda',
 };
 
 export const SEASONAL_POINTS: Record<number, number> = {
   2: 100,
   3: 300,
   4: 700,
-  5: 1500
+  5: 1500,
 };
 
 export const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
@@ -70,7 +70,7 @@ export function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.encerrada;
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full"
+      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
       style={{ background: cfg.bg, color: cfg.text }}
     >
       {status === 'ativa' && (
@@ -88,7 +88,7 @@ export function NivelBadge({ nivel }: { nivel: Nivel }) {
   const c = NIVEL_COLORS[nivel] || NIVEL_COLORS.starter;
   return (
     <span
-      className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+      className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
       style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}
     >
       {NIVEL_EMOJIS[nivel]} {NIVEL_LABELS[nivel]}
@@ -113,7 +113,6 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
   const [form, setForm] = useState({ nome: '', dataInicio: '', dataFim: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-
   const [showConfirm, setShowConfirm] = useState(false);
   const [conflictMessage, setConflictMessage] = useState('');
 
@@ -142,8 +141,8 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!form.nome || form.nome.trim().length < 5) errs.nome = 'Nome deve ter no mínimo 5 caracteres';
-    if (!form.dataInicio) errs.dataInicio = 'Data de início é obrigatória';
-    if (!form.dataFim) errs.dataFim = 'Data de fim é obrigatória';
+    if (!form.dataInicio) errs.dataInicio = 'Data de início obrigatória';
+    if (!form.dataFim) errs.dataFim = 'Data de fim obrigatória';
     const dur = getDurationDays();
     if (dur !== null && dur < 7) errs.dataFim = 'A temporada deve ter pelo menos 7 dias';
     setErrors(errs);
@@ -179,8 +178,7 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
 
   if (showConfirm) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowConfirm(false)} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
           <AlertCircle size={48} className="mx-auto text-amber-500 mb-4" />
           <h2 className="text-xl font-black text-gray-900 mb-2">Atenção!</h2>
@@ -188,14 +186,14 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
           <div className="flex gap-3">
             <button 
               onClick={() => setShowConfirm(false)} 
-              className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+              className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 hover:bg-gray-50 transition-colors text-sm"
             >
               Cancelar
             </button>
             <button 
               onClick={() => handleSalvar(true)} 
               disabled={isLoading} 
-              className="flex-1 py-3 rounded-xl font-bold text-[#04096D] bg-[#FBBC04] hover:brightness-105 flex justify-center items-center transition-all disabled:opacity-50"
+              className="flex-1 py-3 rounded-xl font-bold text-[#04096D] bg-[#FBBC04] hover:brightness-105 flex justify-center items-center transition-all disabled:opacity-50 text-sm"
             >
               {isLoading ? 'Aguarde...' : 'Sim, Substituir'}
             </button>
@@ -206,9 +204,8 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className="relative bg-white rounded-t-[24px] sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
         <div className="px-6 pt-6 pb-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #04096D, #31358B)' }}>
           <div>
             <h2 className="text-white font-black text-[18px]">Nova Temporada</h2>
@@ -218,7 +215,6 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
             <X size={18} className="text-white" />
           </button>
         </div>
-
         <div className="px-6 py-5 space-y-4">
           {(form.nome || form.dataInicio) && (
             <div className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #04096D, #31358B)' }}>
@@ -226,13 +222,12 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
               <div className="font-black text-[15px]">{form.nome || ' '}</div>
               {form.dataInicio && form.dataFim && (
                 <div className="text-[12px] text-white/80 mt-1">
-                  {new Date(form.dataInicio).toLocaleDateString('pt-BR')} — {new Date(form.dataFim).toLocaleDateString('pt-BR')}
+                  {new Date(form.dataInicio).toLocaleDateString('pt-BR')} até {new Date(form.dataFim).toLocaleDateString('pt-BR')}
                   {duration !== null && duration > 0 && <span className="ml-2 text-white/60">({duration} dias)</span>}
                 </div>
               )}
             </div>
           )}
-
           <div>
             <label className="text-[13px] font-semibold text-gray-700 mb-1.5 block">Nome da Temporada</label>
             <input
@@ -242,8 +237,7 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
               placeholder="Ex: Temporada 2026 - S3"
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-[13px] font-semibold text-gray-700 mb-1.5 block">Data de Início</label>
               <input type="date" value={form.dataInicio} onChange={e => handleDataInicioChange(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border text-[13px] focus:outline-none transition-all" />
@@ -254,7 +248,6 @@ export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
             </div>
           </div>
         </div>
-
         <div className="px-6 pb-6 flex gap-3">
           <button onClick={onClose} className="flex-1 h-11 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancelar</button>
           <button onClick={() => handleSalvar(false)} disabled={isLoading} className="flex-1 h-11 rounded-xl text-white text-[13px] font-bold flex items-center justify-center gap-2 transition-all hover:opacity-95 disabled:opacity-60" style={{ background: '#04096D' }}>
@@ -272,7 +265,6 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
   if (!isOpen || !temporada) return null;
 
   const elegiveis = progressData.filter((u: any) => u.currentLevel >= 2 && !u.cupomEmitido);
-
   const breakdown = [2, 3, 4, 5].map(level => {
     const usersInLevel = elegiveis.filter((u: any) => u.currentLevel === level);
     const reward = temporada.rewards?.[`nivel${level}`]?.cuponsGerados?.[0];
@@ -301,53 +293,51 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className="relative bg-white rounded-t-[24px] sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
         <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-gray-100">
-          <h2 className="text-[17px] font-black text-[#04096D]">
-              Gerar Cupons — {temporada.name}
+          <h2 className="text-[17px] font-black text-[#04096D] truncate pr-2">
+            Gerer Cupons - {temporada.name}
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0">
             <X size={16} className="text-gray-500" />
           </button>
         </div>
-
         <div className="px-6 py-4 space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex gap-2">
             <AlertCircle size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
             <p className="text-[12px] text-blue-700">
-              Esta ação irá gerar cupons para todos os usuários elegíveis de acordo com o <strong>Nível Sazonal</strong> que eles alcançaram.<br/>
+              Esta ação irá gerar cupons para todos os usuários elegíveis de acordo com o <strong>Nível Sazonal</strong> alcançado.<br/>
               <strong>Total estimado: {elegiveis.length} cupons.</strong>
             </p>
           </div>
-
           <div className="rounded-xl border border-gray-100 overflow-hidden">
-            <table className="w-full text-[12px]">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="text-left px-3 py-2 text-gray-500 font-semibold">Nível Atingido</th>
-                  <th className="text-right px-3 py-2 text-gray-500 font-semibold">Usuários</th>
-                  <th className="text-right px-3 py-2 text-gray-500 font-semibold">Recompensa</th>
-                </tr>
-              </thead>
-              <tbody>
-                {breakdown.length === 0 ? (
-                  <tr><td colSpan={3} className="text-center py-4 text-gray-500">Nenhum usuário elegível.</td></tr>
-                ) : (
-                  breakdown.map((row, i) => (
-                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                      <td className="px-3 py-2 font-semibold text-gray-700">{row.nivel}</td>
-                      <td className="px-3 py-2 text-right text-gray-600">{row.usuarios}</td>
-                      <td className="px-3 py-2 text-right font-bold" style={{ color: '#04096D' }}>{row.valor}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto scrollbar-hide">
+              <table className="w-full text-[12px] min-w-[300px]">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left px-3 py-2 text-gray-500 font-semibold">Nível Atingido</th>
+                    <th className="text-right px-3 py-2 text-gray-500 font-semibold">Usuários</th>
+                    <th className="text-right px-3 py-2 text-gray-500 font-semibold">Recompensa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {breakdown.length === 0 ? (
+                    <tr><td colSpan={3} className="text-center py-4 text-gray-500">Nenhum usuário elegível.</td></tr>
+                  ) : (
+                    breakdown.map((row, i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                        <td className="px-3 py-2 font-semibold text-gray-700">{row.nivel}</td>
+                        <td className="px-3 py-2 text-right text-gray-600">{row.usuarios}</td>
+                        <td className="px-3 py-2 text-right font-bold" style={{ color: '#04096D' }}>{row.valor}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-
         <div className="px-6 pb-6 flex gap-3">
           <button onClick={onClose} className="flex-1 h-11 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancelar</button>
           <button 
@@ -367,10 +357,10 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
 
 export function Tab1TodasTemporadas({ seasons, onGerarCupons }: any) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
+    <div className="overflow-x-auto scrollbar-hide rounded-xl border border-gray-100">
+      <table className="w-full text-[13px] min-w-[600px]">
         <thead>
-          <tr className="border-b border-gray-100">
+          <tr className="border-b border-gray-100 bg-gray-50">
             <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">Temporada</th>
             <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">Período</th>
             <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">Status</th>
@@ -379,15 +369,15 @@ export function Tab1TodasTemporadas({ seasons, onGerarCupons }: any) {
         </thead>
         <tbody>
           {seasons.map((t: any) => (
-            <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+            <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/50 bg-white">
               <td className="px-4 py-3 font-semibold text-[#04096D]">{t.name}</td>
-              <td className="px-4 py-3 text-gray-600">
-                {new Date(t.startDate).toLocaleDateString('pt-BR')} — {new Date(t.endDate).toLocaleDateString('pt-BR')}
+              <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                {new Date(t.startDate).toLocaleDateString('pt-BR')} até {new Date(t.endDate).toLocaleDateString('pt-BR')}
               </td>
               <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
               <td className="px-4 py-3 flex gap-2">
                 {t.status === 'ativa' && (
-                  <button onClick={() => onGerarCupons(t)} className="w-8 h-8 rounded-lg bg-blue-50 text-[#04096D] flex items-center justify-center hover:bg-blue-100 transition"><Ticket size={14}/></button>
+                  <button onClick={() => onGerarCupons(t)} className="w-8 h-8 rounded-lg bg-blue-50 text-[#04096D] flex items-center justify-center hover:bg-blue-100 transition" title="Gerar Cupons"><Ticket size={14}/></button>
                 )}
               </td>
             </tr>
@@ -400,12 +390,11 @@ export function Tab1TodasTemporadas({ seasons, onGerarCupons }: any) {
 
 export function Tab2Progressao({ progressData }: { progressData: any[] }) {
   const sortedData = [...progressData].sort((a, b) => b.avaliacoes - a.avaliacoes);
-
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
+    <div className="overflow-x-auto scrollbar-hide rounded-xl border border-gray-100">
+      <table className="w-full text-[13px] min-w-[700px]">
         <thead>
-          <tr className="border-b border-gray-100">
+          <tr className="border-b border-gray-100 bg-gray-50">
             <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Usuário</th>
             <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Nível Sazonal</th>
             <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Pontos na Temporada</th>
@@ -417,41 +406,37 @@ export function Tab2Progressao({ progressData }: { progressData: any[] }) {
           {sortedData.map(u => {
             const pontos = u.avaliacoes || 0;
             const pctColor = u.pct >= 100 ? '#22C55E' : u.pct >= 50 ? '#F97316' : '#31358B';
-
             return (
-              <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+              <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 bg-white">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Avatar name={u.nome} nivel={u.nivel as Nivel} />
-                    <div>
-                      <div className="font-semibold text-gray-900">{u.nome}</div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate max-w-[140px]">{u.nome}</div>
                       <NivelBadge nivel={u.nivel as Nivel} />
                     </div>
                   </div>
                 </td>
                 
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 whitespace-nowrap">
                   <span className="flex items-center gap-1.5 font-bold text-[#04096D]">
                     <Trophy size={14} className="text-[#FBBC04]" /> 
                     Nível {u.currentLevel} - {SEASONAL_LEVELS[u.currentLevel]}
                   </span>
                 </td>
-
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 whitespace-nowrap">
                   <span className="flex items-center gap-1.5 font-bold text-gray-700">
                     <Star size={14} className="text-[#04096D] opacity-50" /> 
                     {pontos} pts
                   </span>
                 </td>
-
                 <td className="px-4 py-3 min-w-[150px]">
                   <div className="flex items-center gap-3">
                     <ProgressBar value={u.pct} color={pctColor} height={8} />
                     <span className="font-black text-[12px]" style={{ color: pctColor }}>{u.pct}%</span>
                   </div>
                 </td>
-
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 whitespace-nowrap">
                   {u.cupomEmitido ? (
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">Emitido</span>
                   ) : (
@@ -469,7 +454,6 @@ export function Tab2Progressao({ progressData }: { progressData: any[] }) {
 
 export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
   const levels = [2, 3, 4, 5];
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       {levels.map(level => {
@@ -481,14 +465,14 @@ export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
           <div key={level} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
             <div className="px-5 py-4 flex items-center justify-between" style={{ background: level === 5 ? 'linear-gradient(135deg, #04096D, #FBBC04)' : '#F7F8FF' }}>
               <div className="flex items-center gap-3">
-                <span className="text-[28px] leading-none">{level === 5 ? '👑' : '⭐'}</span>
+                <span className="text-[24px] leading-none">{level === 5 ? '👑' : '⭐'}</span>
                 <div>
-                  <div className={`font-black text-[18px] ${level === 5 ? 'text-white' : 'text-[#04096D]'}`}>
+                  <div className={`font-black text-base sm:text-lg ${level === 5 ? 'text-white' : 'text-[#04096D]'}`}>
                     Nível {level} - {SEASONAL_LEVELS[level]}
                   </div>
                 </div>
               </div>
-              <div className={`font-black text-xl ${level === 5 ? 'text-white drop-shadow-md' : 'text-[#31358B]'}`}>
+              <div className={`font-black text-lg sm:text-xl ${level === 5 ? 'text-white drop-shadow-md' : 'text-[#31358B]'}`}>
                 {pontuacaoNecessaria} pts
               </div>
             </div>
@@ -503,8 +487,8 @@ export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recompensa</p>
                 {rec.cuponsGerados?.map((cp: any, i: number) => (
-                   <span key={i} className="inline-block text-[12px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 text-[#04096D] border border-blue-100">
-                      🎁 {cp.tipo === 'percentual' ? `${cp.valor}% OFF` : `R$${cp.valor} OFF`} - {cp.descricao}
+                   <span key={i} className="inline-block text-[12px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 text-[#04096D] border border-blue-100 mr-2 mb-2">
+                        {cp.tipo === 'percentual' ? `${cp.valor}% OFF` : `R$${cp.valor} OFF`} - {cp.descricao}
                    </span>
                 ))}
                 {!rec.cuponsGerados && (
@@ -521,26 +505,26 @@ export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
 
 export function Tab4Historico({ couponsData }: { couponsData: any[] }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
+    <div className="overflow-x-auto scrollbar-hide rounded-xl border border-gray-100">
+      <table className="w-full text-[13px] min-w-[700px]">
         <thead>
-          <tr className="border-b border-gray-100">
+          <tr className="border-b border-gray-100 bg-gray-50">
             {['Usuário', 'Temporada', 'Nível Atingido', 'Código', 'Valor', 'Status'].map(h => <th key={h} className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}
           </tr>
         </thead>
         <tbody>
           {couponsData.map((c) => (
-            <tr key={c.id} className="border-b border-gray-50">
+            <tr key={c.id} className="border-b border-gray-50 bg-white">
               <td className="px-4 py-3 font-semibold text-gray-900">{c.usuario}</td>
-              <td className="px-4 py-3 text-gray-600">{c.temporada}</td>
+              <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{c.temporada}</td>
               <td className="px-4 py-3">
-                <span className="bg-[#F0F2FF] text-[#04096D] border border-[#31358B]/20 font-bold px-2 py-1 rounded-md text-[11px]">
+                <span className="bg-[#F0F2FF] text-[#04096D] border border-[#31358B]/20 font-bold px-2 py-1 rounded-md text-[11px] whitespace-nowrap">
                   {c.nivel}
                 </span>
               </td>
-              <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-1 rounded-md font-mono">{c.codigo}</code></td>
-              <td className="px-4 py-3 font-bold text-[#04096D]">{c.valor}</td>
-              <td className="px-4 py-3">
+              <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-1 rounded-md font-mono text-xs">{c.codigo}</code></td>
+              <td className="px-4 py-3 font-bold text-[#04096D] whitespace-nowrap">{c.valor}</td>
+              <td className="px-4 py-3 whitespace-nowrap">
                 <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${c.status === 'ativo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {c.status.toUpperCase()}
                 </span>
