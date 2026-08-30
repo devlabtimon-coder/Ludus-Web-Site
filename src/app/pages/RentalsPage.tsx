@@ -8,7 +8,6 @@ import { Loading } from '../components/shared/Loading';
 import { ErrorMessage } from '../components/shared/ErrorMessage';
 import { PlaySquare, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 
-
 import { useRentals } from '../../hooks';
 
 interface RentalsPageProps {
@@ -21,10 +20,8 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
   const [selectedStatus, setSelectedStatus] = useState<VisualRentalStatus>('todos');
   const [selectedSort, setSelectedSort] = useState<SortOption>('recent');
 
-  
   const { metrics, rentals, loading, error, refetch, updateStatus } = useRentals();
 
-  
   const filteredAndSortedRentals = useMemo(() => {
     if (!rentals) return [];
     
@@ -69,7 +66,9 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
   if (error) return <ErrorMessage message={error} onRetry={refetch} />;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      
+  
       <Sidebar
         activePage="emprestimos"
         onNavigate={onNavigate}
@@ -78,39 +77,46 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onLogout={onLogout} onMenuToggle={() => setIsSidebarOpen(true)} />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      
+        <Header 
+          onLogout={onLogout} 
+          onMenuToggle={() => setIsSidebarOpen(true)} 
+        />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 xl:p-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#02096D] mb-6 md:mb-8">Empréstimos</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#02096D] mb-6 md:mb-8">
+            Empréstimos
+          </h1>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+      
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
             <RentalMetricCard
               title="Ativos"
               value={metrics?.active || 0}
               tag="Rodando"
-              icon={<PlaySquare size={96} strokeWidth={1.5} />}
+              icon={<PlaySquare size={80} strokeWidth={1.5} />}
               variant="yellow"
             />
             <RentalMetricCard
               title="Em Atraso"
               value={metrics?.late || 0}
               tag="Ação necessária"
-              icon={<AlertCircle size={96} strokeWidth={1.5} />}
+              icon={<AlertCircle size={80} strokeWidth={1.5} />}
               variant="white-red"
             />
             <RentalMetricCard
               title="Pendentes"
               value={metrics?.pending || 0}
               tag="Aguardando retirada"
-              icon={<Clock size={96} strokeWidth={1.5} />}
+              icon={<Clock size={80} strokeWidth={1.5} />}
               variant="dark-blue"
             />
             <RentalMetricCard
               title="Devolvidos (Mês)"
               value={metrics?.returnedThisMonth || 0}
               tag="Últimos 30 dias"
-              icon={<CheckCircle size={96} strokeWidth={1.5} />}
+              icon={<CheckCircle size={80} strokeWidth={1.5} />}
               variant="white-green"
             />
           </div>
