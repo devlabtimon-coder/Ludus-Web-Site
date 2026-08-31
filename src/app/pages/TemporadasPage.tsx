@@ -4,11 +4,15 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 import { api } from '../../services/api';
 import { toast } from 'sonner';
+
 import {
   diffDays, ProgressBar, StatusBadge,
-  ModalAdicionarTemporada, ModalGerarCupons,
+  ModalGerarCupons,
   Tab1TodasTemporadas, Tab2Progressao, Tab3Requisitos, Tab4Historico
 } from '../components/seasons/SeasonsTabs';
+
+
+import { ModalGerenciarTemporada } from '../components/seasons/ModalGerenciarTemporada';
 
 interface TemporadasPageProps {
   onNavigate?: (page: string) => void;
@@ -159,6 +163,7 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
                 <Tab1TodasTemporadas
                   seasons={seasons}
                   onGerarCupons={(t: any) => setGerarCuponsTemporada(t)}
+                  fetchSeasons={fetchData} 
                 />
               )}
               {activeTab === 1 && <Tab2Progressao progressData={progressData} />}
@@ -169,8 +174,21 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
         </main>
       </div>
 
-      <ModalAdicionarTemporada isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSalvar={fetchData} />
-      <ModalGerarCupons isOpen={!!gerarCuponsTemporada} temporada={gerarCuponsTemporada} progressData={progressData} onClose={() => setGerarCuponsTemporada(null)} onSuccess={fetchCoupons} />
+      
+      <ModalGerenciarTemporada 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSalvar={fetchData} 
+        season={null} 
+      />
+
+      <ModalGerarCupons 
+        isOpen={!!gerarCuponsTemporada} 
+        temporada={gerarCuponsTemporada} 
+        progressData={progressData} 
+        onClose={() => setGerarCuponsTemporada(null)} 
+        onSuccess={fetchCoupons} 
+      />
     </div>
   );
 }

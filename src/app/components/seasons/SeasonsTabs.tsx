@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X, AlertCircle, Ticket, Trophy, Star } from 'lucide-react';
+import { X, AlertCircle, Ticket, Trophy, Star, Edit, Trash2 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
+import { ModalGerenciarTemporada } from './ModalGerenciarTemporada';
 
 export const NIVEL_ORDER = ['starter', 'family', 'expert', 'ultragamer'] as const;
 export type Nivel = typeof NIVEL_ORDER[number];
@@ -109,156 +110,6 @@ export function Avatar({ name, nivel }: { name: string; nivel: Nivel }) {
   );
 }
 
-export function ModalAdicionarTemporada({ isOpen, onClose, onSalvar }: any) {
-  const [form, setForm] = useState({ nome: '', dataInicio: '', dataFim: '' });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [conflictMessage, setConflictMessage] = useState('');
-
-  if (!isOpen) return null;
-
-  const getSuggestedName = (dateStr: string): string => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    const month = d.getMonth() + 1;
-    const year = d.getFullYear();
-    const s = month <= 3 ? 'S1' : month <= 6 ? 'S2' : month <= 9 ? 'S3' : 'S4';
-    return `Temporada ${year} - ${s}`;
-  };
-
-  const handleDataInicioChange = (val: string) => {
-    const suggested = getSuggestedName(val);
-    setForm(f => ({ ...f, dataInicio: val, nome: f.nome || suggested }));
-    setErrors(e => ({ ...e, dataInicio: '' }));
-  };
-
-  const getDurationDays = (): number | null => {
-    if (!form.dataInicio || !form.dataFim) return null;
-    return diffDays(new Date(form.dataFim), new Date(form.dataInicio));
-  };
-
-  const validate = (): boolean => {
-    const errs: Record<string, string> = {};
-    if (!form.nome || form.nome.trim().length < 5) errs.nome = 'Nome deve ter no mínimo 5 caracteres';
-    if (!form.dataInicio) errs.dataInicio = 'Data de início obrigatória';
-    if (!form.dataFim) errs.dataFim = 'Data de fim obrigatória';
-    const dur = getDurationDays();
-    if (dur !== null && dur < 7) errs.dataFim = 'A temporada deve ter pelo menos 7 dias';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleSalvar = async (overrideActive = false) => {
-    if (!validate()) return;
-    setIsLoading(true);
-    try {
-      await api.post('/admin/seasons', {
-        nome: form.nome,
-        dataInicio: new Date(form.dataInicio).toISOString(),
-        dataFim: new Date(form.dataFim).toISOString(),
-        overrideActive
-      });
-      toast.success("Temporada criada com sucesso!");
-      onSalvar();
-      onClose();
-    } catch (e: any) {
-      if (e.response?.data?.code === "ACTIVE_SEASON_EXISTS") {
-        setConflictMessage(e.response.data.error);
-        setShowConfirm(true);
-      } else {
-        toast.error("Erro ao criar temporada.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const duration = getDurationDays();
-
-  if (showConfirm) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
-          <AlertCircle size={48} className="mx-auto text-amber-500 mb-4" />
-          <h2 className="text-xl font-black text-gray-900 mb-2">Atenção!</h2>
-          <p className="text-sm text-gray-600 mb-6">{conflictMessage}</p>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => setShowConfirm(false)} 
-              className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600 hover:bg-gray-50 transition-colors text-sm"
-            >
-              Cancelar
-            </button>
-            <button 
-              onClick={() => handleSalvar(true)} 
-              disabled={isLoading} 
-              className="flex-1 py-3 rounded-xl font-bold text-[#04096D] bg-[#FBBC04] hover:brightness-105 flex justify-center items-center transition-all disabled:opacity-50 text-sm"
-            >
-              {isLoading ? 'Aguarde...' : 'Sim, Substituir'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
-      <div className="relative bg-white rounded-t-[24px] sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
-        <div className="px-6 pt-6 pb-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #04096D, #31358B)' }}>
-          <div>
-            <h2 className="text-white font-black text-[18px]">Nova Temporada</h2>
-            <p className="text-white/75 text-[13px] mt-0.5">Crie um novo ciclo de corrida por pontos</p>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/15 transition-colors">
-            <X size={18} className="text-white" />
-          </button>
-        </div>
-        <div className="px-6 py-5 space-y-4">
-          {(form.nome || form.dataInicio) && (
-            <div className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #04096D, #31358B)' }}>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-white/70 mb-1">Pré-visualização</div>
-              <div className="font-black text-[15px]">{form.nome || ' '}</div>
-              {form.dataInicio && form.dataFim && (
-                <div className="text-[12px] text-white/80 mt-1">
-                  {new Date(form.dataInicio).toLocaleDateString('pt-BR')} até {new Date(form.dataFim).toLocaleDateString('pt-BR')}
-                  {duration !== null && duration > 0 && <span className="ml-2 text-white/60">({duration} dias)</span>}
-                </div>
-              )}
-            </div>
-          )}
-          <div>
-            <label className="text-[13px] font-semibold text-gray-700 mb-1.5 block">Nome da Temporada</label>
-            <input
-              type="text" value={form.nome}
-              onChange={e => { setForm(f => ({ ...f, nome: e.target.value })); setErrors(er => ({ ...er, nome: '' })); }}
-              className="w-full px-3 py-2.5 rounded-xl border text-[13px] focus:outline-none transition-all"
-              placeholder="Ex: Temporada 2026 - S3"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-[13px] font-semibold text-gray-700 mb-1.5 block">Data de Início</label>
-              <input type="date" value={form.dataInicio} onChange={e => handleDataInicioChange(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border text-[13px] focus:outline-none transition-all" />
-            </div>
-            <div>
-              <label className="text-[13px] font-semibold text-gray-700 mb-1.5 block">Data de Fim</label>
-              <input type="date" value={form.dataFim} onChange={e => setForm(f => ({ ...f, dataFim: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border text-[13px] focus:outline-none transition-all" />
-            </div>
-          </div>
-        </div>
-        <div className="px-6 pb-6 flex gap-3">
-          <button onClick={onClose} className="flex-1 h-11 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancelar</button>
-          <button onClick={() => handleSalvar(false)} disabled={isLoading} className="flex-1 h-11 rounded-xl text-white text-[13px] font-bold flex items-center justify-center gap-2 transition-all hover:opacity-95 disabled:opacity-60" style={{ background: '#04096D' }}>
-            {isLoading ? <span className="animate-spin">⏳</span> : 'Salvar Temporada'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onSuccess }: any) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -273,7 +124,7 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
       nivel: `Nível ${level} - ${SEASONAL_LEVELS[level]}`,
       usuarios: usersInLevel.length,
       cupons: usersInLevel.length,
-      valor: reward ? (reward.tipo === 'percentual' ? `${reward.valor}% OFF` : `R$ ${reward.valor} OFF`) : '--'
+      valor: reward ? (reward.tipo === 'percentual' ? `${reward.valor}% OFF` : reward.tipo === 'fixo' ? `R$ ${reward.valor} OFF` : '🎁 Vale-Brinde') : '--'
     };
   }).filter(row => row.usuarios > 0);
 
@@ -297,7 +148,7 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
       <div className="relative bg-white rounded-t-[24px] sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
         <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-gray-100">
           <h2 className="text-[17px] font-black text-[#04096D] truncate pr-2">
-            Gerer Cupons - {temporada.name}
+            Gerar Cupons - {temporada.name}
           </h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0">
             <X size={16} className="text-gray-500" />
@@ -355,35 +206,94 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
   );
 }
 
-export function Tab1TodasTemporadas({ seasons, onGerarCupons }: any) {
+export function Tab1TodasTemporadas({ seasons, onGerarCupons, fetchSeasons }: any) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [seasonEdit, setSeasonEdit] = useState<any>(null);
+
+  const openEdit = (season: any) => {
+    setSeasonEdit(season);
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir a temporada "${name}"?`)) {
+      try {
+        await api.delete(`/admin/seasons/${id}`);
+        toast.success("Temporada excluída com sucesso.");
+        if (fetchSeasons) fetchSeasons();
+      } catch (err: any) {
+        toast.error("Erro ao excluir a temporada.");
+      }
+    }
+  };
+
   return (
     <div className="overflow-x-auto scrollbar-hide rounded-xl border border-gray-100">
-      <table className="w-full text-[13px] min-w-[600px]">
+      <table className="w-full text-[13px] min-w-[600px] text-left border-collapse">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
-            <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">Temporada</th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">Período</th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">Ações</th>
+            <th className="px-4 py-3 font-semibold text-gray-500 uppercase tracking-wide">Temporada</th>
+            <th className="px-4 py-3 font-semibold text-gray-500 uppercase tracking-wide">Período</th>
+            <th className="px-4 py-3 font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <th className="px-4 py-3 font-semibold text-gray-500 uppercase tracking-wide text-right">Ações</th>
           </tr>
         </thead>
         <tbody>
-          {seasons.map((t: any) => (
-            <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/50 bg-white">
-              <td className="px-4 py-3 font-semibold text-[#04096D]">{t.name}</td>
-              <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                {new Date(t.startDate).toLocaleDateString('pt-BR')} até {new Date(t.endDate).toLocaleDateString('pt-BR')}
-              </td>
-              <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
-              <td className="px-4 py-3 flex gap-2">
-                {t.status === 'ativa' && (
-                  <button onClick={() => onGerarCupons(t)} className="w-8 h-8 rounded-lg bg-blue-50 text-[#04096D] flex items-center justify-center hover:bg-blue-100 transition" title="Gerar Cupons"><Ticket size={14}/></button>
-                )}
+          {seasons.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="py-8 text-center text-gray-500 font-medium text-sm">
+                Nenhuma temporada cadastrada.
               </td>
             </tr>
-          ))}
+          ) : (
+            seasons.map((t: any) => (
+              <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/50 bg-white">
+                <td className="px-4 py-3 font-semibold text-[#04096D]">{t.name}</td>
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                  {new Date(t.startDate).toLocaleDateString('pt-BR')} até {new Date(t.endDate).toLocaleDateString('pt-BR')}
+                </td>
+                <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex justify-end gap-2">
+                    {t.status === 'ativa' && (
+                      <button 
+                        onClick={() => onGerarCupons(t)} 
+                        className="px-3 py-1.5 bg-[#04096D]/10 hover:bg-[#04096D]/20 text-[#04096D] rounded-lg text-xs font-bold transition-colors" 
+                        title="Gerar Cupons"
+                      >
+                        Gerar Cupons
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={() => openEdit(t)}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Editar Temporada"
+                    >
+                      <Edit size={18} />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(t.id, t.name)}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Excluir Temporada"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
+
+      <ModalGerenciarTemporada 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        onSalvar={fetchSeasons} 
+        season={seasonEdit} 
+      />
     </div>
   );
 }
@@ -488,7 +398,7 @@ export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recompensa</p>
                 {rec.cuponsGerados?.map((cp: any, i: number) => (
                    <span key={i} className="inline-block text-[12px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 text-[#04096D] border border-blue-100 mr-2 mb-2">
-                        {cp.tipo === 'percentual' ? `${cp.valor}% OFF` : `R$${cp.valor} OFF`} - {cp.descricao}
+                        {cp.tipo === 'percentual' ? `${cp.valor}% OFF` : cp.tipo === 'fixo' ? `R$${cp.valor} OFF` : '🎁 Vale-Brinde'} - {cp.descricao}
                    </span>
                 ))}
                 {!rec.cuponsGerados && (
