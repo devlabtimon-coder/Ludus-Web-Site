@@ -34,6 +34,7 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
     }
   }, [tab, hasHowToPlay]);
 
+
   useEffect(() => {
     if (isOpen && game?.id) {
       const existingComponents = (game as any).components;
@@ -53,6 +54,29 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
       setStatusExpanded(false);
     }
   }, [isOpen, game]);
+
+ 
+  useEffect(() => {
+    if (isOpen) {
+    
+      window.history.pushState({ modal: 'GamePreviewModal' }, '');
+
+      const handlePopState = () => {
+       
+        onClose();
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        
+        if (window.history.state?.modal === 'GamePreviewModal') {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
 
   if (!isOpen || !game) return null;
 
@@ -126,10 +150,8 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
   return (
     <div 
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
-      onClick={onClose} 
+      onClick={onClose}
     >
-      
-     
       <button 
         onClick={onClose}
         className="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-md transition-colors z-[110] shadow-xl"
@@ -142,7 +164,6 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
         className="relative w-full max-w-[375px] h-[812px] max-h-[90vh] bg-white rounded-[40px] border-[8px] border-black shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        
         <div className="absolute top-0 inset-x-0 h-6 bg-black rounded-b-3xl w-40 mx-auto z-50"></div>
 
         <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] relative bg-white pb-32">
@@ -154,7 +175,11 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
               <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-sm">Sem Capa</div>
             )}
             
-            <div className="absolute top-10 left-4 w-[42px] h-[42px] rounded-[14px] bg-[#0A1F5C] flex items-center justify-center shadow-md">
+            <div 
+              className="absolute top-10 left-4 w-[42px] h-[42px] rounded-[14px] bg-[#0A1F5C] flex items-center justify-center shadow-md cursor-pointer hover:bg-[#071542] transition-colors"
+              onClick={onClose}
+              title="Voltar"
+            >
               <ChevronLeft size={22} color="#fff" strokeWidth={3} />
             </div>
             <div className="absolute top-10 right-4 w-[42px] h-[42px] rounded-[14px] bg-[#0A1F5C] flex items-center justify-center shadow-md">
