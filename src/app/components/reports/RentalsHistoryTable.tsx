@@ -1,6 +1,7 @@
 import { Eye, FileText } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { Badge } from '../shared/Badge';
+import { generateAdminReportPDF } from '../../../services/pdf.service';
 
 interface Rental {
   id: string;
@@ -8,21 +9,25 @@ interface Rental {
     name: string;
     email: string;
     membershipNumber: string;
+    avatar?: string | null;
+    picture?: string | null;
   };
   game: string;
   category: 'LATAO' | 'BRONZE' | 'PRATA' | 'OURO' | 'DIAMANTE';
   startDate: string;
   endDate: string;
   duration: number;
-  status: 'Em Andamento' | 'Atrasado' | 'Concluído' | 'Pendente';
+  status: 'Em Andamento' | 'Atrasado' | 'Concluído' | 'Pendente' | 'Cancelado';
 }
 
 interface RentalsHistoryTableProps {
   rentals: Rental[];
   total: number;
+  fullReportData?: any;
+  periodCode?: string;
 }
 
-export function RentalsHistoryTable({ rentals, total }: RentalsHistoryTableProps) {
+export function RentalsHistoryTable({ rentals, total, fullReportData, periodCode }: RentalsHistoryTableProps) {
   const getAvatarColor = (email: string) => {
     const colors = ['#04096E', '#22C55E', '#FBBC04', '#E62325', '#8B5CF6'];
     const index = email.charCodeAt(0) % colors.length;
@@ -46,40 +51,19 @@ export function RentalsHistoryTable({ rentals, total }: RentalsHistoryTableProps
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
-   
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900">Histórico de Empréstimos</h2>
         
         <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-          <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
-            <span className="text-xs font-semibold text-gray-500 uppercase">Período:</span>
-            <input
-              type="date"
-              className="border border-gray-300 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#04096E]"
-            />
-            <span className="text-gray-400">-</span>
-            <input
-              type="date"
-              className="border border-gray-300 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#04096E]"
-            />
-          </div>
-
-          <select className="border border-gray-300 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#04096E] bg-white flex-1 sm:flex-none">
-            <option>Todos os jogos</option>
-          </select>
-
-          <button className="bg-[#04096E] hover:bg-blue-900 text-white px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition-colors">
-            Filtrar
-          </button>
-
-          <button className="flex items-center justify-center gap-2 bg-[#FBBC04] hover:bg-[#E5AA00] text-[#04096E] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-colors w-full sm:w-auto ml-auto xl:ml-0">
+          <button 
+            onClick={() => fullReportData && periodCode ? generateAdminReportPDF(fullReportData, periodCode) : null}
+            className="flex items-center justify-center gap-2 bg-[#FBBC04] hover:bg-[#E5AA00] text-[#04096E] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-colors w-full sm:w-auto ml-auto xl:ml-0"
+          >
             <FileText size={16} />
             Gerar PDF
           </button>
         </div>
       </div>
-
-
       <div className="rounded-xl border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full min-w-[950px] text-left border-collapse">
@@ -102,6 +86,7 @@ export function RentalsHistoryTable({ rentals, total }: RentalsHistoryTableProps
                     <div className="flex items-center gap-3">
                       <Avatar
                         name={rental.user.name}
+                        src={rental.user.avatar || rental.user.picture}
                         color={getAvatarColor(rental.user.email)}
                         size="sm"
                       />
@@ -119,7 +104,7 @@ export function RentalsHistoryTable({ rentals, total }: RentalsHistoryTableProps
                     {rental.duration} dias
                   </td>
                   <td className="py-3 px-4">
-                    <Badge status={rental.status} />
+                    <Badge status={rental.status as any} />
                   </td>
                   <td className="py-3 px-4 text-center">
                     <button className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors inline-flex" title="Ver Detalhes">
@@ -132,23 +117,11 @@ export function RentalsHistoryTable({ rentals, total }: RentalsHistoryTableProps
           </table>
         </div>
       </div>
-
-    
+      
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-100">
         <p className="text-xs sm:text-sm font-medium text-gray-500 text-center sm:text-left">
           Mostrando <span className="font-bold text-gray-900">1-{rentals.length}</span> de <span className="font-bold text-gray-900">{total.toLocaleString('pt-BR')}</span> empréstimos
         </p>
-        <div className="flex gap-1.5">
-          <button className="bg-[#04096E] text-white px-3 py-1.5 rounded-lg font-bold text-sm transition-colors">
-            1
-          </button>
-          <button className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-3 py-1.5 rounded-lg font-bold text-sm transition-colors">
-            2
-          </button>
-          <button className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-3 py-1.5 rounded-lg font-bold text-sm transition-colors">
-            3
-          </button>
-        </div>
       </div>
     </div>
   );

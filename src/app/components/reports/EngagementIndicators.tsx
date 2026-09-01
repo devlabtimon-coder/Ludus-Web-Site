@@ -5,7 +5,9 @@ interface TopUser {
   name: string;
   email: string;
   rentals: number;
-  category: 'ULTRAGAMER' | 'EXPERT' | 'FAMILY';
+  category: 'ULTRAGAMER' | 'EXPERT' | 'FAMILY' | 'STARTER' | string;
+  avatar?: string | null;
+  picture?: string | null;
 }
 
 interface EngagementIndicatorsProps {
@@ -20,27 +22,21 @@ interface EngagementIndicatorsProps {
 
 export function EngagementIndicators({
   activeUsers,
-  activeUsersChange,
   inactiveUsers,
-  inactiveUsersChange,
   avgRentalsPerUser,
   newUsers,
   topUsers,
 }: EngagementIndicatorsProps) {
-  const getCategoryBadge = (category: 'ULTRAGAMER' | 'EXPERT' | 'FAMILY') => {
-    const styles = {
+  const getCategoryBadge = (category: string) => {
+    const styles: Record<string, string> = {
       ULTRAGAMER: 'bg-[#04096E] text-[#FBBC04]', 
       EXPERT: 'bg-gray-800 text-white',
-      FAMILY: 'bg-[#FBBC04] text-[#04096E]', 
-    };
-    const labels = {
-      ULTRAGAMER: 'Ultragamer',
-      EXPERT: 'Expert',
-      FAMILY: 'Family',
+      FAMILY: 'bg-[#FBBC04] text-[#04096E]',
+      STARTER: 'bg-gray-200 text-gray-700',
     };
     return (
-      <span className={`${styles[category]} px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider`}>
-        {labels[category]}
+      <span className={`${styles[category] || styles.STARTER} px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider`}>
+        {category}
       </span>
     );
   };
@@ -56,11 +52,10 @@ export function EngagementIndicators({
       <div className="flex items-center justify-between mb-5 sm:mb-6">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900">Engajamento de Usuários</h2>
         <span className="px-3 py-1 bg-[#EFF6FF] text-[#04096E] rounded-full text-xs font-bold">
-          Últimos 30 dias
+          Filtro Ativo
         </span>
       </div>
-
-    
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Alugaram</p>
@@ -68,13 +63,12 @@ export function EngagementIndicators({
             <p className="text-xl sm:text-2xl font-bold text-[#04096E]">{activeUsers}</p>
             <span className="flex items-center gap-1 text-xs font-bold text-[#22C55E]">
               <TrendingUp size={14} strokeWidth={3} />
-              +{activeUsersChange}%
             </span>
           </div>
         </div>
 
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Inativos +30d</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Inativos (No Período)</p>
           <div className="flex items-center gap-2">
             <p className="text-xl sm:text-2xl font-bold text-[#E62325]">{inactiveUsers}</p>
             <span className="flex items-center gap-1 text-xs font-bold text-[#E62325]">
@@ -92,7 +86,7 @@ export function EngagementIndicators({
         </div>
 
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Novos (Período)</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Novos Usuários</p>
           <div className="flex items-center gap-2">
             <p className="text-xl sm:text-2xl font-bold text-[#22C55E]">{newUsers}</p>
             <UserPlus className="text-[#22C55E]" size={18} />
@@ -100,28 +94,39 @@ export function EngagementIndicators({
         </div>
       </div>
 
-
       <div>
         <h3 className="text-xs sm:text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Top 3 Usuários Mais Ativos</h3>
         <div className="space-y-3">
-          {topUsers.map((user, index) => (
-            <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl hover:shadow-sm transition-all">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 text-xs font-bold text-gray-600 shrink-0">
-                {index + 1}
-              </div>
-              <Avatar name={user.name} color={getAvatarColor(user.email)} size="sm" />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 text-sm truncate">{user.name}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs sm:text-sm font-black text-[#04096E]">{user.rentals} aluguéis</p>
-                <div className="mt-1">
-                  {getCategoryBadge(user.category)}
+          {topUsers.length === 0 ? (
+            <p className="text-xs font-medium text-gray-400 py-3 text-center">Nenhum empréstimo registrado no período selecionado.</p>
+          ) : (
+            topUsers.map((user, index) => (
+              <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl hover:shadow-sm transition-all">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 text-xs font-bold text-gray-600 shrink-0">
+                  {index + 1}
+                </div>
+                
+                <Avatar 
+                  name={user.name} 
+                  src={user.avatar || user.picture} 
+                  color={getAvatarColor(user.email)} 
+                  size="sm" 
+                />
+                
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 text-sm truncate">{user.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                </div>
+                
+                <div className="text-right shrink-0">
+                  <p className="text-xs sm:text-sm font-black text-[#04096E]">{user.rentals} aluguéis</p>
+                  <div className="mt-1">
+                    {getCategoryBadge(user.category)}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
