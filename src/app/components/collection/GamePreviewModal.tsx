@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   X, ChevronLeft, Heart, Star, Users, Clock, Smile, 
-  Shield, Diamond, Info, FileText, Package, PlayCircle, ChevronDown, Loader2
+  Shield, Diamond, Info, FileText, Package, PlayCircle, ChevronDown, Loader2 
 } from 'lucide-react';
 import { Game } from '../../../types/api';
 import { api } from '../../../services/api';
@@ -63,7 +63,7 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
 
   const avgRating = Number((game as any).rating ?? 0);
   const ratingsCount = typeof (game as any).ratingsCount === 'number' ? (game as any).ratingsCount : 0;
-
+  
   const tierKey = game.tier ? game.tier.toUpperCase() : 'PRATA';
   const tierMeta = TIER_META[tierKey] || TIER_META.PRATA;
   const TierIcon = tierMeta.icon;
@@ -124,16 +124,24 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
   const mechanicsList = (game as any).mechanics || [];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose} 
+    >
       
+     
       <button 
         onClick={onClose}
-        className="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors"
+        className="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-md transition-colors z-[110] shadow-xl"
+        title="Fechar Prévia"
       >
-        <X size={24} />
+        <X size={28} strokeWidth={2.5} />
       </button>
 
-      <div className="relative w-full max-w-[375px] h-[812px] max-h-[90vh] bg-white rounded-[40px] border-[8px] border-black shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+      <div 
+        className="relative w-full max-w-[375px] h-[812px] max-h-[90vh] bg-white rounded-[40px] border-[8px] border-black shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         <div className="absolute top-0 inset-x-0 h-6 bg-black rounded-b-3xl w-40 mx-auto z-50"></div>
 
@@ -255,6 +263,7 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
                   </p>
                 </div>
               )}
+
               {tab === 'components' && (
                 <div>
                   <h3 className="text-base font-extrabold text-[#444] mb-2">Componentes</h3>
@@ -278,6 +287,7 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
                   )}
                 </div>
               )}
+
               {tab === 'howtoplay' && hasHowToPlay && (
                 <div>
                   <h3 className="text-base font-extrabold text-[#444] mb-2">Como jogar</h3>
