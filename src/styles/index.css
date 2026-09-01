@@ -1,3 +1,9 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+iframe[src*="netlify"], 
+#netlify-badge, 
+.netlify-badge,
+[data-netlify-deploy-preview] {
+  display: none !important;
+}
