@@ -9,6 +9,8 @@ import { ErrorMessage } from '../components/shared/ErrorMessage';
 import { PlaySquare, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 
 import { useRentals } from '../../hooks';
+import { api } from '../../services/api';
+import { toast } from 'sonner';
 
 interface RentalsPageProps {
   onNavigate?: (page: 'dashboard' | 'acervo' | 'emprestimos' | 'usuarios' | 'cadastro' | 'relatorios' | 'login') => void;
@@ -20,7 +22,17 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
   const [selectedStatus, setSelectedStatus] = useState<VisualRentalStatus>('todos');
   const [selectedSort, setSelectedSort] = useState<SortOption>('recent');
 
-  const { metrics, rentals, loading, error, refetch, updateStatus } = useRentals();
+  const { metrics, rentals, loading, error, refetch } = useRentals();
+
+  const handleUpdateStatus = async (id: string, status: string, extraData?: any) => {
+    try {
+      await api.patch(`/admin/rentals/${id}/status`, { status, ...extraData });
+      toast.success('Status do aluguel atualizado com sucesso!');
+      refetch();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Erro ao atualizar o aluguel.');
+    }
+  };
 
   const filteredAndSortedRentals = useMemo(() => {
     if (!rentals) return [];
@@ -36,7 +48,7 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
         if (selectedStatus === 'andamento') return rental.status === 'ACTIVE' && !isLate;
         if (selectedStatus === 'atrasado') return isLate;
         if (selectedStatus === 'pendente') return rental.status === 'PENDING' && !isLate;
-        if (selectedStatus === 'concluido') return rental.status === 'RETURNED';
+        if (selectedStatus === 'concluido') return rental.status === 'RETURNED' || rental.status === 'CANCELED';
         return true;
       });
     }
@@ -67,8 +79,6 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      
-  
       <Sidebar
         activePage="emprestimos"
         onNavigate={onNavigate}
@@ -78,7 +88,6 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      
         <Header 
           onLogout={onLogout} 
           onMenuToggle={() => setIsSidebarOpen(true)} 
@@ -89,7 +98,6 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
             Empréstimos
           </h1>
 
-      
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
             <RentalMetricCard
               title="Ativos"
@@ -131,7 +139,7 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
 
           <RentalsTable 
             rentals={filteredAndSortedRentals} 
-            onUpdateStatus={updateStatus} 
+            onUpdateStatus={handleUpdateStatus} 
           />
         </main>
       </div>
