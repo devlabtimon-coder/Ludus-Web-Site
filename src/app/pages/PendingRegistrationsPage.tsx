@@ -16,7 +16,6 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
 
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
@@ -75,16 +74,14 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
 
   const completos = pendingUsers.filter(u => 
     isIfmaMode
-      ? u.enrollmentProof && u.documentFrontImage && u.documentBackImage
-      : u.documentFrontImage && u.documentBackImage && u.addressProof && u.selfieWithId
+      ? u.enrollmentProof && u.documentFile
+      : u.documentFile && u.addressProof && u.selfieWithId
   ).length;
 
   const incompletos = pendingUsers.length - completos;
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      
-      
       <Sidebar
         activePage="cadastro"
         onNavigate={onNavigate}
@@ -94,20 +91,17 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      
         <Header 
           onLogout={onLogout} 
           onMenuToggle={() => setIsSidebarOpen(true)} 
         />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-    
           <div className="mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-[#0A1628] mb-2">Cadastro Pendente</h1>
             <p className="text-sm md:text-base text-gray-500">Gerencie e aprove os cadastros enviados pelos usuários</p>
           </div>
 
-     
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
             <RegistrationMetricCard
               label="AGUARDANDO ANÁLISE"
@@ -137,10 +131,7 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
             />
           </div>
 
-         
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6 items-start">
-            
-           
             <div className="xl:col-span-2">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 h-full min-h-[500px] flex flex-col">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6 gap-3">
@@ -174,7 +165,6 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
               </div>
             </div>
 
-          
             <div className="col-span-1 h-auto xl:h-[650px]">
               <RegistrationDetailsPanel
                 registration={selectedRegistration}
@@ -183,7 +173,6 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
                 onRequestResendDoc={handleRequestResendDoc}
               />
             </div>
-
           </div>
         </main>
       </div>

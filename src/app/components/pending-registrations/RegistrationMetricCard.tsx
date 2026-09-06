@@ -20,15 +20,15 @@ export function RegistrationMetricCard({
   iconColor,
 }: RegistrationMetricCardProps) {
   const variants = {
-    dark: 'bg-[#04096E] text-white', // Azul Ludus
+    dark: 'bg-[#04096E] text-white', 
     white: 'bg-white border border-gray-200 text-[#0A1628]',
-    yellow: 'bg-[#FBBC04] text-[#04096E]', // Amarelo Ludus com texto Azul
+    yellow: 'bg-[#FBBC04] text-[#04096E]',
   };
 
   const labelColors = {
-    dark: 'text-[#FBBC04]', // Amarelo Ludus
+    dark: 'text-[#FBBC04]',
     white: 'text-gray-500',
-    yellow: 'text-[#04096E]', // Azul Ludus
+    yellow: 'text-[#04096E]',
   };
 
   const tagColors = {
@@ -37,14 +37,14 @@ export function RegistrationMetricCard({
     red: 'bg-[#E62325]/10 text-[#E62325]',
   };
 
-  // Cores adaptadas para servirem como marca d'água de fundo
+
   const iconColors = {
     dark: 'text-white',
     white: iconColor || 'text-gray-300', 
     yellow: iconColor || 'text-[#04096E]',
   };
 
-  // Níveis de transparência para cada cor de fundo
+
   const watermarkOpacities = {
     dark: 'opacity-10',
     white: 'opacity-[0.15]',
@@ -53,12 +53,12 @@ export function RegistrationMetricCard({
 
   return (
     <div className={`${variants[variant]} rounded-xl p-6 relative shadow-sm overflow-hidden`}>
-      {/* Ícone gigante no fundo (Estilo Ludus) */}
+      
       <div className={`absolute -right-6 -bottom-6 pointer-events-none transition-transform duration-300 group-hover:scale-110 ${watermarkOpacities[variant]}`}>
         <Icon className={iconColors[variant]} size={140} strokeWidth={1.5} />
       </div>
 
-      {/* Conteúdo (z-10 para garantir que fica por cima do ícone) */}
+      
       <div className="relative z-10 space-y-3">
         <p className={`text-xs font-bold uppercase tracking-wide ${labelColors[variant]}`}>
           {label}

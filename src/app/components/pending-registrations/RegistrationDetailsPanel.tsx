@@ -32,12 +32,10 @@ export function RegistrationDetailsPanel({
   const hasAllDocs = isIfmaMode
     ? !!(
         registration.enrollmentProof &&
-        registration.documentFrontImage &&
-        registration.documentBackImage
+        registration.documentFile
       )
     : !!(
-        registration.documentFrontImage &&
-        registration.documentBackImage &&
+        registration.documentFile &&
         registration.addressProof &&
         registration.selfieWithId
       );
@@ -112,8 +110,6 @@ export function RegistrationDetailsPanel({
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 h-full flex flex-col relative z-0">
         <div className="flex-1 overflow-y-auto pr-1 sm:pr-2">
-          
-
           <div className="text-center mb-6">
             <Avatar 
               name={registration.name} 
@@ -168,15 +164,13 @@ export function RegistrationDetailsPanel({
               {isIfmaMode ? (
                 <>
                   {renderDocument("1. Comprovante SUAP", registration.enrollmentProof)}
-                  {renderDocument("2. Frente do RG/CNH", registration.documentFrontImage)}
-                  {renderDocument("3. Verso do RG/CNH", registration.documentBackImage)}
+                  {renderDocument("2. Documento (Frente e Verso)", registration.documentFile)}
                 </>
               ) : (
                 <>
                   {renderDocument("1. Selfie c/ Documento", registration.selfieWithId)}
-                  {renderDocument("2. Frente do RG/CNH", registration.documentFrontImage)}
-                  {renderDocument("3. Verso do RG/CNH", registration.documentBackImage)}
-                  {renderDocument("4. Comprovante de Endereço", registration.addressProof)}
+                  {renderDocument("2. Documento (Frente e Verso)", registration.documentFile)}
+                  {renderDocument("3. Comprovante de Endereço", registration.addressProof)}
                 </>
               )}
             </div>
@@ -198,7 +192,6 @@ export function RegistrationDetailsPanel({
           </div>
         </div>
 
-  
         <div className="flex flex-col sm:flex-row gap-2.5 pt-4 border-t border-gray-100 shrink-0">
           <button
             onClick={() => onApprove(registration.id)}

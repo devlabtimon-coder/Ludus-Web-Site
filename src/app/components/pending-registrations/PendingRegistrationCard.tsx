@@ -19,9 +19,10 @@ export function PendingRegistrationCard({
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
   const getBorderColor = () => {
+   
     const hasAllDocs = isIfmaMode
-      ? user.enrollmentProof && user.documentFrontImage && user.documentBackImage
-      : user.documentFrontImage && user.documentBackImage && user.addressProof && user.selfieWithId;
+      ? user.enrollmentProof && user.documentFile
+      : user.documentFile && user.addressProof && user.selfieWithId;
     if (hasAllDocs) {
       return 'border-l-[#22C55E]';
     }
@@ -110,14 +111,12 @@ export function PendingRegistrationCard({
         {isIfmaMode ? (
           <>
             {getDocumentBadge(user.enrollmentProof, 'SUAP')}
-            {getDocumentBadge(user.documentFrontImage, 'RG Frente')}
-            {getDocumentBadge(user.documentBackImage, 'RG Verso')}
+            {getDocumentBadge(user.documentFile, 'Documento (Frente/Verso)')}
           </>
         ) : (
           <>
             {getDocumentBadge(user.selfieWithId, 'Selfie')}
-            {getDocumentBadge(user.documentFrontImage, 'RG Frente')}
-            {getDocumentBadge(user.documentBackImage, 'RG Verso')}
+            {getDocumentBadge(user.documentFile, 'Documento (Frente/Verso)')}
             {getDocumentBadge(user.addressProof, 'Endereço')}
           </>
         )}
