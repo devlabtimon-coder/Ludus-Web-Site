@@ -68,9 +68,14 @@ export function Header({ onLogout, onMenuToggle, onNavigate }: HeaderProps) {
       setUnreadCount(prev => Math.max(0, prev - 1));
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, readAt: new Date().toISOString() } : n));
       
-      if (route && onNavigate) {
-        // Remove a barra inicial se existir para o nome da página bater com o App.tsx (ex: "/emprestimos" -> "emprestimos")
-        onNavigate(route.replace('/', '')); 
+      if (route) {
+        const cleanRoute = route.replace('/', ''); 
+        
+        if (onNavigate) {
+          onNavigate(cleanRoute);
+        } else {
+          window.location.href = `/${cleanRoute}`;
+        }
       }
     } catch (e) {
       console.error("Erro ao marcar como lida", e);
@@ -113,7 +118,6 @@ export function Header({ onLogout, onMenuToggle, onNavigate }: HeaderProps) {
     <>
       <header className="bg-white border-b border-gray-200 px-4 md:px-8 py-3 md:py-4 flex items-center justify-between gap-4 relative z-50">
         
-        {/* Menu Mobile & Logo */}
         <div className="flex items-center gap-2 sm:gap-3 md:hidden">
           <button 
             onClick={onMenuToggle}
@@ -131,7 +135,6 @@ export function Header({ onLogout, onMenuToggle, onNavigate }: HeaderProps) {
           </div>
         </div>
 
-        {/* Busca */}
         <div className="hidden md:block flex-1 max-w-xl">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -145,7 +148,6 @@ export function Header({ onLogout, onMenuToggle, onNavigate }: HeaderProps) {
 
         <div className="flex items-center gap-3 md:gap-4 ml-auto">
           
-          {/* Menu de Notificações com Radix Popover */}
           <Popover>
             <PopoverTrigger asChild>
               <button className="relative p-2 hover:bg-gray-50 rounded-full transition-colors outline-none cursor-pointer">
@@ -190,7 +192,6 @@ export function Header({ onLogout, onMenuToggle, onNavigate }: HeaderProps) {
             </PopoverContent>
           </Popover>
 
-          {/* Menu de Perfil Original */}
           <div className="relative" ref={dropdownRef}>
             <div 
               className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:bg-gray-50 p-1.5 pr-2 rounded-full transition-colors"

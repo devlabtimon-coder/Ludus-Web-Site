@@ -97,9 +97,21 @@ export function NivelBadge({ nivel }: { nivel: Nivel }) {
   );
 }
 
-export function Avatar({ name, nivel }: { name: string; nivel: Nivel }) {
+export function Avatar({ name, nivel, src }: { name: string; nivel: Nivel; src?: string | null }) {
   const c = NIVEL_COLORS[nivel] || NIVEL_COLORS.starter;
   const initials = name ? name.split(' ').slice(0, 2).map(n => n[0]).join('') : '?';
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        className="w-8 h-8 rounded-full object-cover flex-shrink-0 border"
+        style={{ borderColor: c.border }}
+      />
+    );
+  }
+
   return (
     <div
       className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
@@ -112,21 +124,28 @@ export function Avatar({ name, nivel }: { name: string; nivel: Nivel }) {
 
 export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onSuccess }: any) {
   const [isLoading, setIsLoading] = useState(false);
-
   if (!isOpen || !temporada) return null;
 
   const elegiveis = progressData.filter((u: any) => u.currentLevel >= 2 && !u.cupomEmitido);
+
   const breakdown = [2, 3, 4, 5].map(level => {
-    const usersInLevel = elegiveis.filter((u: any) => u.currentLevel === level);
+    
+    const usersNeedingThisLevel = elegiveis.filter((u: any) => {
+      const jaTem = Array.isArray(u.cuponsEmitidos) && u.cuponsEmitidos.includes(level);
+      return u.currentLevel >= level && !jaTem;
+    });
+
     const reward = temporada.rewards?.[`nivel${level}`]?.cuponsGerados?.[0];
     
     return {
       nivel: `Nível ${level} - ${SEASONAL_LEVELS[level]}`,
-      usuarios: usersInLevel.length,
-      cupons: usersInLevel.length,
+      usuarios: usersNeedingThisLevel.length,
+      cupons: usersNeedingThisLevel.length,
       valor: reward ? (reward.tipo === 'percentual' ? `${reward.valor}% OFF` : reward.tipo === 'fixo' ? `R$ ${reward.valor} OFF` : '🎁 Vale-Brinde') : '--'
     };
   }).filter(row => row.usuarios > 0);
+
+  const totalCuponsPendentes = breakdown.reduce((acc, row) => acc + row.cupons, 0);
 
   const handleGerar = async () => {
     setIsLoading(true);
@@ -158,8 +177,8 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex gap-2">
             <AlertCircle size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
             <p className="text-[12px] text-blue-700">
-              Esta ação irá gerar cupons para todos os usuários elegíveis de acordo com o <strong>Nível Sazonal</strong> alcançado.<br/>
-              <strong>Total estimado: {elegiveis.length} cupons.</strong>
+              Esta ação irá gerar os cupons pendentes para todos os usuários elegíveis.<br/>
+              <strong>Total a emitir: {totalCuponsPendentes} cupons.</strong>
             </p>
           </div>
           <div className="rounded-xl border border-gray-100 overflow-hidden">
@@ -167,14 +186,14 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
               <table className="w-full text-[12px] min-w-[300px]">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="text-left px-3 py-2 text-gray-500 font-semibold">Nível Atingido</th>
-                    <th className="text-right px-3 py-2 text-gray-500 font-semibold">Usuários</th>
+                    <th className="text-left px-3 py-2 text-gray-500 font-semibold">Nível Pendente</th>
+                    <th className="text-right px-3 py-2 text-gray-500 font-semibold">Qtd</th>
                     <th className="text-right px-3 py-2 text-gray-500 font-semibold">Recompensa</th>
                   </tr>
                 </thead>
                 <tbody>
                   {breakdown.length === 0 ? (
-                    <tr><td colSpan={3} className="text-center py-4 text-gray-500">Nenhum usuário elegível.</td></tr>
+                    <tr><td colSpan={3} className="text-center py-4 text-gray-500">Nenhum cupom pendente.</td></tr>
                   ) : (
                     breakdown.map((row, i) => (
                       <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
@@ -193,7 +212,7 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
           <button onClick={onClose} className="flex-1 h-11 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancelar</button>
           <button 
             onClick={handleGerar}
-            disabled={elegiveis.length === 0 || isLoading}
+            disabled={totalCuponsPendentes === 0 || isLoading}
             className="flex-1 h-11 rounded-xl text-white text-[13px] font-bold flex items-center justify-center gap-2 transition-all hover:opacity-95 disabled:opacity-50"
             style={{ background: '#04096D' }}
           >
@@ -320,7 +339,8 @@ export function Tab2Progressao({ progressData }: { progressData: any[] }) {
               <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 bg-white">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <Avatar name={u.nome} nivel={u.nivel as Nivel} />
+                    
+                    <Avatar name={u.nome} nivel={u.nivel as Nivel} src={u.avatar} />
                     <div className="min-w-0">
                       <div className="font-semibold text-gray-900 truncate max-w-[140px]">{u.nome}</div>
                       <NivelBadge nivel={u.nivel as Nivel} />

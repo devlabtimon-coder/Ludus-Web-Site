@@ -11,7 +11,6 @@ import {
   Tab1TodasTemporadas, Tab2Progressao, Tab3Requisitos, Tab4Historico
 } from '../components/seasons/SeasonsTabs';
 
-
 import { ModalGerenciarTemporada } from '../components/seasons/ModalGerenciarTemporada';
 
 interface TemporadasPageProps {
@@ -77,7 +76,21 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
   const percentualDecorrido = Math.min(100, Math.max(0, Math.round((decorridos / totalDias) * 100)));
   const corUrgencia = diasRestantes <= 7 ? '#EF4444' : '#F97316';
 
-  const usersEligible = progressData.filter(u => u.pct >= 100);
+  const rewardLevels = [2, 3, 4, 5];
+
+  const usersEligible = useMemo(() => {
+    return progressData.filter(u => u.currentLevel >= 2);
+  }, [progressData]);
+
+  const totalCuponsPendentes = useMemo(() => {
+    return progressData.reduce((acc, u) => {
+      if (u.currentLevel < 2) return acc;
+      const reached = rewardLevels.filter(lvl => lvl <= u.currentLevel);
+      const emitted = Array.isArray(u.cuponsEmitidos) ? u.cuponsEmitidos : [];
+      const pendingCount = reached.filter(lvl => !emitted.includes(lvl)).length;
+      return acc + pendingCount;
+    }, 0);
+  }, [progressData]);
 
   return (
     <div className="flex h-screen bg-[#F5F5F7]">
@@ -125,7 +138,7 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
                 <span className="text-[12px] font-semibold text-gray-500">Usuários Elegíveis</span>
               </div>
               <div className="text-[32px] font-black leading-tight text-green-500">{usersEligible.length}</div>
-              <div className="text-[12px] text-gray-400 mt-0.5 mb-2">completaram requisitos 100%</div>
+              <div className="text-[12px] text-gray-400 mt-0.5 mb-2">atingiram nível 2 ou superior</div>
             </div>
 
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
@@ -133,11 +146,11 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50"><Ticket size={20} style={{ color: '#04096D' }} /></div>
                 <span className="text-[12px] font-semibold text-gray-500">Cupons Pendentes</span>
               </div>
-              <div className="text-[32px] font-black leading-tight text-[#04096D]">{usersEligible.filter(u => !u.cupomEmitido).length}</div>
+              <div className="text-[32px] font-black leading-tight text-[#04096D]">{totalCuponsPendentes}</div>
               <div className="text-[12px] text-gray-400 mt-0.5 mb-3">para gerar agora</div>
               <button
                 onClick={() => setGerarCuponsTemporada(temporadaAtiva)}
-                disabled={!temporadaAtiva}
+                disabled={!temporadaAtiva || totalCuponsPendentes === 0}
                 className="w-full h-8 rounded-lg text-[12px] font-bold border border-[#04096D] text-[#04096D] transition-all hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Gerar Agora
@@ -174,7 +187,6 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
         </main>
       </div>
 
-      
       <ModalGerenciarTemporada 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
@@ -187,7 +199,10 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
         temporada={gerarCuponsTemporada} 
         progressData={progressData} 
         onClose={() => setGerarCuponsTemporada(null)} 
-        onSuccess={fetchCoupons} 
+        onSuccess={() => {
+          fetchCoupons();
+          if (temporadaAtiva) fetchProgress(temporadaAtiva.id);
+        }} 
       />
     </div>
   );
