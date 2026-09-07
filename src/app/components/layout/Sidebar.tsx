@@ -8,7 +8,8 @@ import {
   X,
   Tags,
   Trophy,
-  Calendar
+  Calendar,
+  ShieldAlert
 } from 'lucide-react';
 import logoFull from '../../../assets/images/logo-full.png';
 
@@ -22,6 +23,7 @@ type PageType =
   | 'mecanicas'
   | 'temporadas'
   | 'ranking'
+  | 'auditoria'
   | 'login';
 
 interface MenuItem {
@@ -104,6 +106,12 @@ export function Sidebar({
       label: 'Relatórios',
       active: activePage === 'relatorios',
       page: 'relatorios'
+    },
+    {
+      icon: <ShieldAlert size={19} />,
+      label: 'Auditoria',
+      active: activePage === 'auditoria',
+      page: 'auditoria'
     }
   ];
 

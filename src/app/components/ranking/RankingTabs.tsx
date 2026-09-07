@@ -1,12 +1,15 @@
 import { Crown, ChevronDown, Gamepad2, Trophy, Tag, Users } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 
-export const CATEGORY_COLORS: Record<string, string> = {
-  Starter: '#10B981',
-  Family: '#FBBC04',
-  Expert: '#31358B',
-  Ultragamer: '#04096D',
+
+export const LEVEL_COLORS: Record<string, string> = {
+  Iniciante: '#6B7280',
+  Explorador: '#10B981',
+  Estrategista: '#3B82F6',
+  Campeão: '#8B5CF6',
+  Lenda: '#FBBC04',
 };
+
 
 export const TIER_COLORS: Record<string, string> = {
   LATAO: '#78716C',
@@ -46,14 +49,16 @@ function getHighResImage(url?: string | null) {
     .replace("_t.png", ".png");
 }
 
-export function CategoryBadge({ category }: { category: string }) {
-  const color = CATEGORY_COLORS[category] ?? '#6B7280';
+export function LevelBadge({ levelName }: { levelName?: string }) {
+  const name = levelName || 'Iniciante';
+  const color = LEVEL_COLORS[name] ?? '#6B7280';
+  
   return (
     <span
       className="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full"
       style={{ background: color + '15', color, border: `1px solid ${color}30` }}
     >
-      {category}
+      {name}
     </span>
   );
 }
@@ -92,10 +97,10 @@ export function UsersTab({ top3, usersRest }: { top3: any[], usersRest: any[] })
               </div>
               <div className="mt-3 sm:mt-4 text-center">
                 <p className="font-bold text-white text-xs sm:text-sm">{top3[1].name}</p>
-                <p className="text-white/70 text-[10px] sm:text-[11px] mt-0.5">@{top3[1].nick}</p>
-                <p className="font-black mt-1 text-base sm:text-xl" style={{ color: '#FBBC04' }}>{(top3[1].pts || 0).toLocaleString()} pts</p>
-                <p className="text-white/60 text-[10px] sm:text-[11px]">{top3[1].rentals || 0} aluguéis</p>
-                <div className="mt-1.5"><CategoryBadge category={top3[1].category} /></div>
+                <p className="text-white/70 text-[10px] sm:text-[11px] mt-0.5">@{top3[1].email.split('@')[0]}</p>
+                <p className="font-black mt-1 text-base sm:text-xl" style={{ color: '#FBBC04' }}>{(top3[1].points || 0).toLocaleString()} pts</p>
+                <p className="text-white/60 text-[10px] sm:text-[11px]">{top3[1].totalRentalsCount || 0} aluguéis</p>
+                <div className="mt-1.5"><LevelBadge levelName={top3[1].levelName} /></div>
               </div>
             </div>
           )}
@@ -111,10 +116,10 @@ export function UsersTab({ top3, usersRest }: { top3: any[], usersRest: any[] })
               </div>
               <div className="mt-4 sm:mt-5 text-center">
                 <p className="font-bold text-white text-sm sm:text-lg">{top3[0].name}</p>
-                <p className="text-white/70 text-[11px] sm:text-[12px] mt-0.5">@{top3[0].nick}</p>
-                <p className="font-black mt-1.5 text-2xl sm:text-3xl drop-shadow-sm" style={{ color: '#FBBC04' }}>{(top3[0].pts || 0).toLocaleString()} pts</p>
-                <p className="text-white/60 text-[11px] sm:text-[12px]">{top3[0].rentals || 0} aluguéis</p>
-                <div className="mt-2"><CategoryBadge category={top3[0].category} /></div>
+                <p className="text-white/70 text-[11px] sm:text-[12px] mt-0.5">@{top3[0].email.split('@')[0]}</p>
+                <p className="font-black mt-1.5 text-2xl sm:text-3xl drop-shadow-sm" style={{ color: '#FBBC04' }}>{(top3[0].points || 0).toLocaleString()} pts</p>
+                <p className="text-white/60 text-[11px] sm:text-[12px]">{top3[0].totalRentalsCount || 0} aluguéis</p>
+                <div className="mt-2"><LevelBadge levelName={top3[0].levelName} /></div>
               </div>
             </div>
           )}
@@ -127,10 +132,10 @@ export function UsersTab({ top3, usersRest }: { top3: any[], usersRest: any[] })
               </div>
               <div className="mt-3 sm:mt-4 text-center">
                 <p className="font-bold text-white text-xs sm:text-sm">{top3[2].name}</p>
-                <p className="text-white/70 text-[10px] sm:text-[11px] mt-0.5">@{top3[2].nick}</p>
-                <p className="font-black mt-1 text-base sm:text-xl" style={{ color: '#FBBC04' }}>{(top3[2].pts || 0).toLocaleString()} pts</p>
-                <p className="text-white/60 text-[10px] sm:text-[11px]">{top3[2].rentals || 0} aluguéis</p>
-                <div className="mt-1.5"><CategoryBadge category={top3[2].category} /></div>
+                <p className="text-white/70 text-[10px] sm:text-[11px] mt-0.5">@{top3[2].email.split('@')[0]}</p>
+                <p className="font-black mt-1 text-base sm:text-xl" style={{ color: '#FBBC04' }}>{(top3[2].points || 0).toLocaleString()} pts</p>
+                <p className="text-white/60 text-[10px] sm:text-[11px]">{top3[2].totalRentalsCount || 0} aluguéis</p>
+                <div className="mt-1.5"><LevelBadge levelName={top3[2].levelName} /></div>
               </div>
             </div>
           )}
@@ -138,21 +143,21 @@ export function UsersTab({ top3, usersRest }: { top3: any[], usersRest: any[] })
       )}
 
       <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-        {usersRest.length === 0 && <p className="p-6 sm:p-8 text-center text-gray-500 font-medium text-sm">Nenhum outro usuário encontrado.</p>}
+        {usersRest.length === 0 && <p className="p-6 sm:p-8 text-center text-gray-500 font-medium">Nenhum outro usuário rankeado.</p>}
         {usersRest.map((u, i) => (
-          <div key={u.id} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 hover:bg-[#F7F8FF] transition-colors cursor-default" style={{ padding: '14px 16px', borderBottom: i < usersRest.length - 1 ? '1px solid #F1F5F9' : 'none' }}>
-            <span className="font-black text-base sm:text-lg w-8 sm:w-10 flex-shrink-0 text-center" style={{ color: '#94A3B8' }}>{u.pos}</span>
-            <div className="flex-shrink-0">
-              <Avatar name={u.name} src={u.avatar || u.picture} size="md" />
-            </div>
+          <div key={u.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-b-0">
+            <span className="w-6 sm:w-8 font-bold text-center text-gray-400 text-xs sm:text-sm">{i + 4}º</span>
+            <Avatar name={u.name} src={u.avatar || u.picture} size="sm" />
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm truncate text-[#04096D]">{u.name}</p>
-              <p className="text-xs font-medium truncate text-gray-500">@{u.nick}</p>
+              <p className="font-bold text-[#1A1A2E] text-sm sm:text-base truncate">{u.name}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <LevelBadge levelName={u.levelName} />
+                <span className="text-[10px] sm:text-xs font-semibold text-gray-500">{u.totalRentalsCount || 0} aluguéis</span>
+              </div>
             </div>
-            <div className="hidden md:block flex-shrink-0 w-28 text-center"><CategoryBadge category={u.category} /></div>
-            <div className="text-right flex-shrink-0 w-24 sm:w-32">
-              <p className="font-black text-base sm:text-lg" style={{ color: '#FBBC04' }}>{(u.pts || 0).toLocaleString()}</p>
-              <p className="text-[11px] sm:text-xs font-semibold text-gray-500">{u.rentals || 0} aluguéis</p>
+            <div className="text-right pl-2 sm:pl-0">
+              <p className="font-black text-sm sm:text-base" style={{ color: '#04096D' }}>{(u.points || 0).toLocaleString()}</p>
+              <p className="text-[10px] sm:text-xs font-bold text-gray-400">PTS</p>
             </div>
           </div>
         ))}
@@ -161,107 +166,50 @@ export function UsersTab({ top3, usersRest }: { top3: any[], usersRest: any[] })
   );
 }
 
-export function GamesTab({ 
-  processedGames, 
-  maxGameRentals, 
-  catFilter, 
-  setCatFilter, 
-  sortBy, 
-  setSortBy 
-}: any) {
+export function GamesTab({ games }: { games: any[] }) {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Select label="Categoria" options={GAME_CAT_OPTIONS} value={catFilter} onChange={setCatFilter} />
-        <Select label="Ordenar" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-        {processedGames.map((g: any) => {
-          const fillPct = ((g.rentals || 0) / maxGameRentals) * 100;
-          const highResCover = getHighResImage(g.cover);
-          return (
-            <div key={g.name} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-              <div className="relative flex items-center justify-center shrink-0 overflow-hidden bg-gray-100" style={{ height: 160 }}>
-                {highResCover ? (
-                  <img src={highResCover} alt={g.name} className="absolute inset-0 w-full h-full object-cover" />
-                ) : (
-                  <span className="absolute font-black select-none pointer-events-none" style={{ fontSize: 110, color: 'rgba(0,0,0,0.08)', lineHeight: 1, top: 16 }}>{g.name[0]}</span>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
-                <span className="absolute top-3 left-3 text-[12px] sm:text-[13px] font-black px-2.5 py-0.5 rounded-md shadow-sm z-10" style={{ background: '#04096D', color: '#FBBC04' }}>#{g.pos}</span>
-                <span className="absolute top-3 right-3 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-black/40 text-white backdrop-blur-sm z-10">{g.category}</span>
-              </div>
-              <div className="p-4 sm:p-5 flex-1 flex flex-col">
-                <p className="font-black text-[15px] sm:text-[16px] text-[#04096D] line-clamp-2 leading-tight">{g.name}</p>
-                <div className="flex items-center gap-3 sm:gap-4 mt-auto pt-4 text-xs font-bold text-gray-600">
-                  <span className="flex items-center gap-1"><Gamepad2 size={15} className="text-[#31358B]" /> {g.rentals || 0} aluguéis</span>
-                  <span className="flex items-center gap-1"><Trophy size={15} className="text-[#FBBC04]" /> {(g.rating || 0).toFixed(1)}</span>
-                </div>
-                <div className="mt-3 sm:mt-4 rounded-full overflow-hidden bg-gray-100 h-2">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${fillPct}%`, background: '#31358B' }} />
-                </div>
-              </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+      {games.length === 0 && <p className="col-span-2 p-6 sm:p-8 text-center text-gray-500 font-medium bg-white rounded-2xl border border-gray-100">Nenhum jogo no ranking.</p>}
+      {games.map((g, i) => {
+        const tColor = TIER_COLORS[g.tier] ?? '#E5E7EB';
+        const tGrad = TIER_GRADIENTS[g.tier] ?? 'linear-gradient(135deg, #E5E7EB, #9CA3AF)';
+        const rating = typeof g.rating === "number" ? g.rating.toFixed(1) : "0.0";
+        return (
+          <div key={g.id} className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 flex gap-3 sm:gap-4 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="absolute top-0 right-0 px-2 sm:px-3 py-1 bg-gray-900 text-white font-black text-xs sm:text-sm rounded-bl-xl z-10 flex items-center gap-1 shadow-sm">
+              <Trophy size={12} className="text-[#FBBC04]" /> #{i + 1}
             </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-export function CategoriesTab({ userCatBars, gameCatBars, insights }: any) {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {insights.map((ins: any, i: number) => {
-          const Icon = ins.icon;
-          return (
-            <div key={i} className="bg-white rounded-2xl p-5 sm:p-6 flex flex-col gap-2 border border-gray-100 shadow-sm">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 mb-2" style={{ background: ins.color + '15' }}>
-                <Icon size={24} style={{ color: ins.color }} strokeWidth={2.5} />
-              </div>
-              <p className="font-black text-xl leading-tight text-[#04096D]">{ins.value}</p>
-              <p className="text-xs font-bold text-gray-500">{ins.sub}</p>
-              <p className="text-[11px] font-bold uppercase tracking-wider mt-2 pt-2 border-t border-gray-100 text-gray-400">{ins.label}</p>
+            
+            <div className="w-20 h-24 sm:w-24 sm:h-28 rounded-lg sm:rounded-xl overflow-hidden shadow-inner relative flex-shrink-0 bg-gray-100">
+              {g.cover ? (
+                <img src={getHighResImage(g.cover) || ''} alt={g.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center"><Gamepad2 size={24} color="#9CA3AF" /></div>
+              )}
             </div>
-          );
-        })}
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm overflow-hidden">
-          <p className="font-black text-lg mb-6 text-[#04096D]">Usuários por Categoria</p>
-          <div className="flex flex-col gap-5">
-            {userCatBars.map((b: any) => (
-              <div key={b.label} className="flex items-center gap-3 sm:gap-4">
-                <span className="flex-shrink-0 text-xs sm:text-sm font-bold text-gray-600 text-right w-20 sm:w-24">{b.label}</span>
-                <div className="flex-1 rounded-md bg-gray-100 h-6 overflow-hidden">
-                  <div className="h-full flex items-center px-3 transition-all rounded-md" style={{ width: `${((b.count || 0) / Math.max(...userCatBars.map((x: any)=>x.count || 0), 1)) * 100}%`, background: b.color, minWidth: 40 }}>
-                    <span className="text-[11px] font-black text-white">{b.count || 0}</span>
+            <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+              <div>
+                <h3 className="font-bold text-[#1A1A2E] text-sm sm:text-base leading-tight mb-1.5 sm:mb-2 line-clamp-2 pr-8">{g.title}</h3>
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md text-white shadow-sm" style={{ background: tGrad }}>
+                    <Tag size={10} /> {g.tier}
+                  </span>
+                  <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-md border border-yellow-100">
+                    <span className="text-[10px] sm:text-[11px] font-black text-yellow-700">{rating}</span>
+                    <span className="text-[9px] sm:text-[10px] font-bold text-yellow-600/70">({g.ratingsCount || 0})</span>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm overflow-hidden">
-          <p className="font-black text-lg mb-6 text-[#04096D]">Jogos por Categoria (Tier)</p>
-          <div className="flex flex-col gap-5">
-            {gameCatBars.map((b: any) => (
-              <div key={b.label} className="flex items-center gap-3 sm:gap-4">
-                <span className="flex-shrink-0 text-xs sm:text-sm font-bold text-gray-600 text-right w-20 sm:w-24">{b.label}</span>
-                <div className="flex-1 rounded-md bg-gray-100 h-6 overflow-hidden">
-                  <div className="h-full flex items-center px-3 transition-all rounded-md" style={{ width: `${((b.count || 0) / Math.max(...gameCatBars.map((x: any)=>x.count || 0), 1)) * 100}%`, background: b.color, minWidth: 40 }}>
-                    <span className="text-[11px] font-black text-white">{b.count || 0}</span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-50">
+                <Users size={12} className="text-gray-400" />
+                <span className="text-xs sm:text-sm font-black text-[#04096D]">{g.rentalsCount || 0}</span>
+                <span className="text-[10px] sm:text-[11px] font-semibold text-gray-500">aluguéis</span>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
