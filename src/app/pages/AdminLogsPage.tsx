@@ -19,6 +19,8 @@ interface AdminLog {
   admin: {
     name: string;
     email: string;
+    avatar?: string | null;
+    picture?: string | null;
   };
 }
 
@@ -35,7 +37,6 @@ export function AdminLogsPage({ onNavigate, onLogout }: { onNavigate?: (p: strin
   const fetchLogs = async () => {
     setLoading(true);
     try {
-     
       const res = await api.get('/admin/logs?limit=100');
       setLogs(res.data);
     } catch (error) {
@@ -51,7 +52,6 @@ export function AdminLogsPage({ onNavigate, onLogout }: { onNavigate?: (p: strin
     (log.entityId && log.entityId.includes(searchTerm))
   );
 
-  
   const getActionMeta = (action: string) => {
     const act = action.toUpperCase();
     if (act.includes('BLOCK_USER')) return { label: 'Bloqueio de Usuário', color: 'text-red-700 bg-red-50 border-red-200', icon: Ban };
@@ -154,7 +154,13 @@ export function AdminLogsPage({ onNavigate, onLogout }: { onNavigate?: (p: strin
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
-                              <Avatar name={log.admin.name} size="sm" color="#04096D" />
+                              
+                              <Avatar 
+                                name={log.admin.name} 
+                                src={log.admin.avatar || log.admin.picture} 
+                                size="sm" 
+                                color="#04096D" 
+                              />
                               <div>
                                 <p className="text-sm font-bold text-gray-900">{log.admin.name}</p>
                                 <p className="text-xs text-gray-500">{log.admin.email}</p>
