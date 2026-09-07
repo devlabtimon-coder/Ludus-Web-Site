@@ -16,10 +16,10 @@ export function PendingRegistrationCard({
   onApprove,
   onReject,
 }: PendingRegistrationCardProps) {
+  console.log("DADOS DO USUÁRIO:", user);
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
   const getBorderColor = () => {
-   
     const hasAllDocs = isIfmaMode
       ? user.enrollmentProof && user.documentFile
       : user.documentFile && user.addressProof && user.selfieWithId;
@@ -61,12 +61,17 @@ export function PendingRegistrationCard({
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-sm sm:text-base text-gray-900 truncate">{user.name}</h3>
           <p className="text-xs sm:text-sm text-gray-600 truncate">
-            {isIfmaMode && user.matricula ? `Matrícula: ${user.matricula}` : user.email}
+            {user.email}
           </p>
+          {isIfmaMode && user.matricula && (
+            <p className="text-xs font-bold text-[#04096E] mt-0.5">
+              Matrícula: {user.matricula}
+            </p>
+          )}
           
           <div className="flex flex-col gap-1.5 mt-2">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <span className="text-xs text-[#04096E] font-semibold">
+              <span className="text-xs text-gray-700 font-semibold">
                 {user.phone || 'Sem telefone'}
               </span>
               

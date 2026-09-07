@@ -119,7 +119,17 @@ export function RegistrationDetailsPanel({
             />
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 mt-3 truncate px-2">{registration.name}</h2>
             <p className="text-xs sm:text-sm text-gray-500 truncate px-2">{registration.email}</p>
-            {renderStatusBadge()}
+            
+            {/* Destaque para a Matrícula no topo */}
+            {isIfmaMode && registration.matricula && (
+              <div className="mt-2">
+                <span className="inline-block px-3 py-1 bg-[#F0F2FF] text-[#04096E] border border-[#04096E]/20 rounded-lg text-xs font-black">
+                  Matrícula: {registration.matricula}
+                </span>
+              </div>
+            )}
+            
+            <div>{renderStatusBadge()}</div>
           </div>
 
           <div className="mb-6">
@@ -128,12 +138,6 @@ export function RegistrationDetailsPanel({
               <h3 className="font-bold text-sm sm:text-base text-gray-900">Dados Pessoais</h3>
             </div>
             <div className="space-y-2 text-xs sm:text-sm">
-              {isIfmaMode && registration.matricula && (
-                <div className="flex justify-between gap-2">
-                  <span className="text-gray-600">Matrícula:</span>
-                  <span className="font-bold text-[#04096E]">{registration.matricula}</span>
-                </div>
-              )}
               <div className="flex justify-between gap-2">
                 <span className="text-gray-600">CPF:</span>
                 <span className="font-medium text-gray-900">{registration.cpf || 'Não informado'}</span>
