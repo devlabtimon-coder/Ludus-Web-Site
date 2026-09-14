@@ -33,7 +33,8 @@ interface CollectionPageProps {
       | "usuarios"
       | "cadastro"
       | "relatorios"
-      | "login",
+      | "login"
+      | "manutencao", 
   ) => void;
   onLogout?: () => void;
 }
@@ -81,8 +82,9 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
       } else if (selectedStatus === "inativo") {
         filtered = filtered.filter((g) => !g.isActive);
       } else if (selectedStatus === "manutencao") {
+        
         filtered = filtered.filter(
-          (g) => g.isActive && g.available === false && !g.isAvailableNow,
+          (g) => !g.isActive || (g.isActive && g.available === false && !g.isAvailableNow)
         );
       }
     }
@@ -128,6 +130,7 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
     }
   };
 
+ 
   const handleInactivateConfirm = async (reason: string) => {
     if (!inactivatingGame) return;
 
@@ -137,6 +140,7 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
       await api.patch(`/games/${inactivatingGame.id}`, {
         isActive: willBeActive,
         isVisible: willBeActive, 
+        inactivationReason: willBeActive ? null : reason 
       });
 
       toast.success(
@@ -182,6 +186,7 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
               tag="Em catálogo"
               icon={<Library size={80} strokeWidth={1.5} />}
               variant="dark-blue"
+              onClick={() => setSelectedStatus("todos")}
             />
             <CollectionMetricCard
               title="Disponíveis"
@@ -189,6 +194,7 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
               tag="Prontos para jogo"
               icon={<CheckCircle2 size={80} strokeWidth={1.5} />}
               variant="white-orange"
+              onClick={() => setSelectedStatus("disponivel")}
             />
             <CollectionMetricCard
               title="Alugados"
@@ -196,6 +202,7 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
               tag="Em circulação"
               icon={<PackageMinus size={80} strokeWidth={1.5} />}
               variant="yellow"
+              onClick={() => setSelectedStatus("alugado")}
             />
             <CollectionMetricCard
               title="Manutenção"
@@ -203,6 +210,7 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
               tag="Requer atenção"
               icon={<Wrench size={80} strokeWidth={1.5} />}
               variant="white-red"
+              onClick={() => setSelectedStatus("manutencao")}
             />
           </div>
 

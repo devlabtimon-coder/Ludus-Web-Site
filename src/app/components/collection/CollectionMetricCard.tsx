@@ -3,13 +3,13 @@ import { ReactNode } from 'react';
 interface CollectionMetricCardProps {
   title: string;
   value: number | string;
-  tag?: string; // Coloquei como opcional
-  icon?: ReactNode; // Adicionado para a marca d'água!
+  tag?: string; 
+  icon?: ReactNode; 
   variant: 'dark-blue' | 'white-orange' | 'yellow' | 'white-red';
+  onClick?: () => void; 
 }
 
-export function CollectionMetricCard({ title, value, tag, icon, variant }: CollectionMetricCardProps) {
-  // Cores baseadas na identidade visual da Ludus
+export function CollectionMetricCard({ title, value, tag, icon, variant, onClick }: CollectionMetricCardProps) {
   const cardStyles = {
     'dark-blue': 'bg-[#04096D] border border-[#1F2937] text-white',
     'white-orange': 'bg-white border border-[#1F2937] text-[#02096D]',
@@ -26,12 +26,11 @@ export function CollectionMetricCard({ title, value, tag, icon, variant }: Colle
 
   const valueStyles = {
     'dark-blue': 'text-white',
-    'white-orange': 'text-[#F5A623]', // Laranja para dar destaque
+    'white-orange': 'text-[#F5A623]', 
     yellow: 'text-[#02096D]',
-    'white-red': 'text-[#FC090D]', // Vermelho para alerta de manutenção
+    'white-red': 'text-[#FC090D]', 
   };
 
-  // Cores do "Pill" (a tag arredondada)
   const tagStyles = {
     'dark-blue': 'bg-white/10 text-white',
     'white-orange': 'bg-[#F5A623]/10 text-[#F5A623]',
@@ -40,8 +39,14 @@ export function CollectionMetricCard({ title, value, tag, icon, variant }: Colle
   };
 
   return (
-    <div className={`${cardStyles[variant]} rounded-2xl p-6 h-[139px] flex flex-col justify-between relative overflow-hidden font-sans select-none`}>
-      
+    <div 
+      onClick={onClick}
+      className={`
+        ${cardStyles[variant]} 
+        rounded-2xl p-6 h-[139px] flex flex-col justify-between relative overflow-hidden font-sans select-none
+        ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:shadow-md transition-all active:scale-[0.98]' : ''} 
+      `}
+    >
       <div className="flex flex-col gap-1 z-10">
         <h3 className={`${titleStyles[variant]} text-[10px] font-bold tracking-wider uppercase`}>
           {title}
@@ -52,7 +57,6 @@ export function CollectionMetricCard({ title, value, tag, icon, variant }: Colle
         </p>
       </div>
 
-      {/* Renderiza a tag apenas se ela existir */}
       {tag && (
         <div className="z-10 flex items-center mt-auto">
           <span className={`${tagStyles[variant]} text-[10px] font-bold px-3 py-1 rounded-full`}>
@@ -61,7 +65,6 @@ export function CollectionMetricCard({ title, value, tag, icon, variant }: Colle
         </div>
       )}
 
-      {/* Ícone d'água absoluto no fundo direito */}
       {icon && (
         <div className="absolute right-[-15px] bottom-[-15px] text-current opacity-10 pointer-events-none z-0">
           {icon}

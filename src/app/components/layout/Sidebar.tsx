@@ -9,7 +9,8 @@ import {
   Tags,
   Trophy,
   Calendar,
-  ShieldAlert
+  ShieldAlert,
+  Wrench // <-- Adicionado
 } from 'lucide-react';
 import logoFull from '../../../assets/images/logo-full.png';
 
@@ -24,6 +25,7 @@ type PageType =
   | 'temporadas'
   | 'ranking'
   | 'auditoria'
+  | 'manutencao' // <-- Adicionado
   | 'login';
 
 interface MenuItem {
@@ -100,6 +102,12 @@ export function Sidebar({
       label: 'Temporadas',
       active: activePage === 'temporadas',
       page: 'temporadas'
+    },
+    {
+      icon: <Wrench size={19} />, // <-- Adicionado
+      label: 'Manutenção',
+      active: activePage === 'manutencao',
+      page: 'manutencao'
     },
     {
       icon: <FileText size={19} />,

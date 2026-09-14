@@ -12,6 +12,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { TemporadasPage } from './pages/TemporadasPage';
 import { RankingPage } from './pages/RankingPage';
 import { AdminLogsPage } from './pages/AdminLogsPage';
+import { MaintenancePage } from './pages/MaintenancePage'; 
 
 type PageType =
   | 'dashboard'
@@ -24,6 +25,7 @@ type PageType =
   | 'temporadas'
   | 'ranking'
   | 'auditoria'
+  | 'manutencao' 
   | 'login'
   | 'forgot-password';
 
@@ -90,6 +92,8 @@ export default function App() {
         return <RankingPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
       case 'auditoria':
         return <AdminLogsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
+      case 'manutencao': // <-- Adicionado
+        return <MaintenancePage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
       default:
         return <DashboardPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
     }
