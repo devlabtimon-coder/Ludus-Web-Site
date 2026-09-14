@@ -3,12 +3,13 @@ import { ReactNode } from 'react';
 interface MetricCardProps {
   title: string;
   value: number | string;
-  subtext: string; 
+  subtext: string;
   icon: ReactNode;
   variant?: 'yellow' | 'white' | 'dark' | 'white-yellow';
+  onClick?: () => void; 
 }
 
-export function MetricCard({ title, value, subtext, icon, variant = 'white' }: MetricCardProps) {
+export function MetricCard({ title, value, subtext, icon, variant = 'white', onClick }: MetricCardProps) {
   const cardStyles = {
     yellow: 'bg-[#FAB208] border border-[#1F2937] text-[#02096D]',
     white: 'bg-white border border-[#1F2937] text-[#02096D]',
@@ -31,8 +32,14 @@ export function MetricCard({ title, value, subtext, icon, variant = 'white' }: M
   };
 
   return (
-    <div className={`${cardStyles[variant]} rounded-2xl p-5 sm:p-6 min-h-[120px] sm:h-[139px] flex flex-col justify-between relative overflow-hidden font-sans select-none shadow-sm transition-all`}>
-      
+    <div 
+      onClick={onClick}
+      className={`
+        ${cardStyles[variant]} 
+        rounded-2xl p-5 sm:p-6 min-h-[120px] sm:h-[139px] flex flex-col justify-between relative overflow-hidden font-sans select-none shadow-sm transition-all
+        ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:shadow-md active:scale-[0.98]' : ''}
+      `}
+    >
       <div className="flex flex-col gap-1 z-10">
         <h3 className={`${titleStyles[variant]} text-[10px] sm:text-[11px] font-bold tracking-wider uppercase line-clamp-1`}>
           {title}

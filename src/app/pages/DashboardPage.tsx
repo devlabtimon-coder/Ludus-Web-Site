@@ -13,7 +13,7 @@ import { Plus, Info, Bell, Users } from 'lucide-react';
 import { useDashboard } from '../../hooks';
 
 interface DashboardPageProps {
-  onNavigate?: (page: 'dashboard' | 'acervo' | 'emprestimos' | 'usuarios' | 'cadastro' | 'relatorios' | 'login') => void;
+  onNavigate?: (page: 'dashboard' | 'acervo' | 'emprestimos' | 'usuarios' | 'cadastro' | 'relatorios' | 'mecanicas' | 'temporadas' | 'ranking' | 'manutencao' | 'login') => void;
   onLogout?: () => void;
 }
 
@@ -41,8 +41,6 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      
-     
       <Sidebar
         activePage="dashboard"
         onNavigate={onNavigate}
@@ -52,7 +50,6 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-
         <Header 
           notificationCount={pendingApprovals?.length || 0}
           onLogout={onLogout} 
@@ -60,43 +57,45 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
         />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          
           <h1 className="text-2xl sm:text-3xl font-bold text-[#02096D] mb-6 sm:mb-8">
             Visão Geral
           </h1>
 
-        
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <MetricCard
               title="Jogos Totais"
               value={metrics?.totalGames || 0}
-              subtext="+4 este mês"
+              subtext="Clique para ver o Acervo"
               icon={<Plus size={80} strokeWidth={1.5} />}
               variant="yellow"
+              onClick={() => onNavigate?.('acervo')}
             />
             
             <MetricCard
               title="Aluguéis Ativos"
               value={metrics?.activeRentals || 0}
-              subtext="85% capacidade"
+              subtext="Clique para ver Empréstimos"
               icon={<Info size={80} strokeWidth={1.5} />}
               variant="white"
+              onClick={() => onNavigate?.('emprestimos')}
             />
             
             <MetricCard
               title="Aprovações Pendentes"
               value={metrics?.pendingApprovals || 0}
-              subtext="Requer atenção"
+              subtext="Clique para ver Cadastros"
               icon={<Bell size={80} strokeWidth={1.5} />}
               variant="dark"
+              onClick={() => onNavigate?.('cadastro')}
             />
             
             <MetricCard
               title="Usuários Ativos"
               value={metrics?.activeUsers || 0}
-              subtext="12 novos hoje"
+              subtext="Clique para ver Usuários"
               icon={<Users size={80} strokeWidth={1.5} />}
               variant="white-yellow" 
+              onClick={() => onNavigate?.('usuarios')}
             />
           </div>
 
@@ -104,7 +103,6 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
             <RecentRentals rentals={recentRentals} />
           </div>
 
-          
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2">
               <TopGames games={topGames} />
@@ -112,10 +110,9 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
 
             <div className="space-y-6">
               <LateAlerts alerts={lateAlerts} />
-              <PendingApprovals approvals={pendingApprovals} />
+              <PendingApprovals approvals={pendingApprovals} onActionComplete={refetch} />
             </div>
           </div>
-
         </main>
       </div>
     </div>

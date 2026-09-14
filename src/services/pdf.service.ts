@@ -2,13 +2,10 @@ import * as pdfMakeModule from 'pdfmake/build/pdfmake';
 import * as pdfFontsModule from 'pdfmake/build/vfs_fonts';
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
 
-
 const pdfMakeObj: any = (pdfMakeModule as any).default || pdfMakeModule;
 const pdfFontsObj: any = (pdfFontsModule as any).default || pdfFontsModule;
 
-
 pdfMakeObj.vfs = pdfFontsObj?.pdfMake?.vfs || pdfFontsObj?.vfs;
-
 
 const LUDUS_BLUE = '#04096E';
 const LUDUS_YELLOW = '#FBBC04';
@@ -21,12 +18,12 @@ const BG_LIGHT = '#F7F8FF';
 function getStatusColor(status: string) {
   if (status === 'Concluído') return GREEN;
   if (status === 'Cancelado' || status === 'Atrasado') return RED;
-  if (status === 'Pendente') return LUDUS_YELLOW;
+  if (status === 'Pendente') return '#D97706';
   return LUDUS_BLUE; 
 }
 
 function getTierColor(tier: string) {
-  switch (tier?.toUpperCase()) {
+  switch (String(tier || '').toUpperCase()) {
     case 'DIAMANTE': return '#06B6D4';
     case 'OURO': return '#D97706';
     case 'PRATA': return '#6B7280';
@@ -47,19 +44,28 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
   const periodLabel = getPeriodLabel(periodCode);
   const emissionDate = new Date().toLocaleString('pt-BR');
 
-  
+ 
+  const topGames = Array.isArray(reportData.topGames) ? reportData.topGames : [];
   const topGamesBody = [
     [
       { text: 'JOGO', style: 'tableHeaderSmall', alignment: 'left' },
       { text: 'ALUGUÉIS', style: 'tableHeaderSmall', alignment: 'center' }
     ],
-    ...(reportData.topGames || []).map((game: any) => [
-      { text: game.name || 'N/A', style: 'tableCell', bold: true },
-      { text: String(game.count || 0), style: 'tableCell', alignment: 'center', color: LUDUS_BLUE, bold: true }
-    ])
+    ...(topGames.length > 0
+      ? topGames.map((game: any) => [
+          { text: String(game.name || game.title || 'N/A'), style: 'tableCell', bold: true },
+          { text: String(game.count || game.rentalsCount || 0), style: 'tableCell', alignment: 'center', color: LUDUS_BLUE, bold: true }
+        ])
+      : [
+          [
+            { text: 'Nenhum jogo alugado no período.', colSpan: 2, style: 'tableCell', italics: true, color: GRAY_LIGHT },
+            {}
+          ]
+        ])
   ];
 
- 
+  
+  const history = Array.isArray(reportData.history) ? reportData.history : [];
   const historyBody = [
     [
       { text: 'USUÁRIO', style: 'tableHeader' },
@@ -69,20 +75,55 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
       { text: 'DEVOLUÇÃO', style: 'tableHeader' },
       { text: 'STATUS', style: 'tableHeader' }
     ],
-    ...(reportData.history || []).map((rental: any) => [
-      { text: rental.user?.name || 'N/A', style: 'tableCell', bold: true },
-      { text: rental.game || 'N/A', style: 'tableCell' },
-      { text: rental.category || 'BRONZE', style: 'tableCell', color: getTierColor(rental.category), bold: true },
-      { text: rental.startDate || 'N/A', style: 'tableCell' },
-      { text: rental.endDate || 'N/A', style: 'tableCell' },
-      { text: rental.status || 'N/A', style: 'tableCell', color: getStatusColor(rental.status), bold: true }
-    ])
+    ...(history.length > 0
+      ? history.slice(0, 35).map((rental: any) => [
+          { text: String(rental.user?.name || 'Aluno Desconhecido'), style: 'tableCell', bold: true },
+          { text: String(rental.game || 'N/A'), style: 'tableCell' },
+          { text: String(rental.category || 'BRONZE'), style: 'tableCell', color: getTierColor(rental.category), bold: true },
+          { text: String(rental.startDate || '—'), style: 'tableCell' },
+          { text: String(rental.endDate || '—'), style: 'tableCell' },
+          { text: String(rental.status || 'Em Andamento'), style: 'tableCell', color: getStatusColor(rental.status), bold: true }
+        ])
+      : [
+          [
+            { text: 'Nenhum histórico de empréstimo registrado para o período selecionado.', colSpan: 6, style: 'tableCell', italics: true, color: GRAY_LIGHT, alignment: 'center' },
+            {}, {}, {}, {}, {}
+          ]
+        ])
   ];
 
-  const docDefinition: TDocumentDefinitions = {
+  
+  const gamesAnalytics = Array.isArray(reportData.gamesAnalytics) ? reportData.gamesAnalytics : [];
+  const gamesAnalyticsBody = [
+    [
+      { text: 'TÍTULO DO JOGO', style: 'tableHeader' },
+      { text: 'TIER', style: 'tableHeader' },
+      { text: 'ESTOQUE', style: 'tableHeader', alignment: 'center' },
+      { text: 'GIRO (%)', style: 'tableHeader', alignment: 'center' },
+      { text: 'AVALIAÇÃO', style: 'tableHeader', alignment: 'center' },
+      { text: 'AVARIAS', style: 'tableHeader', alignment: 'center' }
+    ],
+    ...(gamesAnalytics.length > 0
+      ? gamesAnalytics.slice(0, 25).map((g: any) => [
+          { text: String(g.title || 'N/A'), style: 'tableCell', bold: true },
+          { text: String(g.tier || 'BRONZE'), style: 'tableCell', color: getTierColor(g.tier), bold: true },
+          { text: `${g.totalCopies || 1} un.`, style: 'tableCell', alignment: 'center' },
+          { text: `${g.turnoverRate || 0}%`, style: 'tableCell', alignment: 'center', bold: true, color: g.turnoverRate >= 50 ? GREEN : LUDUS_BLUE },
+          { text: g.avgRating > 0 ? `${g.avgRating.toFixed(1)} ★` : '—', style: 'tableCell', alignment: 'center' },
+          { text: String(g.maintenanceCount || 0), style: 'tableCell', alignment: 'center', color: g.maintenanceCount > 0 ? RED : GRAY_LIGHT, bold: g.maintenanceCount > 0 }
+        ])
+      : [
+          [
+            { text: 'Dados de auditoria do acervo consolidados na visão geral.', colSpan: 6, style: 'tableCell', italics: true, color: GRAY_LIGHT, alignment: 'center' },
+            {}, {}, {}, {}, {}
+          ]
+        ])
+  ];
+
+  const docDefinition: any = {
     pageSize: 'A4',
     pageOrientation: 'portrait',
-    pageMargins: [40, 60, 40, 40],
+    pageMargins: [40, 50, 40, 40],
     
     background: [
       {
@@ -93,12 +134,12 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
       }
     ],
 
-    footer: (currentPage, pageCount) => ({
+    footer: (currentPage: number, pageCount: number) => ({
       columns: [
         { text: `Gerado em ${emissionDate}`, alignment: 'left', color: GRAY_LIGHT },
         { text: `Página ${currentPage} de ${pageCount}`, alignment: 'right', color: GRAY_LIGHT }
       ],
-      fontSize: 9,
+      fontSize: 8,
       margin: [40, 10, 40, 0]
     }),
 
@@ -107,7 +148,7 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
         columns: [
           {
             text: 'LUDUS',
-            fontSize: 28,
+            fontSize: 26,
             bold: true,
             color: LUDUS_BLUE,
             width: 'auto'
@@ -115,12 +156,12 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
           {
             text: 'RELATÓRIO GERENCIAL DE ACERVO E ENGAJAMENTO\nInstituto Federal do Maranhão - Campus Timon',
             alignment: 'right',
-            fontSize: 10,
+            fontSize: 9,
             color: GRAY_DARK,
-            margin: [0, 5, 0, 0]
+            margin: [0, 4, 0, 0]
           }
         ],
-        margin: [0, 0, 0, 25]
+        margin: [0, 0, 0, 20]
       },
       {
         text: 'Resumo Executivo',
@@ -128,108 +169,134 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
       },
       {
         text: `Período do relatório: ${periodLabel}`,
-        fontSize: 10,
+        fontSize: 9,
         color: GRAY_LIGHT,
-        margin: [0, 0, 0, 15]
+        margin: [0, 0, 0, 12]
       },
       {
         columns: [
           {
             stack: [
               { text: 'Total de Empréstimos', style: 'kpiLabel' },
-              { text: String(reportData.kpis?.totalRentals?.value || '0'), style: 'kpiValue' }
+              { text: String(reportData.kpis?.totalRentals?.value ?? '0'), style: 'kpiValue' }
             ],
             style: 'kpiBox'
           },
           {
             stack: [
-              { text: 'Jogos Únicos Alugados', style: 'kpiLabel' },
-              { text: String(reportData.kpis?.uniqueGames?.value || '0'), style: 'kpiValue' }
+              { text: 'Jogos Únicos', style: 'kpiLabel' },
+              { text: String(reportData.kpis?.uniqueGames?.value ?? '0'), style: 'kpiValue' }
             ],
             style: 'kpiBox'
           },
           {
             stack: [
               { text: 'Tempo Médio', style: 'kpiLabel' },
-              { text: String(reportData.kpis?.avgRentalDays?.value || '0'), style: 'kpiValue' }
+              { text: String(reportData.kpis?.avgRentalDays?.value ?? '0 dias'), style: 'kpiValue' }
             ],
             style: 'kpiBox'
           },
           {
             stack: [
               { text: 'Engajamento Ativo', style: 'kpiLabel' },
-              { text: String(reportData.kpis?.engagementRate?.value || '0%'), style: 'kpiValue', color: GREEN }
+              { text: String(reportData.kpis?.engagementRate?.value ?? '0%'), style: 'kpiValue', color: GREEN }
             ],
             style: 'kpiBox'
           }
         ],
         columnGap: 10,
-        margin: [0, 0, 0, 25]
+        margin: [0, 0, 0, 20]
       },
       {
         columns: [
           {
             width: '48%',
             stack: [
-              { text: 'Jogos Mais Alugados (Top 6)', style: 'sectionTitle', margin: [0, 0, 0, 10] },
-              reportData.topGames?.length ? {
+              { text: 'Jogos Mais Alugados (Top 6)', style: 'sectionTitle', margin: [0, 0, 0, 8] },
+              {
                 table: {
                   headerRows: 1,
                   widths: ['*', 60],
                   body: topGamesBody
                 },
                 layout: 'lightHorizontalLines'
-              } : { text: 'Nenhum jogo alugado no período.', fontSize: 10, color: GRAY_LIGHT, italics: true }
+              }
             ]
           },
           { width: '4%', text: '' },
           {
             width: '48%',
             stack: [
-              { text: 'Status do Acervo', style: 'sectionTitle', margin: [0, 0, 0, 10] },
+              { text: 'Status Físico do Acervo', style: 'sectionTitle', margin: [0, 0, 0, 8] },
               {
-                margin: [0, 0, 0, 15],
+                margin: [0, 0, 0, 12],
                 table: {
                   widths: ['*', '*'],
                   body: [
                     [
-                      { text: 'Total de Cópias:', fontSize: 10, color: GRAY_LIGHT },
-                      { text: String(reportData.collection?.total || 0), fontSize: 10, bold: true, alignment: 'right' }
+                      { text: 'Total de Cópias:', fontSize: 9, color: GRAY_LIGHT },
+                      { text: String(reportData.collection?.total ?? 0), fontSize: 9, bold: true, alignment: 'right' }
                     ],
                     [
-                      { text: 'Disponíveis:', fontSize: 10, color: GRAY_LIGHT },
-                      { text: String(reportData.collection?.available || 0), fontSize: 10, bold: true, color: GREEN, alignment: 'right' }
+                      { text: 'Disponíveis:', fontSize: 9, color: GRAY_LIGHT },
+                      { text: String(reportData.collection?.available ?? 0), fontSize: 9, bold: true, color: GREEN, alignment: 'right' }
                     ],
                     [
-                      { text: 'Em Manutenção:', fontSize: 10, color: GRAY_LIGHT },
-                      { text: String(reportData.collection?.maintenance || 0), fontSize: 10, bold: true, color: RED, alignment: 'right' }
+                      { text: 'Em Manutenção:', fontSize: 9, color: GRAY_LIGHT },
+                      { text: String(reportData.collection?.maintenance ?? 0), fontSize: 9, bold: true, color: RED, alignment: 'right' }
                     ],
                     [
-                      { text: 'Taxa de Ocupação:', fontSize: 10, color: GRAY_LIGHT },
-                      { text: `${reportData.collection?.occupancyRate || 0}%`, fontSize: 10, bold: true, color: LUDUS_BLUE, alignment: 'right' }
+                      { text: 'Taxa de Ocupação:', fontSize: 9, color: GRAY_LIGHT },
+                      { text: `${reportData.collection?.occupancyRate ?? 0}%`, fontSize: 9, bold: true, color: LUDUS_BLUE, alignment: 'right' }
                     ]
                   ]
                 },
                 layout: 'noBorders'
               },
-              
-              { text: 'Top 3 Usuários', style: 'sectionTitle', margin: [0, 0, 0, 10] },
-              ...(reportData.engagement?.topUsers || []).slice(0, 3).map((user: any, index: number) => ({
-                text: `${index + 1}. ${user.name} (${user.rentals} aluguéis)`,
-                fontSize: 10,
-                bold: true,
-                color: LUDUS_BLUE,
-                margin: [0, 0, 0, 4]
-              }))
+              { text: 'Top Alunos no Período', style: 'sectionTitle', margin: [0, 0, 0, 6] },
+              ...(reportData.engagement?.topUsers && reportData.engagement.topUsers.length > 0
+                ? reportData.engagement.topUsers.slice(0, 3).map((user: any, index: number) => ({
+                    text: `${index + 1}. ${user.name || 'Aluno'} (${user.rentals || 0} aluguéis)`,
+                    fontSize: 9,
+                    bold: true,
+                    color: LUDUS_BLUE,
+                    margin: [0, 0, 0, 3]
+                  }))
+                : [{ text: 'Nenhum empréstimo no período.', fontSize: 9, color: GRAY_LIGHT, italics: true, margin: [0, 0, 0, 0] }])
             ]
           }
         ],
-        margin: [0, 0, 0, 30]
+        margin: [0, 0, 0, 20]
       },
+      ...(gamesAnalytics.length > 0 ? [
+        {
+          text: 'Auditoria de Desempenho e Avarias do Acervo',
+          style: 'sectionTitle',
+          margin: [0, 0, 0, 8]
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto'],
+            body: gamesAnalyticsBody
+          },
+          layout: {
+            fillColor: (rowIndex: number) => (rowIndex === 0 ? LUDUS_BLUE : rowIndex % 2 === 0 ? BG_LIGHT : null),
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0,
+            hLineColor: () => '#E5E7EB',
+            paddingTop: () => 5,
+            paddingBottom: () => 5,
+            paddingLeft: () => 6,
+            paddingRight: () => 6,
+          },
+          margin: [0, 0, 0, 20]
+        }
+      ] : []),
       {
-        text: 'Histórico de Empréstimos (Recentes)',
+        text: 'Histórico de Empréstimos Recentes',
         style: 'sectionTitle',
-        margin: [0, 0, 0, 10]
+        margin: [0, 0, 0, 8]
       },
       {
         table: {
@@ -238,57 +305,54 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
           body: historyBody
         },
         layout: {
-          fillColor: (rowIndex: number) => {
-            if (rowIndex === 0) return LUDUS_BLUE;
-            return rowIndex % 2 === 0 ? BG_LIGHT : null;
-          },
-          hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length) ? 0 : 1,
+          fillColor: (rowIndex: number) => (rowIndex === 0 ? LUDUS_BLUE : rowIndex % 2 === 0 ? BG_LIGHT : null),
+          hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 0 : 0.5),
           vLineWidth: () => 0,
           hLineColor: () => '#E5E7EB',
-          paddingTop: () => 8,
-          paddingBottom: () => 8,
-          paddingLeft: () => 8,
-          paddingRight: () => 8,
+          paddingTop: () => 6,
+          paddingBottom: () => 6,
+          paddingLeft: () => 6,
+          paddingRight: () => 6,
         }
       }
     ],
 
     styles: {
       sectionTitle: {
-        fontSize: 14,
+        fontSize: 12,
         bold: true,
         color: LUDUS_BLUE
       },
       kpiBox: {
         fillColor: BG_LIGHT,
         margin: [0, 0, 0, 0],
-        padding: 10,
+        padding: 8,
         border: [false, true, false, false],
         borderColor: ['#fff', LUDUS_YELLOW, '#fff', '#fff']
       },
       kpiLabel: {
-        fontSize: 9,
+        fontSize: 8,
         color: GRAY_LIGHT,
         bold: true,
-        margin: [0, 0, 0, 4]
+        margin: [0, 0, 0, 3]
       },
       kpiValue: {
-        fontSize: 20,
+        fontSize: 16,
         bold: true,
         color: LUDUS_BLUE
       },
       tableHeader: {
         bold: true,
-        fontSize: 9,
+        fontSize: 8,
         color: 'white'
       },
       tableHeaderSmall: {
         bold: true,
-        fontSize: 9,
+        fontSize: 8,
         color: GRAY_LIGHT
       },
       tableCell: {
-        fontSize: 9,
+        fontSize: 8,
         color: GRAY_DARK
       }
     },
@@ -297,6 +361,5 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
     }
   };
 
-  
-  pdfMakeObj.createPdf(docDefinition).download(`Ludus_Relatorio_${periodCode}_${Date.now()}.pdf`);
+  pdfMakeObj.createPdf(docDefinition as TDocumentDefinitions).download(`Ludus_Relatorio_${periodCode}_${Date.now()}.pdf`);
 };
