@@ -8,6 +8,7 @@ interface RegistrationMetricCardProps {
   variant: 'dark' | 'white' | 'yellow';
   tagColor?: 'blue' | 'green' | 'red';
   iconColor?: string;
+  onClick?: () => void; 
 }
 
 export function RegistrationMetricCard({
@@ -18,9 +19,10 @@ export function RegistrationMetricCard({
   variant,
   tagColor = 'blue',
   iconColor,
+  onClick,
 }: RegistrationMetricCardProps) {
   const variants = {
-    dark: 'bg-[#04096E] text-white', 
+    dark: 'bg-[#04096E] text-white',
     white: 'bg-white border border-gray-200 text-[#0A1628]',
     yellow: 'bg-[#FBBC04] text-[#04096E]',
   };
@@ -37,13 +39,11 @@ export function RegistrationMetricCard({
     red: 'bg-[#E62325]/10 text-[#E62325]',
   };
 
-
   const iconColors = {
     dark: 'text-white',
-    white: iconColor || 'text-gray-300', 
+    white: iconColor || 'text-gray-300',
     yellow: iconColor || 'text-[#04096E]',
   };
-
 
   const watermarkOpacities = {
     dark: 'opacity-10',
@@ -52,13 +52,20 @@ export function RegistrationMetricCard({
   };
 
   return (
-    <div className={`${variants[variant]} rounded-xl p-6 relative shadow-sm overflow-hidden`}>
-      
-      <div className={`absolute -right-6 -bottom-6 pointer-events-none transition-transform duration-300 group-hover:scale-110 ${watermarkOpacities[variant]}`}>
+    <div
+      onClick={onClick}
+      className={`
+        ${variants[variant]} 
+        rounded-xl p-6 relative shadow-sm overflow-hidden select-none
+        ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:shadow-md transition-all active:scale-[0.98]' : ''}
+      `}
+    >
+      <div
+        className={`absolute -right-6 -bottom-6 pointer-events-none transition-transform duration-300 ${watermarkOpacities[variant]}`}
+      >
         <Icon className={iconColors[variant]} size={140} strokeWidth={1.5} />
       </div>
 
-      
       <div className="relative z-10 space-y-3">
         <p className={`text-xs font-bold uppercase tracking-wide ${labelColors[variant]}`}>
           {label}

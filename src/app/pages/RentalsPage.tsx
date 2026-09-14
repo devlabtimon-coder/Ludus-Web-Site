@@ -13,7 +13,21 @@ import { api } from '../../services/api';
 import { toast } from 'sonner';
 
 interface RentalsPageProps {
-  onNavigate?: (page: 'dashboard' | 'acervo' | 'emprestimos' | 'usuarios' | 'cadastro' | 'relatorios' | 'login') => void;
+  onNavigate?: (
+    page:
+      | 'dashboard'
+      | 'acervo'
+      | 'emprestimos'
+      | 'usuarios'
+      | 'cadastro'
+      | 'relatorios'
+      | 'mecanicas'
+      | 'temporadas'
+      | 'ranking'
+      | 'auditoria'
+      | 'manutencao'
+      | 'login'
+  ) => void;
   onLogout?: () => void;
 }
 
@@ -105,6 +119,7 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
               tag="Rodando"
               icon={<PlaySquare size={80} strokeWidth={1.5} />}
               variant="yellow"
+              onClick={() => setSelectedStatus(selectedStatus === 'andamento' ? 'todos' : 'andamento')}
             />
             <RentalMetricCard
               title="Em Atraso"
@@ -112,6 +127,7 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
               tag="Ação necessária"
               icon={<AlertCircle size={80} strokeWidth={1.5} />}
               variant="white-red"
+              onClick={() => setSelectedStatus(selectedStatus === 'atrasado' ? 'todos' : 'atrasado')}
             />
             <RentalMetricCard
               title="Pendentes"
@@ -119,6 +135,7 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
               tag="Aguardando retirada"
               icon={<Clock size={80} strokeWidth={1.5} />}
               variant="dark-blue"
+              onClick={() => setSelectedStatus(selectedStatus === 'pendente' ? 'todos' : 'pendente')}
             />
             <RentalMetricCard
               title="Devolvidos (Mês)"
@@ -126,6 +143,7 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
               tag="Últimos 30 dias"
               icon={<CheckCircle size={80} strokeWidth={1.5} />}
               variant="white-green"
+              onClick={() => setSelectedStatus(selectedStatus === 'concluido' ? 'todos' : 'concluido')}
             />
           </div>
 

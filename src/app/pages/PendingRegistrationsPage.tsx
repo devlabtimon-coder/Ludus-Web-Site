@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 import { RegistrationMetricCard } from '../components/pending-registrations/RegistrationMetricCard';
 import { PendingRegistrationCard } from '../components/pending-registrations/PendingRegistrationCard';
 import { RegistrationDetailsPanel } from '../components/pending-registrations/RegistrationDetailsPanel';
-import { Clock, FileText, AlertTriangle, Download } from 'lucide-react';
+import { Clock, FileText, AlertTriangle, Download, Filter, X } from 'lucide-react';
 import { api } from '../../services/api';
+import { toast } from 'sonner';
 
 interface PendingRegistrationsPageProps {
   onNavigate?: (page: any) => void;
@@ -15,14 +16,19 @@ interface PendingRegistrationsPageProps {
 export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegistrationsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
 
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
+  const checkIsComplete = (u: any) =>
+    isIfmaMode
+      ? !!(u.enrollmentProof && u.documentFile)
+      : !!(u.documentFile && u.addressProof && u.selfieWithId);
+
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/admin/users'); 
+      const res = await api.get('/admin/users');
       const pendings = res.data.filter((u: any) => u.registrationStatus === 'PENDING');
       setPendingUsers(pendings);
       if (pendings.length > 0 && !selectedId) {
@@ -37,48 +43,67 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
     fetchUsers();
   }, []);
 
+  const completos = useMemo(() => {
+    return pendingUsers.filter(checkIsComplete).length;
+  }, [pendingUsers, isIfmaMode]);
+
+  const incompletos = pendingUsers.length - completos;
+
+  const filteredUsers = useMemo(() => {
+    if (selectedFilter === 'complete') {
+      return pendingUsers.filter(checkIsComplete);
+    }
+    if (selectedFilter === 'incomplete') {
+      return pendingUsers.filter((u) => !checkIsComplete(u));
+    }
+    return pendingUsers;
+  }, [pendingUsers, selectedFilter, isIfmaMode]);
+
+  
+  useEffect(() => {
+    if (filteredUsers.length > 0) {
+      const exists = filteredUsers.some((u) => u.id === selectedId);
+      if (!exists) {
+        setSelectedId(filteredUsers[0].id);
+      }
+    } else {
+      setSelectedId(null);
+    }
+  }, [filteredUsers, selectedId]);
+
   const handleApprove = async (id: string) => {
     try {
       await api.patch(`/admin/users/${id}/approve-docs`);
-      alert("Cadastro Aprovado!");
+      toast.success("Cadastro aprovado com sucesso!");
       setSelectedId(null);
       fetchUsers();
     } catch (error) {
-      alert("Erro ao aprovar.");
+      toast.error("Erro ao aprovar cadastro.");
     }
   };
 
   const handleReject = async (id: string, reason: string) => {
     try {
       await api.patch(`/admin/users/${id}/reject-docs`, { reason });
-      alert("Cadastro Rejeitado!");
+      toast.success("Cadastro rejeitado!");
       setSelectedId(null);
       fetchUsers();
     } catch (error) {
-      alert("Erro ao rejeitar.");
+      toast.error("Erro ao rejeitar cadastro.");
     }
   };
 
   const handleRequestResendDoc = async (id: string, documentName: string) => {
     try {
       await api.post(`/admin/users/${id}/request-doc`, { documentName });
-      alert(`Solicitação de reenvio (${documentName}) enviada ao aplicativo do usuário!`);
+      toast.info(`Solicitação de reenvio (${documentName}) enviada ao usuário!`);
     } catch (error) {
       console.error(error);
-      alert("Erro ao enviar notificação de reenvio.");
+      toast.error("Erro ao enviar notificação de reenvio.");
     }
   };
 
-  const selectedRegistration = pendingUsers.find(u => u.id === selectedId) || null;
-
-
-  const completos = pendingUsers.filter(u => 
-    isIfmaMode
-      ? u.enrollmentProof && u.documentFile
-      : u.documentFile && u.addressProof && u.selfieWithId
-  ).length;
-
-  const incompletos = pendingUsers.length - completos;
+  const selectedRegistration = pendingUsers.find((u) => u.id === selectedId) || null;
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -110,6 +135,10 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
               icon={Clock}
               variant="dark"
               tagColor="blue"
+              onClick={() => {
+                setSelectedFilter('all');
+                toast.info("Exibindo toda a fila de cadastros");
+              }}
             />
             <RegistrationMetricCard
               label="DOCUMENTOS ENVIADOS"
@@ -119,6 +148,11 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
               variant="white"
               tagColor="green"
               iconColor="text-green-500"
+              onClick={() => {
+                const next = selectedFilter === 'complete' ? 'all' : 'complete';
+                setSelectedFilter(next);
+                if (next === 'complete') toast.info("Filtrando cadastros com documentação completa");
+              }}
             />
             <RegistrationMetricCard
               label="DOC. PENDENTES"
@@ -128,14 +162,36 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
               variant="yellow"
               tagColor="red"
               iconColor="text-[#04096E]"
+              onClick={() => {
+                const next = selectedFilter === 'incomplete' ? 'all' : 'incomplete';
+                setSelectedFilter(next);
+                if (next === 'incomplete') toast.info("Filtrando cadastros com pendências de envio");
+              }}
             />
           </div>
+
+          {selectedFilter !== 'all' && (
+            <div className="mb-6 flex items-center justify-between bg-blue-50 border border-blue-200 text-[#04096E] px-4 py-3 rounded-2xl text-sm font-bold animate-in fade-in duration-200">
+              <span className="flex items-center gap-2">
+                <Filter size={16} />
+                Filtro ativo: {selectedFilter === 'complete' ? 'Documentos Completos' : 'Documentos com Pendências'}
+              </span>
+              <button
+                onClick={() => setSelectedFilter('all')}
+                className="flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 bg-white px-3 py-1.5 rounded-xl border border-blue-200 transition-colors shadow-xs"
+              >
+                <X size={14} /> Limpar filtro
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6 items-start">
             <div className="xl:col-span-2">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 h-full min-h-[500px] flex flex-col">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6 gap-3">
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900">Cadastros Aguardando Aprovação</h2>
+                  <h2 className="text-lg md:text-xl font-bold text-gray-900">
+                    Cadastros Aguardando Aprovação ({filteredUsers.length})
+                  </h2>
                   <div className="flex gap-2">
                     <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
                       <Download className="text-gray-600" size={18} />
@@ -144,10 +200,14 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
                 </div>
 
                 <div className="space-y-3 flex-1 overflow-y-auto pr-1">
-                  {pendingUsers.length === 0 ? (
-                    <div className="text-center text-gray-500 py-12 font-bold text-sm">Nenhum cadastro pendente no momento! 🎉</div>
+                  {filteredUsers.length === 0 ? (
+                    <div className="text-center text-gray-500 py-12 font-bold text-sm">
+                      {selectedFilter === 'all'
+                        ? 'Nenhum cadastro pendente no momento! 🎉'
+                        : 'Nenhum cadastro encontrado para este filtro.'}
+                    </div>
                   ) : (
-                    pendingUsers.map((user) => (
+                    filteredUsers.map((user) => (
                       <PendingRegistrationCard
                         key={user.id}
                         user={user}
@@ -156,7 +216,7 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
                         onApprove={() => handleApprove(user.id)}
                         onReject={() => {
                           const reason = window.prompt("Motivo da rejeição:");
-                          if(reason) handleReject(user.id, reason);
+                          if (reason) handleReject(user.id, reason);
                         }}
                       />
                     ))

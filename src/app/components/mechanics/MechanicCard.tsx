@@ -3,12 +3,13 @@ import { ReactNode } from 'react';
 export interface MetricCardProps {
   title: string;
   value: number | string;
-  subtext: string; 
+  subtext: string;
   icon: ReactNode;
   variant?: 'yellow' | 'white' | 'dark' | 'white-yellow';
+  onClick?: () => void; 
 }
 
-export function MechanicCard({ title, value, subtext, icon, variant = 'white' }: MetricCardProps) {
+export function MechanicCard({ title, value, subtext, icon, variant = 'white', onClick }: MetricCardProps) {
   const cardStyles = {
     yellow: 'bg-[#FAB208] border border-[#1F2937] text-[#02096D]',
     white: 'bg-white border border-[#1F2937] text-[#02096D]',
@@ -31,8 +32,14 @@ export function MechanicCard({ title, value, subtext, icon, variant = 'white' }:
   };
 
   return (
-    <div className={`${cardStyles[variant]} rounded-2xl p-6 h-[139px] flex-1 min-w-[200px] flex flex-col justify-between relative overflow-hidden font-sans select-none shadow-sm`}>
-      
+    <div 
+      onClick={onClick}
+      className={`
+        ${cardStyles[variant]} 
+        rounded-2xl p-6 h-[139px] flex-1 min-w-[200px] flex flex-col justify-between relative overflow-hidden font-sans select-none shadow-sm
+        ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:shadow-md transition-all active:scale-[0.98]' : ''}
+      `}
+    >
       <div className="flex flex-col gap-1 z-10">
         <h3 className={`${titleStyles[variant]} text-[10px] font-bold tracking-wider uppercase`}>
           {title}

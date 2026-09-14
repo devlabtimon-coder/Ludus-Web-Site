@@ -6,10 +6,11 @@ interface RentalMetricCardProps {
   tag?: string;
   icon?: ReactNode;
   variant: 'yellow' | 'white-red' | 'dark-blue' | 'white-green';
+  onClick?: () => void; // <-- Propriedade de clique
 }
 
-export function RentalMetricCard({ title, value, tag, icon, variant }: RentalMetricCardProps) {
-  // Cores baseadas na identidade visual da Ludus
+export function RentalMetricCard({ title, value, tag, icon, variant, onClick }: RentalMetricCardProps) {
+
   const cardStyles = {
     yellow: 'bg-[#FAB208] border border-[#1F2937] text-[#02096D]',
     'white-red': 'bg-white border border-[#1F2937] text-[#02096D]',
@@ -26,12 +27,12 @@ export function RentalMetricCard({ title, value, tag, icon, variant }: RentalMet
 
   const valueStyles = {
     yellow: 'text-[#02096D]',
-    'white-red': 'text-[#FC090D]', // Vermelho alerta
+    'white-red': 'text-[#FC090D]', 
     'dark-blue': 'text-white',
-    'white-green': 'text-[#10B981]', // Verde sucesso
+    'white-green': 'text-[#10B981]', 
   };
 
-  // Cores do "Pill" (a tag arredondada)
+  
   const tagStyles = {
     yellow: 'bg-[#02096D]/10 text-[#02096D]',
     'white-red': 'bg-[#FC090D]/10 text-[#FC090D]',
@@ -40,8 +41,14 @@ export function RentalMetricCard({ title, value, tag, icon, variant }: RentalMet
   };
 
   return (
-    <div className={`${cardStyles[variant]} rounded-2xl p-6 h-[139px] flex flex-col justify-between relative overflow-hidden font-sans select-none`}>
-      
+    <div
+      onClick={onClick}
+      className={`
+        ${cardStyles[variant]} 
+        rounded-2xl p-6 h-[139px] flex flex-col justify-between relative overflow-hidden font-sans select-none
+        ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:shadow-md transition-all active:scale-[0.98]' : ''}
+      `}
+    >
       <div className="flex flex-col gap-1 z-10">
         <h3 className={`${titleStyles[variant]} text-[10px] font-bold tracking-wider uppercase`}>
           {title}
@@ -52,7 +59,6 @@ export function RentalMetricCard({ title, value, tag, icon, variant }: RentalMet
         </p>
       </div>
 
-      {/* Renderiza a tag apenas se ela existir */}
       {tag && (
         <div className="z-10 flex items-center mt-auto">
           <span className={`${tagStyles[variant]} text-[10px] font-bold px-3 py-1 rounded-full`}>
@@ -61,7 +67,6 @@ export function RentalMetricCard({ title, value, tag, icon, variant }: RentalMet
         </div>
       )}
 
-      {/* Ícone d'água absoluto no fundo direito */}
       {icon && (
         <div className="absolute right-[-15px] bottom-[-15px] text-current opacity-10 pointer-events-none z-0">
           {icon}
