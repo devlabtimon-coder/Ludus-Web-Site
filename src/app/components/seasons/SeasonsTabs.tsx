@@ -16,8 +16,8 @@ export const NIVEL_LABELS: Record<Nivel, string> = {
 
 export const NIVEL_EMOJIS: Record<Nivel, string> = {
   starter: '🌱',
-  family: '🏠',
-  expert: '⚔️',
+  family: '🎲',
+  expert: '🏆',
   ultragamer: '💎',
 };
 
@@ -100,7 +100,6 @@ export function NivelBadge({ nivel }: { nivel: Nivel }) {
 export function Avatar({ name, nivel, src }: { name: string; nivel: Nivel; src?: string | null }) {
   const c = NIVEL_COLORS[nivel] || NIVEL_COLORS.starter;
   const initials = name ? name.split(' ').slice(0, 2).map(n => n[0]).join('') : '?';
-
   if (src) {
     return (
       <img
@@ -111,7 +110,6 @@ export function Avatar({ name, nivel, src }: { name: string; nivel: Nivel; src?:
       />
     );
   }
-
   return (
     <div
       className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
@@ -129,19 +127,17 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
   const elegiveis = progressData.filter((u: any) => u.currentLevel >= 2 && !u.cupomEmitido);
 
   const breakdown = [2, 3, 4, 5].map(level => {
-    
     const usersNeedingThisLevel = elegiveis.filter((u: any) => {
       const jaTem = Array.isArray(u.cuponsEmitidos) && u.cuponsEmitidos.includes(level);
       return u.currentLevel >= level && !jaTem;
     });
-
     const reward = temporada.rewards?.[`nivel${level}`]?.cuponsGerados?.[0];
-    
+
     return {
       nivel: `Nível ${level} - ${SEASONAL_LEVELS[level]}`,
       usuarios: usersNeedingThisLevel.length,
       cupons: usersNeedingThisLevel.length,
-      valor: reward ? (reward.tipo === 'percentual' ? `${reward.valor}% OFF` : reward.tipo === 'fixo' ? `R$ ${reward.valor} OFF` : '🎁 Vale-Brinde') : '--'
+      valor: reward ? (reward.tipo === 'percentual' ? `${reward.valor}% OFF` : reward.tipo === 'fixo' ? `R$ ${reward.valor} OFF` : 'Vale-Brinde') : '--'
     };
   }).filter(row => row.usuarios > 0);
 
@@ -225,7 +221,7 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
   );
 }
 
-export function Tab1TodasTemporadas({ seasons, onGerarCupons, fetchSeasons }: any) {
+export function Tab1TodasTemporadas({ seasons, onGerarCupons, fetchSeasons, onSelectSeason, selectedSeasonId }: any) {
   const [modalOpen, setModalOpen] = useState(false);
   const [seasonEdit, setSeasonEdit] = useState<any>(null);
 
@@ -248,7 +244,7 @@ export function Tab1TodasTemporadas({ seasons, onGerarCupons, fetchSeasons }: an
 
   return (
     <div className="overflow-x-auto scrollbar-hide rounded-xl border border-gray-100">
-      <table className="w-full text-[13px] min-w-[600px] text-left border-collapse">
+      <table className="w-full text-[13px] min-w-[650px] text-left border-collapse">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
             <th className="px-4 py-3 font-semibold text-gray-500 uppercase tracking-wide">Temporada</th>
@@ -265,60 +261,77 @@ export function Tab1TodasTemporadas({ seasons, onGerarCupons, fetchSeasons }: an
               </td>
             </tr>
           ) : (
-            seasons.map((t: any) => (
-              <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/50 bg-white">
-                <td className="px-4 py-3 font-semibold text-[#04096D]">{t.name}</td>
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                  {new Date(t.startDate).toLocaleDateString('pt-BR')} até {new Date(t.endDate).toLocaleDateString('pt-BR')}
-                </td>
-                <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex justify-end gap-2">
-                    {t.status === 'ativa' && (
-                      <button 
-                        onClick={() => onGerarCupons(t)} 
-                        className="px-3 py-1.5 bg-[#04096D]/10 hover:bg-[#04096D]/20 text-[#04096D] rounded-lg text-xs font-bold transition-colors" 
-                        title="Gerar Cupons"
-                      >
-                        Gerar Cupons
-                      </button>
+            seasons.map((t: any) => {
+              const isSelected = selectedSeasonId === t.id;
+              return (
+                <tr key={t.id} className={`border-b border-gray-50 hover:bg-gray-50/50 ${isSelected ? 'bg-blue-50/40' : 'bg-white'}`}>
+                  <td className="px-4 py-3 font-semibold text-[#04096D]">
+                    {t.name}
+                    {isSelected && (
+                      <span className="ml-2 text-[10px] bg-[#04096D] text-white px-2 py-0.5 rounded-full font-bold">
+                        Selecionada
+                      </span>
                     )}
-                    
-                    <button
-                      onClick={() => openEdit(t)}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Editar Temporada"
-                    >
-                      <Edit size={18} />
-                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                    {new Date(t.startDate).toLocaleDateString('pt-BR')} até {new Date(t.endDate).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end items-center gap-2">
+                      <button
+                        onClick={() => onSelectSeason(t.id)}
+                        className="px-3 py-1.5 bg-[#04096D] hover:bg-[#070e99] text-white rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1.5"
+                        title="Ver Ranking desta Temporada"
+                      >
+                        <Trophy size={14} className="text-[#FBBC04]" /> Ver Ranking
+                      </button>
 
-                    <button
-                      onClick={() => handleDelete(t.id, t.name)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Excluir Temporada"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
+                      {t.status === 'ativa' && (
+                        <button
+                          onClick={() => onGerarCupons(t)}
+                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#04096D] rounded-lg text-xs font-bold transition-colors"
+                          title="Gerar Cupons"
+                        >
+                          Cupons
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => openEdit(t)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Editar Temporada"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(t.id, t.name)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Excluir Temporada"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
-
-      <ModalGerenciarTemporada 
-        isOpen={modalOpen} 
-        onClose={() => setModalOpen(false)} 
-        onSalvar={fetchSeasons} 
-        season={seasonEdit} 
+      <ModalGerenciarTemporada
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSalvar={fetchSeasons}
+        season={seasonEdit}
       />
     </div>
   );
 }
 
-export function Tab2Progressao({ progressData }: { progressData: any[] }) {
+export function Tab2Progressao({ progressData }: { progressData: any[], temporadaNome?: string }) {
   const sortedData = [...progressData].sort((a, b) => b.avaliacoes - a.avaliacoes);
+
   return (
     <div className="overflow-x-auto scrollbar-hide rounded-xl border border-gray-100">
       <table className="w-full text-[13px] min-w-[700px]">
@@ -332,50 +345,57 @@ export function Tab2Progressao({ progressData }: { progressData: any[] }) {
           </tr>
         </thead>
         <tbody>
-          {sortedData.map(u => {
-            const pontos = u.avaliacoes || 0;
-            const pctColor = u.pct >= 100 ? '#22C55E' : u.pct >= 50 ? '#F97316' : '#31358B';
-            return (
-              <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 bg-white">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    
-                    <Avatar name={u.nome} nivel={u.nivel as Nivel} src={u.avatar} />
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate max-w-[140px]">{u.nome}</div>
-                      <NivelBadge nivel={u.nivel as Nivel} />
+          {sortedData.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="py-8 text-center text-gray-500 font-medium">
+                Nenhum usuário registrado ou com pontuação nesta temporada.
+              </td>
+            </tr>
+          ) : (
+            sortedData.map(u => {
+              const pontos = u.avaliacoes || 0;
+              const pctColor = u.pct >= 100 ? '#22C55E' : u.pct >= 50 ? '#F97316' : '#31358B';
+              return (
+                <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 bg-white">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Avatar name={u.nome} nivel={u.nivel as Nivel} src={u.avatar} />
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate max-w-[140px]">{u.nome}</div>
+                        <NivelBadge nivel={u.nivel as Nivel} />
+                      </div>
                     </div>
-                  </div>
-                </td>
-                
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="flex items-center gap-1.5 font-bold text-[#04096D]">
-                    <Trophy size={14} className="text-[#FBBC04]" /> 
-                    Nível {u.currentLevel} - {SEASONAL_LEVELS[u.currentLevel]}
-                  </span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="flex items-center gap-1.5 font-bold text-gray-700">
-                    <Star size={14} className="text-[#04096D] opacity-50" /> 
-                    {pontos} pts
-                  </span>
-                </td>
-                <td className="px-4 py-3 min-w-[150px]">
-                  <div className="flex items-center gap-3">
-                    <ProgressBar value={u.pct} color={pctColor} height={8} />
-                    <span className="font-black text-[12px]" style={{ color: pctColor }}>{u.pct}%</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  {u.cupomEmitido ? (
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">Emitido</span>
-                  ) : (
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pendente</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
+                  </td>
+                  
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="flex items-center gap-1.5 font-bold text-[#04096D]">
+                      <Trophy size={14} className="text-[#FBBC04]" /> 
+                      Nível {u.currentLevel} - {SEASONAL_LEVELS[u.currentLevel] || 'Iniciante'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="flex items-center gap-1.5 font-bold text-gray-700">
+                      <Star size={14} className="text-[#04096D] opacity-50" /> 
+                      {pontos} pts
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 min-w-[150px]">
+                    <div className="flex items-center gap-3">
+                      <ProgressBar value={u.pct} color={pctColor} height={8} />
+                      <span className="font-black text-[12px]" style={{ color: pctColor }}>{u.pct}%</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {u.cupomEmitido ? (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">Emitido</span>
+                    ) : (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pendente</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
     </div>
@@ -390,12 +410,12 @@ export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
         const levelKey = `nivel${level}`;
         const rec = temporadaAtiva?.rewards?.[levelKey] || {};
         const pontuacaoNecessaria = SEASONAL_POINTS[level] || 0;
-        
+
         return (
           <div key={level} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
             <div className="px-5 py-4 flex items-center justify-between" style={{ background: level === 5 ? 'linear-gradient(135deg, #04096D, #FBBC04)' : '#F7F8FF' }}>
               <div className="flex items-center gap-3">
-                <span className="text-[24px] leading-none">{level === 5 ? '👑' : '⭐'}</span>
+                <span className="text-[24px] leading-none">{level === 5 ? '👑' : '🎯'}</span>
                 <div>
                   <div className={`font-black text-base sm:text-lg ${level === 5 ? 'text-white' : 'text-[#04096D]'}`}>
                     Nível {level} - {SEASONAL_LEVELS[level]}
@@ -417,9 +437,9 @@ export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recompensa</p>
                 {rec.cuponsGerados?.map((cp: any, i: number) => (
-                   <span key={i} className="inline-block text-[12px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 text-[#04096D] border border-blue-100 mr-2 mb-2">
-                        {cp.tipo === 'percentual' ? `${cp.valor}% OFF` : cp.tipo === 'fixo' ? `R$${cp.valor} OFF` : '🎁 Vale-Brinde'} - {cp.descricao}
-                   </span>
+                  <span key={i} className="inline-block text-[12px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 text-[#04096D] border border-blue-100 mr-2 mb-2">
+                    {cp.tipo === 'percentual' ? `${cp.valor}% OFF` : cp.tipo === 'fixo' ? `R$${cp.valor} OFF` : 'Vale-Brinde'} - {cp.descricao}
+                  </span>
                 ))}
                 {!rec.cuponsGerados && (
                   <span className="text-sm text-gray-400 italic">Sem recompensas cadastradas.</span>
@@ -439,28 +459,36 @@ export function Tab4Historico({ couponsData }: { couponsData: any[] }) {
       <table className="w-full text-[13px] min-w-[700px]">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
-            {['Usuário', 'Temporada', 'Nível Atingido', 'Código', 'Valor', 'Status'].map(h => <th key={h} className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">{h}</th>)}
+            {['Usuário', 'Temporada', 'Nível Atingido', 'Código', 'Valor', 'Status'].map(h => (
+              <th key={h} className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {couponsData.map((c) => (
-            <tr key={c.id} className="border-b border-gray-50 bg-white">
-              <td className="px-4 py-3 font-semibold text-gray-900">{c.usuario}</td>
-              <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{c.temporada}</td>
-              <td className="px-4 py-3">
-                <span className="bg-[#F0F2FF] text-[#04096D] border border-[#31358B]/20 font-bold px-2 py-1 rounded-md text-[11px] whitespace-nowrap">
-                  {c.nivel}
-                </span>
-              </td>
-              <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-1 rounded-md font-mono text-xs">{c.codigo}</code></td>
-              <td className="px-4 py-3 font-bold text-[#04096D] whitespace-nowrap">{c.valor}</td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${c.status === 'ativo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                  {c.status.toUpperCase()}
-                </span>
-              </td>
+          {couponsData.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="py-8 text-center text-gray-500 font-medium">Nenhum cupom gerado no histórico.</td>
             </tr>
-          ))}
+          ) : (
+            couponsData.map((c) => (
+              <tr key={c.id} className="border-b border-gray-50 bg-white">
+                <td className="px-4 py-3 font-semibold text-gray-900">{c.usuario}</td>
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{c.temporada}</td>
+                <td className="px-4 py-3">
+                  <span className="bg-[#F0F2FF] text-[#04096D] border border-[#31358B]/20 font-bold px-2 py-1 rounded-md text-[11px] whitespace-nowrap">
+                    {c.nivel}
+                  </span>
+                </td>
+                <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-1 rounded-md font-mono text-xs">{c.codigo}</code></td>
+                <td className="px-4 py-3 font-bold text-[#04096D] whitespace-nowrap">{c.valor}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${c.status === 'ativo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {c.status.toUpperCase()}
+                  </span>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

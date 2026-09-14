@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Trophy, Clock, Users, Ticket, CalendarPlus } from 'lucide-react';
+import { Trophy, Clock, Users, Ticket, CalendarPlus, ChevronDown } from 'lucide-react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 import { api } from '../../services/api';
@@ -23,6 +23,7 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
   const [activeTab, setActiveTab] = useState(0);
 
   const [seasons, setSeasons] = useState<any[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null); // <-- Temporada em exibição
   const [progressData, setProgressData] = useState<any[]>([]);
   const [couponsData, setCouponsData] = useState<any[]>([]);
 
@@ -33,6 +34,11 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
     try {
       const res = await api.get('/admin/seasons');
       setSeasons(res.data);
+      // Se não houver selecionada, seleciona a ativa ou a primeira da lista
+      if (res.data.length > 0 && !selectedSeasonId) {
+        const active = res.data.find((s: any) => s.status === 'ativa');
+        setSelectedSeasonId(active ? active.id : res.data[0].id);
+      }
     } catch (e) {
       toast.error("Erro ao carregar temporadas");
     }
@@ -50,31 +56,40 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
     fetchCoupons();
   }, []);
 
-  const temporadaAtiva = useMemo(() => seasons.find(s => s.status === 'ativa'), [seasons]);
+  // Temporada atualmente inspecionada (seja ela ativa ou encerrada)
+  const temporadaSelecionada = useMemo(() => {
+    return seasons.find(s => s.id === selectedSeasonId) || seasons.find(s => s.status === 'ativa') || seasons[0] || null;
+  }, [seasons, selectedSeasonId]);
 
   const fetchProgress = async (id: string) => {
     try {
       const res = await api.get(`/admin/seasons/${id}/progress`);
       setProgressData(res.data);
-    } catch (e) {}
+    } catch (e) {
+      toast.error("Erro ao carregar progresso da temporada");
+    }
   };
 
+  // CORRIGIDO: Dispara a busca sempre que a temporada selecionada mudar (mesmo encerrada)
   useEffect(() => {
-    if (temporadaAtiva) fetchProgress(temporadaAtiva.id);
-  }, [temporadaAtiva?.id]);
+    if (temporadaSelecionada?.id) {
+      fetchProgress(temporadaSelecionada.id);
+    }
+  }, [temporadaSelecionada?.id]);
 
-  const TABS = ['Todas as Temporadas', 'Progressão de Usuários', 'Requisitos e Recompensas', 'Histórico de Cupons'];
+  const TABS = ['Todas as Temporadas', 'Ranking e Progresso', 'Requisitos e Recompensas', 'Histórico de Cupons'];
 
-  const shortName = temporadaAtiva ? temporadaAtiva.name : '—';
-  const dateRange = temporadaAtiva
-    ? `${new Date(temporadaAtiva.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} – ${new Date(temporadaAtiva.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
+  const shortName = temporadaSelecionada ? temporadaSelecionada.name : '—';
+  const dateRange = temporadaSelecionada
+    ? `${new Date(temporadaSelecionada.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} – ${new Date(temporadaSelecionada.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
     : '—';
 
-  const diasRestantes = temporadaAtiva ? Math.max(0, diffDays(temporadaAtiva.endDate, new Date())) : 0;
-  const totalDias = temporadaAtiva ? Math.max(1, diffDays(temporadaAtiva.endDate, temporadaAtiva.startDate)) : 1;
-  const decorridos = temporadaAtiva ? diffDays(new Date(), temporadaAtiva.startDate) : 0;
-  const percentualDecorrido = Math.min(100, Math.max(0, Math.round((decorridos / totalDias) * 100)));
-  const corUrgencia = diasRestantes <= 7 ? '#EF4444' : '#F97316';
+  const isEncerrada = temporadaSelecionada?.status === 'encerrada';
+  const diasRestantes = temporadaSelecionada ? Math.max(0, diffDays(temporadaSelecionada.endDate, new Date())) : 0;
+  const totalDias = temporadaSelecionada ? Math.max(1, diffDays(temporadaSelecionada.endDate, temporadaSelecionada.startDate)) : 1;
+  const decorridos = temporadaSelecionada ? diffDays(new Date(), temporadaSelecionada.startDate) : 0;
+  const percentualDecorrido = isEncerrada ? 100 : Math.min(100, Math.max(0, Math.round((decorridos / totalDias) * 100)));
+  const corUrgencia = isEncerrada ? '#6B7280' : diasRestantes <= 7 ? '#EF4444' : '#F97316';
 
   const rewardLevels = [2, 3, 4, 5];
 
@@ -92,6 +107,11 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
     }, 0);
   }, [progressData]);
 
+  const handleSelectSeasonFromTable = (seasonId: string) => {
+    setSelectedSeasonId(seasonId);
+    setActiveTab(1); // Vai direto para a aba de Ranking e Progresso
+  };
+
   return (
     <div className="flex h-screen bg-[#F5F5F7]">
       <Sidebar activePage="temporadas" onNavigate={onNavigate} onLogout={onLogout} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
@@ -102,11 +122,32 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="font-black text-[28px]" style={{ color: '#04096D' }}>Temporadas</h1>
-              <p className="text-[14px] mt-0.5 text-gray-500">Gerencie as temporadas e acompanhe a progressão dos usuários</p>
+              <p className="text-[14px] mt-0.5 text-gray-500">Gerencie as temporadas e acompanhe o ranking consolidado</p>
             </div>
-            <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 text-white text-[14px] font-bold transition-all hover:opacity-95 bg-[#04096D]" style={{ borderRadius: 10 }}>
-              <CalendarPlus size={16} /> + Nova Temporada
-            </button>
+
+            <div className="flex items-center gap-3">
+              {/* Seletor Rápido de Temporada */}
+              {seasons.length > 0 && (
+                <div className="relative">
+                  <select
+                    value={selectedSeasonId || ''}
+                    onChange={(e) => setSelectedSeasonId(e.target.value)}
+                    className="appearance-none bg-white border border-gray-200 text-[#04096D] text-sm font-bold py-2.5 pl-4 pr-10 rounded-xl shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#04096D]"
+                  >
+                    {seasons.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.status.toUpperCase()})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              )}
+
+              <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 text-white text-[14px] font-bold transition-all hover:opacity-95 bg-[#04096D]" style={{ borderRadius: 10 }}>
+                <CalendarPlus size={16} /> + Nova Temporada
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -115,21 +156,25 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10">
                   <Trophy size={20} style={{ color: '#FBBC04' }} />
                 </div>
-                <span className="text-[12px] font-semibold text-white/70">Temporada Ativa</span>
+                <span className="text-[12px] font-semibold text-white/70">Temporada em Foco</span>
               </div>
-              <div className="text-[22px] font-black leading-tight">{shortName}</div>
+              <div className="text-[20px] font-black leading-tight truncate" title={shortName}>{shortName}</div>
               <div className="text-[12px] text-white/60 mt-0.5 mb-3">{dateRange}</div>
-              {temporadaAtiva && <StatusBadge status="ativa" />}
+              {temporadaSelecionada && <StatusBadge status={temporadaSelecionada.status} />}
             </div>
 
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-orange-50"><Clock size={20} style={{ color: '#F97316' }} /></div>
-                <span className="text-[12px] font-semibold text-gray-500">Dias Restantes</span>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-orange-50"><Clock size={20} style={{ color: corUrgencia }} /></div>
+                <span className="text-[12px] font-semibold text-gray-500">{isEncerrada ? 'Situação' : 'Dias Restantes'}</span>
               </div>
-              <div className="text-[32px] font-black leading-tight" style={{ color: corUrgencia }}>{diasRestantes}</div>
-              <ProgressBar value={percentualDecorrido} color="#F97316" height={6} />
-              <div className="text-[11px] text-gray-400 mt-1">{percentualDecorrido}% decorrido</div>
+              <div className="text-[28px] font-black leading-tight" style={{ color: corUrgencia }}>
+                {isEncerrada ? 'Encerrada' : diasRestantes}
+              </div>
+              <ProgressBar value={percentualDecorrido} color={corUrgencia} height={6} />
+              <div className="text-[11px] text-gray-400 mt-1">
+                {isEncerrada ? '100% finalizada' : `${percentualDecorrido}% decorrido`}
+              </div>
             </div>
 
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
@@ -147,10 +192,10 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
                 <span className="text-[12px] font-semibold text-gray-500">Cupons Pendentes</span>
               </div>
               <div className="text-[32px] font-black leading-tight text-[#04096D]">{totalCuponsPendentes}</div>
-              <div className="text-[12px] text-gray-400 mt-0.5 mb-3">para gerar agora</div>
+              <div className="text-[12px] text-gray-400 mt-0.5 mb-3">disponíveis para emissão</div>
               <button
-                onClick={() => setGerarCuponsTemporada(temporadaAtiva)}
-                disabled={!temporadaAtiva || totalCuponsPendentes === 0}
+                onClick={() => setGerarCuponsTemporada(temporadaSelecionada)}
+                disabled={!temporadaSelecionada || totalCuponsPendentes === 0}
                 className="w-full h-8 rounded-lg text-[12px] font-bold border border-[#04096D] text-[#04096D] transition-all hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Gerar Agora
@@ -175,12 +220,19 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
               {activeTab === 0 && (
                 <Tab1TodasTemporadas
                   seasons={seasons}
+                  selectedSeasonId={selectedSeasonId}
+                  onSelectSeason={handleSelectSeasonFromTable}
                   onGerarCupons={(t: any) => setGerarCuponsTemporada(t)}
                   fetchSeasons={fetchData} 
                 />
               )}
-              {activeTab === 1 && <Tab2Progressao progressData={progressData} />}
-              {activeTab === 2 && <Tab3Requisitos temporadaAtiva={temporadaAtiva} />}
+              {activeTab === 1 && (
+                <Tab2Progressao 
+                  progressData={progressData} 
+                  temporadaNome={temporadaSelecionada?.name} 
+                />
+              )}
+              {activeTab === 2 && <Tab3Requisitos temporadaAtiva={temporadaSelecionada} />}
               {activeTab === 3 && <Tab4Historico couponsData={couponsData} />}
             </div>
           </div>
@@ -201,7 +253,7 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
         onClose={() => setGerarCuponsTemporada(null)} 
         onSuccess={() => {
           fetchCoupons();
-          if (temporadaAtiva) fetchProgress(temporadaAtiva.id);
+          if (temporadaSelecionada) fetchProgress(temporadaSelecionada.id);
         }} 
       />
     </div>

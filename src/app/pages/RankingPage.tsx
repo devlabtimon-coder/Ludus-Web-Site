@@ -14,7 +14,6 @@ import {
   SORT_OPTIONS
 } from '../components/ranking/RankingTabs';
 
-
 export function getLevelTitle(levelNumber: number) {
   switch (levelNumber) {
     case 1: return "Iniciante";
@@ -25,7 +24,6 @@ export function getLevelTitle(levelNumber: number) {
     default: return `Nível ${levelNumber}`;
   }
 }
-
 
 export const LEVEL_COLORS: Record<string, string> = {
   Iniciante: '#6B7280',
@@ -52,7 +50,7 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [seasons, setSeasons] = useState<any[]>([]);
-  const [selectedSeasonId, setSelectedSeasonId] = useState('current');
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
 
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
@@ -63,36 +61,40 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
 
   useEffect(() => {
     api.get('/admin/seasons')
-      .then(res => setSeasons(res.data))
-      .catch(() => {});
+      .then(res => {
+        setSeasons(res.data);
+        if (res.data.length > 0) {
+          const active = res.data.find((s: any) => s.status === 'ativa');
+          setSelectedSeasonId(active ? active.id : res.data[0].id);
+        }
+      })
+      .catch(() => toast.error("Erro ao carregar lista de temporadas"));
   }, []);
 
   useEffect(() => {
+    if (!selectedSeasonId) return;
+
     const fetchData = async () => {
       setLoading(true);
       try {
-        let usersEndpoint = '/admin/users';
-        if (selectedSeasonId !== 'current') {
-          usersEndpoint = `/admin/seasons/${selectedSeasonId}/ranking`;
-        }
-
         const [usersRes, gamesRes] = await Promise.all([
-          api.get(usersEndpoint),
+          api.get(`/admin/seasons/${selectedSeasonId}/ranking`),
           api.get('/games') 
         ]);
 
-        const sortedUsers = usersRes.data
-          .filter((u: any) => u.role === 'USER' && !u.isBlocked)
+        const rawUsers = Array.isArray(usersRes.data) ? usersRes.data : [];
+        const validUsers = rawUsers
+          .filter((u: any) => !u.isBlocked && (!u.role || u.role === 'USER'))
           .sort((a: any, b: any) => {
             const ptsA = Number(a.points) || 0;
             const ptsB = Number(b.points) || 0;
             if (ptsB !== ptsA) return ptsB - ptsA;
-            const rentsA = Number(a.totalRentalsCount) || 0;
-            const rentsB = Number(b.totalRentalsCount) || 0;
+            const rentsA = Number(a.rentalsCount ?? a.totalRentalsCount) || 0;
+            const rentsB = Number(b.rentalsCount ?? b.totalRentalsCount) || 0;
             return rentsB - rentsA;
           });
         
-        setUsers(sortedUsers);
+        setUsers(validUsers);
         setGames(gamesRes.data);
       } catch (error) {
         toast.error("Erro ao carregar dados do ranking");
@@ -105,27 +107,30 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
   }, [selectedSeasonId]);
 
   const seasonOptions = useMemo(() => {
-    const options = [{ value: 'current', label: 'Temporada Atual (Ativa)' }];
-    seasons.forEach(s => {
-      options.push({ value: s.id, label: `${s.name} (${s.status.toUpperCase()})` });
-    });
-    return options;
+    return seasons.map(s => ({
+      value: s.id,
+      label: `${s.name} (${s.status.toUpperCase()})`
+    }));
   }, [seasons]);
 
   const topUsers = useMemo(() => {
     return users.map((u, index) => {
       const levelNum = Number(u.level) || 1;
       const levelName = getLevelTitle(levelNum);
+      const points = Number(u.points) || 0;
+      const rentals = Number(u.rentalsCount ?? u.totalRentalsCount) || 0;
       
       return {
         pos: index + 1,
         id: u.id,
         name: u.name,
         email: u.email,
-        nick: u.email.split('@')[0],
-        levelName: levelName,
-        pts: Number(u.points) || 0,
-        totalRentalsCount: Number(u.totalRentalsCount) || 0,
+        nick: u.email ? u.email.split('@')[0] : u.name,
+        levelName,
+        points,
+        pts: points,
+        totalRentalsCount: rentals,
+        gamesRented: u.gamesRented || [],
         avatar: u.avatar,
         picture: u.picture,
         color: LEVEL_COLORS[levelName] || '#9CA3AF',
@@ -157,7 +162,7 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
         title: g.title,
         cover: g.cover,
         maker: g.mechanics?.[0] || 'Jogo de Tabuleiro',
-        tier: tier,
+        tier,
         catColor: TIER_COLORS[tier] || '#9CA3AF',
         rentalsCount: Number(g.rentalsCount) || 0, 
         rating: Number(g.rating) || 0,
@@ -172,19 +177,25 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
       <Sidebar activePage="ranking" onNavigate={onNavigate} onLogout={onLogout} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-  
         <Header onLogout={onLogout} onMenuToggle={() => setSidebarOpen(o => !o)} />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="font-black" style={{ fontSize: 32, color: '#04096D', lineHeight: 1.2 }}>Ranking de Temporadas</h1>
-              <p className="mt-1 text-sm font-medium text-gray-500">Consulte o desempenho dos alunos na temporada atual ou em ciclos anteriores</p>
+              <h1 className="font-black text-2xl sm:text-3xl lg:text-4xl text-[#04096D] leading-tight">Ranking de Temporadas</h1>
+              <p className="mt-1 text-xs sm:text-sm font-medium text-gray-500">Consulte o desempenho dos alunos e jogos nas temporadas ativas ou finalizadas</p>
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
-              <Select label="Temporada" options={seasonOptions} value={selectedSeasonId} onChange={setSelectedSeasonId} />
-              <button className="flex items-center gap-2 h-9 px-5 rounded-lg font-bold text-sm transition-all hover:bg-[#04096D] hover:text-white bg-white text-[#04096D] border border-[#04096D] shadow-sm">
+              {seasonOptions.length > 0 && (
+                <Select 
+                  label="Temporada" 
+                  options={seasonOptions} 
+                  value={selectedSeasonId} 
+                  onChange={setSelectedSeasonId} 
+                />
+              )}
+              <button className="flex items-center gap-2 h-10 sm:h-9 px-4 sm:px-5 rounded-xl sm:rounded-lg font-bold text-xs sm:text-sm transition-all hover:bg-[#04096D] hover:text-white bg-white text-[#04096D] border border-[#04096D] shadow-xs">
                 <Download size={15} strokeWidth={2.5} /> Exportar
               </button>
             </div>
@@ -214,7 +225,6 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
               
               {activeTab === 'jogos' && (
                 <div className="space-y-6">
-                 
                   <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                     <Select label="Categoria" options={GAME_CAT_OPTIONS} value={catFilter} onChange={setCatFilter} />
                     <Select label="Ordenar por" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
