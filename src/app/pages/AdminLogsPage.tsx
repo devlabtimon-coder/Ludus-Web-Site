@@ -24,7 +24,7 @@ interface AdminLog {
   };
 }
 
-export function AdminLogsPage({ onNavigate, onLogout }: { onNavigate?: (p: string) => void, onLogout?: () => void }) {
+export function AdminLogsPage() { // <-- Props removidas
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logs, setLogs] = useState<AdminLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,10 +87,10 @@ export function AdminLogsPage({ onNavigate, onLogout }: { onNavigate?: (p: strin
 
   return (
     <div className="flex h-screen bg-[#F5F5F7] overflow-hidden">
-      <Sidebar activePage="auditoria" onNavigate={onNavigate} onLogout={onLogout} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Header onLogout={onLogout} onMenuToggle={() => setSidebarOpen(true)} />
+        <Header onMenuToggle={() => setSidebarOpen(true)} />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 xl:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">

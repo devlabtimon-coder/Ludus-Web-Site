@@ -1,4 +1,6 @@
+
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom"; 
 import { Sidebar } from "../components/layout/Sidebar";
 import { Header } from "../components/layout/Header";
 import { UsersMetricCard } from "../components/users/UsersMetricCard";
@@ -12,22 +14,8 @@ import { api } from "../../services/api";
 import { toast } from "sonner";
 import { ClientCategory } from "../../types/api";
 
-interface UsersPageProps {
-  onNavigate: (
-    page:
-      | "dashboard"
-      | "acervo"
-      | "emprestimos"
-      | "usuarios"
-      | "cadastro"
-      | "relatorios"
-      | "manutencao"
-      | "login",
-  ) => void;
-  onLogout?: () => void;
-}
-
-export function UsersPage({ onNavigate, onLogout }: UsersPageProps) {
+export function UsersPage() { 
+  const navigate = useNavigate(); 
   const { metrics, users, total, loading, error, refetch } = useUsers();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'ultragamer' | 'recent'>('all');
@@ -70,15 +58,12 @@ export function UsersPage({ onNavigate, onLogout }: UsersPageProps) {
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar
         activePage="usuarios"
-        onNavigate={onNavigate}
-        onLogout={onLogout}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header
-          onLogout={onLogout}
           onMenuToggle={() => setIsSidebarOpen(true)}
         />
 

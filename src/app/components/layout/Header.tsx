@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import { Search, Bell, Menu, LogOut, Settings, User, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { LogoutConfirmModal } from '../shared/LogoutConfirmModal';
@@ -8,12 +9,11 @@ import { api } from '../../../services/api';
 import logoFull from '../../../assets/images/logo-full.png';
 
 interface HeaderProps {
-  onLogout?: () => void;
   onMenuToggle?: () => void;
-  onNavigate?: (page: string) => void;
 }
 
-export function Header({ onLogout, onMenuToggle, onNavigate }: HeaderProps) {
+export function Header({ onMenuToggle }: HeaderProps) {
+  const navigate = useNavigate();
   const [userData, setUserData] = useState<{
     name: string;
     email: string;
@@ -70,12 +70,7 @@ export function Header({ onLogout, onMenuToggle, onNavigate }: HeaderProps) {
       
       if (route) {
         const cleanRoute = route.replace('/', ''); 
-        
-        if (onNavigate) {
-          onNavigate(cleanRoute);
-        } else {
-          window.location.href = `/${cleanRoute}`;
-        }
+        navigate(`/${cleanRoute}`); 
       }
     } catch (e) {
       console.error("Erro ao marcar como lida", e);
@@ -97,17 +92,7 @@ export function Header({ onLogout, onMenuToggle, onNavigate }: HeaderProps) {
     localStorage.removeItem('user');
     sessionStorage.clear();
     setShowLogoutModal(false);
-    
-    if (onLogout) {
-      onLogout();
-    }
-    
-    window.history.pushState({}, '', '/login');
-    if (onNavigate) {
-      onNavigate('login');
-    } else {
-      window.location.href = '/login';
-    }
+    navigate('/login'); 
   };
 
   const userName = userData?.name || 'Admin';

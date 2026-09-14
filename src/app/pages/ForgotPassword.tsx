@@ -1,16 +1,14 @@
+// src/app/pages/ForgotPassword.tsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, KeyRound, Lock, Loader2 } from "lucide-react";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-interface ForgotPasswordProps {
-  onBack: () => void;
-}
-
-
-export function ForgotPassword({ onBack }: ForgotPasswordProps) {
+export function ForgotPassword() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -60,7 +58,7 @@ export function ForgotPassword({ onBack }: ForgotPasswordProps) {
     try {
       await axios.post(`${API_URL}/auth/forgot-password/reset`, { resetToken, newPassword });
       toast.success("Senha alterada com sucesso! Faça login.");
-      onBack(); 
+      navigate('/login'); 
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Erro ao alterar a senha.");
     } finally {
@@ -72,9 +70,8 @@ export function ForgotPassword({ onBack }: ForgotPasswordProps) {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
         
-     
         <button 
-          onClick={onBack}
+          onClick={() => navigate('/login')}
           className="mb-6 flex items-center text-sm font-medium text-gray-500 hover:text-[#31358B] transition-colors"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

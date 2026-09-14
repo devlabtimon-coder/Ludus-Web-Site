@@ -1,4 +1,6 @@
+
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 import { MechanicsTable } from '../components/mechanics/MechanicsTable';
@@ -13,12 +15,8 @@ import { toast } from 'sonner';
 
 import { MechanicCard } from '../components/mechanics/MechanicCard';
 
-interface MechanicsPageProps {
-  onNavigate: (page: any) => void;
-  onLogout?: () => void;
-}
-
-export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
+export function MechanicsPage() {
+  const navigate = useNavigate();
   const { 
     mechanics, 
     loading, 
@@ -32,7 +30,6 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMechanic, setEditingMechanic] = useState<Mechanic | null>(null);
-
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'most-used'>('all');
 
@@ -53,7 +50,6 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
     });
     return gamesSet.size;
   }, [mechanics]);
-
 
   const filteredMechanics = useMemo(() => {
     if (activeFilter === 'active') {
@@ -103,14 +99,12 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar 
         activePage="mecanicas" 
-        onNavigate={onNavigate} 
-        onLogout={onLogout}
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header onLogout={onLogout} onMenuToggle={() => setIsSidebarOpen(true)} />
+        <Header onMenuToggle={() => setIsSidebarOpen(true)} />
         
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
@@ -165,7 +159,7 @@ export function MechanicsPage({ onNavigate, onLogout }: MechanicsPageProps) {
               value={totalJogosUnicos} 
               subtext="Clique para abrir o Acervo" 
               icon={<Gamepad2 size={80} />} 
-              onClick={() => onNavigate('acervo')}
+              onClick={() => navigate('/acervo')} 
             />
           </div>
 

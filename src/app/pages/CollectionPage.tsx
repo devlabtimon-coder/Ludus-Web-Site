@@ -24,22 +24,9 @@ import { EditGameModal } from "../components/collection/EditGameModal";
 import { DeleteGameModal } from "../components/collection/DeleteGameModal";
 import { InactivateGameModal } from "../components/collection/InactivateGameModal";
 
-interface CollectionPageProps {
-  onNavigate: (
-    page:
-      | "dashboard"
-      | "acervo"
-      | "emprestimos"
-      | "usuarios"
-      | "cadastro"
-      | "relatorios"
-      | "login"
-      | "manutencao", 
-  ) => void;
-  onLogout?: () => void;
-}
 
-export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
+
+export function CollectionPage() { 
   const { metrics, games, loading, error, refetch } = useGames();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -48,7 +35,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
   const [deletingGame, setDeletingGame] = useState<Game | null>(null);
   const [inactivatingGame, setInactivatingGame] = useState<Game | null>(null);
   
-
   const [previewingGame, setPreviewingGame] = useState<Game | null>(null);
   const [managingCopiesGame, setManagingCopiesGame] = useState<Game | null>(null);
 
@@ -56,7 +42,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<GameCategory>("todos");
   const [selectedStatus, setSelectedStatus] = useState<GameStatus>("todos");
   const [selectedSort, setSelectedSort] = useState<SortOption>("az");
-
 
   const filteredGames = useMemo(() => {
     if (!games) return [];
@@ -82,7 +67,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
       } else if (selectedStatus === "inativo") {
         filtered = filtered.filter((g) => !g.isActive);
       } else if (selectedStatus === "manutencao") {
-        
         filtered = filtered.filter(
           (g) => !g.isActive || (g.isActive && g.available === false && !g.isAvailableNow)
         );
@@ -130,7 +114,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
     }
   };
 
- 
   const handleInactivateConfirm = async (reason: string) => {
     if (!inactivatingGame) return;
 
@@ -160,16 +143,15 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      
+     
       <Sidebar
         activePage="acervo"
-        onNavigate={onNavigate}
-        onLogout={onLogout}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      
         <Header 
           onMenuToggle={() => setIsSidebarOpen(true)} 
         />
@@ -238,7 +220,6 @@ export function CollectionPage({ onNavigate, onLogout }: CollectionPageProps) {
         </main>
       </div>
 
-     
       <GamePreviewModal
         isOpen={!!previewingGame}
         onClose={() => setPreviewingGame(null)}

@@ -1,4 +1,6 @@
+
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useGoogleLogin } from '@react-oauth/google';
 import { authService } from "../../services";
@@ -6,12 +8,8 @@ import { authService } from "../../services";
 import logoLudus from "../../assets/images/logo-full.png";
 import logoLudusDice from "../../assets/images/logo-dice.png";
 
-interface LoginPageProps {
-  onLogin?: () => void;
-  onForgotPassword?: () => void; 
-}
-
-export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) { 
+export function LoginPage() { 
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -57,7 +55,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
       if (response?.user) localStorage.setItem("user", JSON.stringify(response.user));
       
       setLoading(false);
-      if (onLogin) onLogin();
+      navigate('/');
     } catch (err: any) {
       const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
       setError(apiMessage || "E-mail ou senha incorretos.");
@@ -82,7 +80,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
         if (response?.token) localStorage.setItem("token", response.token);
         if (response?.user) localStorage.setItem("user", JSON.stringify(response.user));
 
-        if (onLogin) onLogin();
+        navigate('/');
       } catch (err: any) {
         const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
         setError(apiMessage || "Erro ao fazer login com o Google.");
@@ -97,8 +95,6 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
 
   return (
     <div className="flex min-h-screen w-full overflow-x-hidden bg-white">
-      
-     
       <div className="relative hidden w-[42%] overflow-hidden bg-[#37379B] lg:flex items-center justify-center">
         <div className="absolute -right-36 -top-36 h-[340px] w-[340px] rounded-full bg-[#FBBC04]/35" />
         <div className="absolute -right-20 -top-20 h-[240px] w-[240px] rounded-full bg-[#FBBC04]/45" />
@@ -112,9 +108,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
         </div>
       </div>
 
-   
       <div className="relative flex w-full items-center justify-center overflow-hidden bg-[#f3f6ff] px-4 py-8 sm:px-6 lg:w-[58%] lg:px-10">
-        
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute right-[-100px] top-[-100px] h-[260px] w-[260px] rounded-full bg-[#31358B]/10 blur-3xl" />
           <div className="absolute bottom-[10%] right-[10%] h-[180px] w-[180px] rounded-full bg-[#FBBC04]/10 blur-3xl" />
@@ -122,14 +116,11 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
         </div>
 
         <div className="relative z-10 w-full max-w-md lg:max-w-lg">
-          
-         
           <div className="mb-6 flex justify-center lg:hidden">
             <img src={logoLudusDice} alt="Ludus" className="w-[180px] sm:w-[230px]" />
           </div>
 
           <div className="rounded-[28px] sm:rounded-[38px] border border-white/60 bg-white px-5 py-6 sm:px-7 sm:py-8 shadow-[0_-10px_50px_rgba(49,53,139,0.08)]">
-            
             <div className="mb-6 sm:mb-8">
               <h1 className="text-[28px] sm:text-[36px] font-black leading-tight text-[#31358B]">
                 Bem-vindo de volta!
@@ -140,7 +131,6 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-              
               <div>
                 <label className="mb-1.5 sm:mb-2 block text-sm font-semibold text-[#535353]">E-mail</label>
                 <div className="flex items-center rounded-2xl border border-[#dfe3f2] bg-[#fafbff] px-4 transition-all focus-within:border-[#FBBC04] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#FBBC04]/20">
@@ -179,7 +169,7 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
               <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={onForgotPassword} 
+                  onClick={() => navigate('/forgot-password')} 
                   className="text-xs sm:text-sm font-semibold text-[#31358B] transition hover:opacity-70"
                 >
                   Esqueceu sua senha?

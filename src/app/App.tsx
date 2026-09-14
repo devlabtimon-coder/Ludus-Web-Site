@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardPage } from './pages/DashboardPage';
 import { RentalsPage } from './pages/RentalsPage';
 import { CollectionPage } from './pages/CollectionPage';
@@ -7,97 +6,47 @@ import { UsersPage } from './pages/UsersPage';
 import { LoginPage } from './pages/LoginPage';
 import { PendingRegistrationsPage } from './pages/PendingRegistrationsPage';
 import { MechanicsPage } from './pages/MechanicsPage';
-import { ReportsPage } from './pages/ReportsPage'; 
+import { ReportsPage } from './pages/ReportsPage';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { TemporadasPage } from './pages/TemporadasPage';
 import { RankingPage } from './pages/RankingPage';
 import { AdminLogsPage } from './pages/AdminLogsPage';
-import { MaintenancePage } from './pages/MaintenancePage'; 
+import { MaintenancePage } from './pages/MaintenancePage';
 
-type PageType =
-  | 'dashboard'
-  | 'acervo'
-  | 'emprestimos'
-  | 'usuarios'
-  | 'cadastro'
-  | 'relatorios'
-  | 'mecanicas'
-  | 'temporadas'
-  | 'ranking'
-  | 'auditoria'
-  | 'manutencao' 
-  | 'login'
-  | 'forgot-password';
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
 
 export default function App() {
-  const getInitialPage = (): PageType => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      if (window.location.pathname === '/forgot-password') {
-        return 'forgot-password';
-      }
-      return 'login';
-    }
-   
-    return 'dashboard';
-  };
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Rotas Públicas */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-  const [currentPage, setCurrentPage] = useState<PageType>(getInitialPage());
-  
-  useEffect(() => {
-    if (currentPage === 'login') {
-      window.history.pushState({}, '', '/login');
-    } else if (currentPage === 'forgot-password') {
-      window.history.pushState({}, '', '/forgot-password');
-    } else {
-      window.history.pushState({}, '', '/');
-    }
-  }, [currentPage]);
-  
-  const handleLogin = () => {
-    setCurrentPage('dashboard');
-  };
-  
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.clear();
-    setCurrentPage('login');
-  };
+        {/* Rotas Privadas (Protegidas) */}
+        <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/acervo" element={<ProtectedRoute><CollectionPage /></ProtectedRoute>} />
+        <Route path="/emprestimos" element={<ProtectedRoute><RentalsPage /></ProtectedRoute>} />
+        <Route path="/usuarios" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+        <Route path="/cadastro" element={<ProtectedRoute><PendingRegistrationsPage /></ProtectedRoute>} />
+        <Route path="/relatorios" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+        <Route path="/mecanicas" element={<ProtectedRoute><MechanicsPage /></ProtectedRoute>} />
+        <Route path="/temporadas" element={<ProtectedRoute><TemporadasPage /></ProtectedRoute>} />
+        <Route path="/ranking" element={<ProtectedRoute><RankingPage /></ProtectedRoute>} />
+        <Route path="/auditoria" element={<ProtectedRoute><AdminLogsPage /></ProtectedRoute>} />
+        <Route path="/manutencao" element={<ProtectedRoute><MaintenancePage /></ProtectedRoute>} />
 
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'login':
-        return <LoginPage onLogin={handleLogin} onForgotPassword={() => setCurrentPage('forgot-password')} />;
-      case 'forgot-password':
-        return <ForgotPassword onBack={() => setCurrentPage('login')} />;
-      case 'dashboard':
-        return <DashboardPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'acervo':
-        return <CollectionPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'emprestimos':
-        return <RentalsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'usuarios':
-        return <UsersPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'cadastro':
-        return <PendingRegistrationsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'relatorios':
-        return <ReportsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'mecanicas':
-        return <MechanicsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'temporadas':
-        return <TemporadasPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'ranking':
-        return <RankingPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'auditoria':
-        return <AdminLogsPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      case 'manutencao': // <-- Adicionado
-        return <MaintenancePage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-      default:
-        return <DashboardPage onNavigate={(page: any) => setCurrentPage(page)} onLogout={handleLogout} />;
-    }
-  };
-
-  return renderPage();
+       
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
