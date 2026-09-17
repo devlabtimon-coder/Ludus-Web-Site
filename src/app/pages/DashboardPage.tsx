@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 import { MetricCard } from '../components/dashboard/MetricCard';
@@ -13,12 +14,12 @@ import { Plus, Info, Bell, Users } from 'lucide-react';
 import { useDashboard } from '../../hooks';
 
 interface DashboardPageProps {
-  onNavigate?: (page: 'dashboard' | 'acervo' | 'emprestimos' | 'usuarios' | 'cadastro' | 'relatorios' | 'mecanicas' | 'temporadas' | 'ranking' | 'manutencao' | 'login') => void;
   onLogout?: () => void;
 }
 
-export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
+export function DashboardPage({ onLogout }: DashboardPageProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const navigate = useNavigate();
 
   const {
     metrics,
@@ -42,9 +43,6 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar
-        activePage="dashboard"
-        onNavigate={onNavigate}
-        onLogout={onLogout}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
@@ -68,7 +66,7 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
               subtext="Clique para ver o Acervo"
               icon={<Plus size={80} strokeWidth={1.5} />}
               variant="yellow"
-              onClick={() => onNavigate?.('acervo')}
+              onClick={() => navigate('/acervo')}
             />
             
             <MetricCard
@@ -77,7 +75,7 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
               subtext="Clique para ver Empréstimos"
               icon={<Info size={80} strokeWidth={1.5} />}
               variant="white"
-              onClick={() => onNavigate?.('emprestimos')}
+              onClick={() => navigate('/emprestimos')}
             />
             
             <MetricCard
@@ -86,7 +84,7 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
               subtext="Clique para ver Cadastros"
               icon={<Bell size={80} strokeWidth={1.5} />}
               variant="dark"
-              onClick={() => onNavigate?.('cadastro')}
+              onClick={() => navigate('/cadastro')}
             />
             
             <MetricCard
@@ -95,7 +93,7 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
               subtext="Clique para ver Usuários"
               icon={<Users size={80} strokeWidth={1.5} />}
               variant="white-yellow" 
-              onClick={() => onNavigate?.('usuarios')}
+              onClick={() => navigate('/usuarios')}
             />
           </div>
 
