@@ -29,13 +29,18 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
   const fetchUsers = async () => {
     try {
       const res = await api.get('/admin/users');
-      const pendings = res.data.filter((u: any) => u.registrationStatus === 'PENDING');
+      
+      
+      const usersList = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      
+      const pendings = usersList.filter((u: any) => u.registrationStatus === 'PENDING');
       setPendingUsers(pendings);
+      
       if (pendings.length > 0 && !selectedId) {
         setSelectedId(pendings[0].id);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Erro ao buscar usuários pendentes:", error);
     }
   };
 
@@ -95,14 +100,16 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
 
   const handleRequestResendDoc = async (id: string, documentName: string) => {
     try {
-      await api.post(`/admin/users/${id}/request-doc`, { documentName });
-      toast.info(`Solicitação de reenvio (${documentName}) enviada ao usuário!`);
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao enviar notificação de reenvio.");
+    
+      const cleanDocumentName = documentName.replace(/^\d+\.\s*/, '');
+      
+      await api.post(`/admin/users/${id}/request-doc`, { documentName: cleanDocumentName });
+      toast.success(`Solicitação de reenvio (${cleanDocumentName}) enviada ao usuário!`);
+    } catch (error: any) {
+      console.error("Erro detalhado ao solicitar reenvio:", error?.response || error);
+      toast.error(error?.response?.data?.error || "Erro ao enviar notificação de reenvio.");
     }
   };
-
   const selectedRegistration = pendingUsers.find((u) => u.id === selectedId) || null;
 
   return (
