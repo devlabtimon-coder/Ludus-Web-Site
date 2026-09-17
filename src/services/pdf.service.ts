@@ -33,6 +33,7 @@ function getTierColor(tier: string) {
 }
 
 function getPeriodLabel(period: string) {
+  if (period === 'day') return 'Fechamento Diário (Hoje)';
   if (period === 'week') return 'Últimos 7 dias';
   if (period === 'year') return 'Últimos 12 meses';
   return 'Últimos 30 dias';
@@ -44,7 +45,6 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
   const periodLabel = getPeriodLabel(periodCode);
   const emissionDate = new Date().toLocaleString('pt-BR');
 
- 
   const topGames = Array.isArray(reportData.topGames) ? reportData.topGames : [];
   const topGamesBody = [
     [
@@ -64,7 +64,6 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
         ])
   ];
 
-  
   const history = Array.isArray(reportData.history) ? reportData.history : [];
   const historyBody = [
     [
@@ -92,7 +91,6 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
         ])
   ];
 
-  
   const gamesAnalytics = Array.isArray(reportData.gamesAnalytics) ? reportData.gamesAnalytics : [];
   const gamesAnalyticsBody = [
     [

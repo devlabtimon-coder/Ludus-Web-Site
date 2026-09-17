@@ -2,8 +2,8 @@ import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YA
 
 export interface RentalsEvolutionChartProps {
   data: any[];
-  period: 'week' | 'month' | 'year';
-  onPeriodChange: (p: 'week' | 'month' | 'year') => void;
+  period: 'day' | 'week' | 'month' | 'year';
+  onPeriodChange: (p: 'day' | 'week' | 'month' | 'year') => void;
 }
 
 export function RentalsEvolutionChart({ data, period, onPeriodChange }: RentalsEvolutionChartProps) {
@@ -12,7 +12,7 @@ export function RentalsEvolutionChart({ data, period, onPeriodChange }: RentalsE
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Evolução de Empréstimos</h2>
         <div className="flex gap-2">
-          {(['week', 'month', 'year'] as const).map((p) => (
+          {(['day', 'week', 'month', 'year'] as const).map((p) => (
             <button
               key={p}
               onClick={() => onPeriodChange(p)}
@@ -20,11 +20,12 @@ export function RentalsEvolutionChart({ data, period, onPeriodChange }: RentalsE
                 period === p ? 'bg-[#04096E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {p === 'week' ? 'Semana' : p === 'month' ? 'Mês' : 'Ano'}
+              {p === 'day' ? 'Hoje' : p === 'week' ? 'Semana' : p === 'month' ? 'Mês' : 'Ano'}
             </button>
           ))}
         </div>
       </div>
+      
       <ResponsiveContainer width="100%" height={280}>
         <AreaChart data={data}>
           <defs>
