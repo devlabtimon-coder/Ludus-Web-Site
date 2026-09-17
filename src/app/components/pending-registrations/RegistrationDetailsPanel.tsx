@@ -1,5 +1,5 @@
-import { User, Folder, FileText, Check, Upload, ExternalLink, X } from 'lucide-react';
-import { useState } from 'react';
+import { User, Folder, FileText, Check, Upload, ExternalLink, X, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Avatar } from '../shared/Avatar';
 
 interface RegistrationDetailsPanelProps {
@@ -17,7 +17,14 @@ export function RegistrationDetailsPanel({
 }: RegistrationDetailsPanelProps) {
   const [reason, setReason] = useState("");
   const [previewFile, setPreviewFile] = useState<{ url: string; isPdf: boolean } | null>(null);
+  const [requestedDocs, setRequestedDocs] = useState<Record<string, boolean>>({});
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
+
+
+  useEffect(() => {
+    setRequestedDocs({});
+    setReason("");
+  }, [registration?.id]);
 
   if (!registration) {
     return (
@@ -69,6 +76,13 @@ export function RegistrationDetailsPanel({
     );
   };
 
+  const handleRequestClick = (title: string) => {
+    if (onRequestResendDoc) {
+      onRequestResendDoc(registration.id, title);
+      setRequestedDocs(prev => ({ ...prev, [title]: true }));
+    }
+  };
+
   const renderDocument = (title: string, url: string | null) => {
     if (url) {
       const isActuallyPdf = url.toLowerCase().includes('.pdf');
@@ -92,15 +106,25 @@ export function RegistrationDetailsPanel({
       );
     }
 
+    const isRequested = requestedDocs[title];
+
     return (
-      <div key={title} className="bg-[#FFF9E6] border-2 border-dashed border-[#FBBC04] rounded-xl p-3 sm:p-4 text-center">
-        <Upload className="text-[#B8860B] mx-auto mb-2" size={24} />
-        <p className="text-xs sm:text-sm font-bold text-[#9A6B00] mb-2">{title} não enviado</p>
+      <div key={title} className={`border-2 border-dashed rounded-xl p-3 sm:p-4 text-center transition-all ${isRequested ? 'bg-green-50 border-green-300' : 'bg-[#FFF9E6] border-[#FBBC04]'}`}>
+        <Upload className={`${isRequested ? 'text-green-600' : 'text-[#B8860B]'} mx-auto mb-2`} size={24} />
+        <p className={`text-xs sm:text-sm font-bold ${isRequested ? 'text-green-800' : 'text-[#9A6B00]'} mb-2`}>
+          {isRequested ? `${title} - Aviso Enviado!` : `${title} não enviado`}
+        </p>
         <button
-          onClick={() => onRequestResendDoc && onRequestResendDoc(registration.id, title)}
-          className="bg-[#FBBC04] hover:bg-[#E5AA00] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+          onClick={() => handleRequestClick(title)}
+          disabled={isRequested}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 mx-auto ${
+            isRequested 
+              ? 'bg-green-600 text-white cursor-default shadow-xs' 
+              : 'bg-[#FBBC04] hover:bg-[#E5AA00] text-white'
+          }`}
         >
-          Solicitar Reenvio
+          {isRequested ? <CheckCircle2 size={14} /> : null}
+          {isRequested ? 'Solicitado ✅' : 'Solicitar Reenvio'}
         </button>
       </div>
     );
@@ -120,7 +144,7 @@ export function RegistrationDetailsPanel({
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 mt-3 truncate px-2">{registration.name}</h2>
             <p className="text-xs sm:text-sm text-gray-500 truncate px-2">{registration.email}</p>
             
-            {/* Destaque para a Matrícula no topo */}
+
             {isIfmaMode && registration.matricula && (
               <div className="mt-2">
                 <span className="inline-block px-3 py-1 bg-[#F0F2FF] text-[#04096E] border border-[#04096E]/20 rounded-lg text-xs font-black">

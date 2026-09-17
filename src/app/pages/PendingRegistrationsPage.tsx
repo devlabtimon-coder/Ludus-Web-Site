@@ -100,16 +100,21 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
 
   const handleRequestResendDoc = async (id: string, documentName: string) => {
     try {
-    
-      const cleanDocumentName = documentName.replace(/^\d+\.\s*/, '');
+      const cleanName = documentName.replace(/^\d+\.\s*/, '');
       
-      await api.post(`/admin/users/${id}/request-doc`, { documentName: cleanDocumentName });
-      toast.success(`Solicitação de reenvio (${cleanDocumentName}) enviada ao usuário!`);
+      const res = await api.post(`/admin/users/${id}/request-doc`, { 
+        documentName: cleanName 
+      });
+
+      toast.success(res.data?.message || "Solicitação enviada com sucesso!");
     } catch (error: any) {
-      console.error("Erro detalhado ao solicitar reenvio:", error?.response || error);
-      toast.error(error?.response?.data?.error || "Erro ao enviar notificação de reenvio.");
+      console.error("Erro retornado pela API:", error);
+      
+      const mensagemErro = error?.response?.data?.error || "Erro desconhecido ao solicitar reenvio.";
+      toast.error(mensagemErro);
     }
   };
+
   const selectedRegistration = pendingUsers.find((u) => u.id === selectedId) || null;
 
   return (
