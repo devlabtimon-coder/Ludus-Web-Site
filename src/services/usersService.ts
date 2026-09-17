@@ -4,7 +4,8 @@ import { User } from '../types/api';
 export const usersService = {
  
   getUsers: async () => {
-    const response = await api.get<User[]>('/users');
+   
+    const response = await api.get<User[]>('/admin/users');
     return response.data;
   },
 
@@ -13,7 +14,6 @@ export const usersService = {
     return response.data;
   },
 
-  
   updateProfile: async (userData: Partial<User>) => {
     const response = await api.patch<User>('/users/profile', userData);
     return response.data;
