@@ -2,11 +2,10 @@ import { api } from './api';
 import { User } from '../types/api';
 
 export const usersService = {
- 
   getUsers: async () => {
+    const response = await api.get<any>('/admin/users');
    
-    const response = await api.get<User[]>('/admin/users');
-    return response.data;
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
   },
 
   getProfile: async () => {
