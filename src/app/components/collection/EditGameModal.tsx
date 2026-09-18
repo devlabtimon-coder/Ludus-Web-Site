@@ -72,21 +72,20 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
     setLoading(true);
     try {
       const numPrice = parseFloat(price.replace(',', '.'));
+      const validMechanics = mechanicsList.map(m => m.trim()).filter(Boolean);
       
       await api.patch(`/games/${game.id}`, {
         title,
         price: isNaN(numPrice) ? 0 : numPrice,
         available,
         description,
-        howToPlayUrl
+        howToPlayUrl,
+        mechanics: validMechanics
       });
 
       if (tier !== game.tier) {
         await api.patch(`/categories/games/${game.id}/tier`, { tier });
       }
-
-      const validMechanics = mechanicsList.map(m => m.trim()).filter(Boolean);
-      await api.put(`/games/${game.id}/mechanics`, { mechanics: validMechanics });
 
       toast.success("Jogo atualizado com sucesso!");
       onSaved();
