@@ -85,7 +85,9 @@ export function RegistrationDetailsPanel({
 
   const renderDocument = (title: string, url: string | null) => {
     if (url) {
-      const isActuallyPdf = url.toLowerCase().includes('.pdf');
+      // Links assinados do Cloudinary trazem o formato em `format=pdf`, sem extensão no caminho.
+      const lowerUrl = url.toLowerCase();
+      const isActuallyPdf = lowerUrl.includes('.pdf') || lowerUrl.includes('format=pdf');
       return (
         <div key={title} className="bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-100">
           <div className="flex items-center gap-3 mb-3">
@@ -269,8 +271,9 @@ export function RegistrationDetailsPanel({
                   <ExternalLink size={14} /> Abrir em nova aba
                 </a>
               </div>
-              <iframe 
-                src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`}
+              {/* Exibido direto do link assinado: o documento não é enviado a serviços de terceiros. */}
+              <iframe
+                src={previewFile.url}
                 className="w-full flex-1"
                 title="PDF Viewer"
               />
