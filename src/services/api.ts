@@ -39,7 +39,8 @@ api.interceptors.response.use(
       url.includes('/auth/resend-code');
 
    
-    const isLoginRequest = url.includes('/login') || url.includes('/auth/login');
+    // Erros de login (inclusive com Google) devem aparecer na tela, sem recarregá-la.
+    const isLoginRequest = url.includes('/login') || url.includes('/auth/login') || url.includes('/auth/google');
 
 
     if (status === 401 && !isLoginRequest) {
