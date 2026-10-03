@@ -16,7 +16,6 @@ export function PendingRegistrationCard({
   onApprove,
   onReject,
 }: PendingRegistrationCardProps) {
-  console.log("DADOS DO USUÁRIO:", user);
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
   const getBorderColor = () => {
