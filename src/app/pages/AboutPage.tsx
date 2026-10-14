@@ -7,7 +7,7 @@ import {
 import { toast } from 'sonner';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
-import logoDice from '../../assets/images/logo-dice.png';
+import logoWordmark from '../../assets/images/logo-wordmark.png';
 import { Loading } from '../components/shared/Loading';
 import { ErrorMessage } from '../components/shared/ErrorMessage';
 import {
@@ -763,11 +763,8 @@ function AboutPreview({ content }: { content: AboutContent }) {
       </div>
       <div className="bg-white rounded-t-[24px] px-3.5 pt-4 pb-6 min-h-[540px] space-y-1">
         <div className="bg-[#F7F8FF] rounded-2xl p-3.5 text-center border border-[#31358B]/10">
-          <div className="mx-auto w-12 h-12 rounded-full bg-white border border-[#31358B]/10 flex items-center justify-center p-1.5">
-            <img src={logoDice} alt="" className="w-full h-full object-contain" />
-          </div>
-          <p className="mt-2 text-[16px] font-black text-[#31358B]">{content.identity.appName}</p>
-          <p className="mt-1.5 text-[11px] font-bold text-[#5F6475] leading-relaxed whitespace-pre-line">{content.identity.description}</p>
+          <img src={logoWordmark} alt={content.identity.appName} className="mx-auto w-[150px] h-auto" />
+          <p className="mt-2.5 text-[11px] font-bold text-[#5F6475] leading-relaxed whitespace-pre-line">{content.identity.description}</p>
           {content.identity.chips.length > 0 && (
             <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
               {content.identity.chips.map((chip, i) => (
