@@ -1,4 +1,8 @@
-import { Package, Download } from 'lucide-react';
+import { useState } from 'react';
+import { Package, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { gamesService } from '../../../services/gamesService';
+import { generateCollectionPDF, openReportWindow } from '../../../services/pdf.service';
 
 interface CollectionStatsProps {
   available: number;
@@ -18,14 +22,39 @@ export function CollectionStats({
   const availablePercent = total > 0 ? ((available / total) * 100).toFixed(1) : '0.0';
   const rentedPercent = total > 0 ? ((rented / total) * 100).toFixed(1) : '0.0';
   const maintenancePercent = total > 0 ? ((maintenance / total) * 100).toFixed(1) : '0.0';
+  const [exporting, setExporting] = useState(false);
+
+  // Exporta o acervo inteiro. A janela abre já no clique para não ser bloqueada.
+  const handleExportCollection = async () => {
+    const printWindow = openReportWindow();
+    if (!printWindow) {
+      toast.error('O navegador bloqueou a janela do relatório. Permita pop-ups para este site e tente de novo.');
+      return;
+    }
+    setExporting(true);
+    try {
+      const games = await gamesService.getGames();
+      generateCollectionPDF(games, printWindow);
+    } catch {
+      printWindow.close();
+      toast.error('Não foi possível exportar o relatório do acervo. Tente novamente.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Uso do Acervo</h2>
-        <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 transition-colors">
-          <Download size={16} />
-          Exportar
+        <button
+          type="button"
+          onClick={handleExportCollection}
+          disabled={exporting}
+          className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 rounded-lg text-sm font-semibold text-gray-700 transition-colors cursor-pointer"
+        >
+          {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+          {exporting ? 'Gerando...' : 'Exportar'}
         </button>
       </div>
 
