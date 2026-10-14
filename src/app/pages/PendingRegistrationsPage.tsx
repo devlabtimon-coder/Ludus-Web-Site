@@ -82,8 +82,8 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
       toast.success("Cadastro aprovado com sucesso!");
       setSelectedId(null);
       fetchUsers();
-    } catch (error) {
-      toast.error("Erro ao aprovar cadastro.");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || "Erro ao aprovar cadastro.");
     }
   };
 
