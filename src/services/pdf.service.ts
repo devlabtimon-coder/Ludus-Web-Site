@@ -361,3 +361,265 @@ export const generateAdminReportPDF = (reportData: any, periodCode: string) => {
 
   pdfMakeObj.createPdf(docDefinition as TDocumentDefinitions).download(`Ludus_Relatorio_${periodCode}_${Date.now()}.pdf`);
 };
+// ---------------------------------------------------------------------------
+// Catálogo e inventário do acervo: abre uma janela de impressão com o relatório,
+// onde o admin escolhe "Salvar como PDF".
+// ---------------------------------------------------------------------------
+
+type CollectionGame = {
+  title: string;
+  tier?: string | null;
+  mechanics?: string[] | null;
+  minPlayers?: number | null;
+  maxPlayers?: number | null;
+  price?: number | null;
+  rating?: number | null;
+  available?: boolean;
+  isActive?: boolean;
+  isAvailableNow?: boolean;
+  copiesCount?: number;
+  availableCopiesCount?: number;
+  rentalsCount?: number;
+};
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const TIER_CLASSES = ['latao', 'bronze', 'prata', 'ouro', 'diamante'];
+
+function getStatusLabel(game: CollectionGame) {
+  if (game.isActive === false) return { text: 'Manutenção', bg: '#FEE2E2', color: '#B91C1C' };
+  if (game.isAvailableNow ?? game.available) return { text: 'Disponível', bg: '#DCFCE7', color: '#15803D' };
+  return { text: 'Alugado', bg: '#FEF3C7', color: '#B45309' };
+}
+
+function formatPlayers(game: CollectionGame) {
+  const min = game.minPlayers ?? 1;
+  if (!game.maxPlayers) return `${min}+`;
+  return game.maxPlayers === min ? `${min}` : `${min}-${game.maxPlayers}`;
+}
+
+// Abre a janela de impressão. Chame direto no clique: navegadores bloqueiam
+// pop-ups abertos depois de um await.
+export function openReportWindow() {
+  const printWindow = window.open('', '_blank', 'width=1100,height=800');
+  if (printWindow) {
+    printWindow.document.write(
+      '<p style="font-family: system-ui, sans-serif; padding: 32px; color: #04096D;">Gerando relatório do acervo…</p>',
+    );
+  }
+  return printWindow;
+}
+
+// Retorna false quando o navegador bloqueou a janela.
+export function generateCollectionPDF(games: CollectionGame[], targetWindow?: Window | null) {
+  const printWindow = targetWindow ?? openReportWindow();
+  if (!printWindow) return false;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('pt-BR');
+  const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  const statuses = games.map(getStatusLabel);
+  const totalGames = games.length;
+  const totalCopies = games.reduce((acc, g) => acc + (g.copiesCount ?? 0), 0);
+  const availableCopies = games.reduce((acc, g) => acc + (g.availableCopiesCount ?? 0), 0);
+  const availableGames = statuses.filter((s) => s.text === 'Disponível').length;
+  const rentedGames = statuses.filter((s) => s.text === 'Alugado').length;
+  const maintenanceGames = statuses.filter((s) => s.text === 'Manutenção').length;
+
+  const rowsHtml = games
+    .map((game, index) => {
+      const status = statuses[index];
+      const copiesCount = game.copiesCount ?? 0;
+      const availCopies = game.availableCopiesCount ?? (game.available ? copiesCount : 0);
+      const rentalsCount = game.rentalsCount ?? 0;
+      const rating = Number(game.rating || 0) > 0 ? Number(game.rating).toFixed(1) : '-';
+      const tier = String(game.tier || 'BRONZE').toUpperCase();
+      const tierClass = TIER_CLASSES.includes(tier.toLowerCase()) ? tier.toLowerCase() : 'bronze';
+      const mechanics = (game.mechanics ?? []).slice(0, 3);
+
+      return `
+        <tr>
+          <td style="text-align: center; color: #6B7280; font-weight: 600;">${index + 1}</td>
+          <td>
+            <div style="font-weight: 700; color: #04096D; font-size: 12px;">${escapeHtml(game.title)}</div>
+            ${
+              mechanics.length > 0
+                ? `<div style="font-size: 10px; color: #6B7280; margin-top: 2px;">${escapeHtml(mechanics.join(', '))}</div>`
+                : ''
+            }
+          </td>
+          <td style="text-align: center;">
+            <span class="tier-badge tier-${tierClass}">${escapeHtml(tier)}</span>
+          </td>
+          <td style="text-align: center; font-weight: 600;">${escapeHtml(formatPlayers(game))} jog.</td>
+          <td style="text-align: center; font-weight: 700; color: #04096D;">${availCopies}/${copiesCount} un.</td>
+          <td style="text-align: center; font-weight: 700;">${rentalsCount}</td>
+          <td style="text-align: center; font-weight: 600;">★ ${rating}</td>
+          <td style="text-align: right; font-weight: 700; color: #04096D;">R$ ${Number(game.price || 0).toFixed(2)}</td>
+          <td style="text-align: center;">
+            <span style="background: ${status.bg}; color: ${status.color}; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 700;">
+              ${status.text}
+            </span>
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Relatório de Acervo - Ludus (${dateStr})</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+          color: #1F2937;
+          background: #FFFFFF;
+          padding: 28px;
+        }
+        .header {
+          background: linear-gradient(135deg, #04096D 0%, #18208C 100%);
+          color: #FFFFFF;
+          padding: 24px 28px;
+          border-radius: 16px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        .header h1 { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+        .header p { font-size: 12px; color: #D6DCFF; margin-top: 4px; }
+        .header-meta { text-align: right; font-size: 11px; color: #E5E7EB; }
+        .header-meta strong { color: #FBBC04; font-size: 13px; display: block; margin-bottom: 2px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 22px; }
+        .kpi-card { border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px 14px; background: #F9FAFB; }
+        .kpi-card.highlight { background: #04096D; color: #FFFFFF; border-color: #04096D; }
+        .kpi-card.yellow { background: #FFFBEB; border-color: #FDE68A; }
+        .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #6B7280; margin-bottom: 4px; }
+        .kpi-card.highlight .kpi-label { color: #FBBC04; }
+        .kpi-value { font-size: 22px; font-weight: 900; color: #04096D; }
+        .kpi-card.highlight .kpi-value { color: #FFFFFF; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        thead { display: table-header-group; }
+        thead tr { background: #F0F2FF; border-bottom: 2px solid #04096D; }
+        th {
+          padding: 10px 8px;
+          text-align: left;
+          font-size: 10px;
+          font-weight: 800;
+          color: #04096D;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+        td { padding: 9px 8px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
+        tr { page-break-inside: avoid; }
+        tbody tr:nth-child(even) { background-color: #FAFAFA; }
+        .tier-badge { padding: 3px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        .tier-diamante { background: #E0F7FA; color: #006064; }
+        .tier-ouro { background: #FEF3C7; color: #92400E; }
+        .tier-prata { background: #E5E7EB; color: #374151; }
+        .tier-bronze { background: #FFEDD5; color: #9A3412; }
+        .tier-latao { background: #FEF9C3; color: #854D0E; }
+        .empty { padding: 32px; text-align: center; color: #6B7280; }
+        .footer {
+          margin-top: 24px;
+          padding-top: 12px;
+          border-top: 1px solid #E5E7EB;
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
+          color: #9CA3AF;
+        }
+        @page { size: A4 landscape; margin: 12mm; }
+        @media print {
+          body { padding: 0; }
+          .header, .kpi-card, thead tr, .tier-badge, td span {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <h1>LUDUS — Catálogo e Inventário do Acervo</h1>
+          <p>Biblioteca de Jogos de Tabuleiro • IFMA Campus Timon</p>
+        </div>
+        <div class="header-meta">
+          <strong>Relatório Oficial do Acervo</strong>
+          Emitido em ${dateStr} às ${timeStr}
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Total de Títulos</div>
+          <div class="kpi-value">${totalGames}</div>
+        </div>
+        <div class="kpi-card yellow">
+          <div class="kpi-label">Exemplares Físicos</div>
+          <div class="kpi-value">${totalCopies} un.</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Títulos Disponíveis</div>
+          <div class="kpi-value" style="color: #16A34A;">${availableGames} (${availableCopies} un.)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Títulos Alugados</div>
+          <div class="kpi-value" style="color: #D97706;">${rentedGames}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Em Manutenção</div>
+          <div class="kpi-value" style="color: #DC2626;">${maintenanceGames}</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 36px; text-align: center;">#</th>
+            <th>Título / Mecânicas</th>
+            <th style="text-align: center;">Tier</th>
+            <th style="text-align: center;">Jogadores</th>
+            <th style="text-align: center;">Exemplares (Livres/Total)</th>
+            <th style="text-align: center;">Aluguéis</th>
+            <th style="text-align: center;">Nota</th>
+            <th style="text-align: right;">Preço</th>
+            <th style="text-align: center;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml || '<tr><td colspan="9" class="empty">Nenhum jogo para listar.</td></tr>'}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <span>Sistema Ludus • Gestão de Acervo</span>
+        <span>Total listado: ${totalGames} jogo(s)</span>
+      </div>
+
+      <script>
+        window.onload = function () {
+          setTimeout(function () { window.print(); }, 250);
+        };
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  return true;
+}
