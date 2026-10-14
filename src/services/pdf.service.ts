@@ -390,7 +390,13 @@ const escapeHtml = (value: unknown) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const TIER_CLASSES = ['latao', 'bronze', 'prata', 'ouro', 'diamante'];
+const TIER_LABELS: Record<string, string> = {
+  LATAO: 'Latão',
+  BRONZE: 'Bronze',
+  PRATA: 'Prata',
+  OURO: 'Ouro',
+  DIAMANTE: 'Diamante',
+};
 
 function getStatusLabel(game: CollectionGame) {
   if (game.isActive === false) return { text: 'Manutenção', bg: '#FEE2E2', color: '#B91C1C' };
@@ -441,7 +447,7 @@ export function generateCollectionPDF(games: CollectionGame[], targetWindow?: Wi
       const rentalsCount = game.rentalsCount ?? 0;
       const rating = Number(game.rating || 0) > 0 ? Number(game.rating).toFixed(1) : '-';
       const tier = String(game.tier || 'BRONZE').toUpperCase();
-      const tierClass = TIER_CLASSES.includes(tier.toLowerCase()) ? tier.toLowerCase() : 'bronze';
+      const tierClass = TIER_LABELS[tier] ? tier.toLowerCase() : 'bronze';
       const mechanics = (game.mechanics ?? []).slice(0, 3);
 
       return `
@@ -456,7 +462,7 @@ export function generateCollectionPDF(games: CollectionGame[], targetWindow?: Wi
             }
           </td>
           <td style="text-align: center;">
-            <span class="tier-badge tier-${tierClass}">${escapeHtml(tier)}</span>
+            <span class="tier-badge tier-${tierClass}">${escapeHtml(TIER_LABELS[tier] ?? tier)}</span>
           </td>
           <td style="text-align: center; font-weight: 600;">${escapeHtml(formatPlayers(game))} jog.</td>
           <td style="text-align: center; font-weight: 700; color: #04096D;">${availCopies}/${copiesCount} un.</td>
@@ -522,6 +528,7 @@ export function generateCollectionPDF(games: CollectionGame[], targetWindow?: Wi
           letter-spacing: 0.4px;
         }
         td { padding: 9px 8px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
+        td:not(:nth-child(2)) { white-space: nowrap; }
         tr { page-break-inside: avoid; }
         tbody tr:nth-child(even) { background-color: #FAFAFA; }
         .tier-badge { padding: 3px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
