@@ -13,6 +13,7 @@ import { TemporadasPage } from './pages/TemporadasPage';
 import { RankingPage } from './pages/RankingPage';
 import { AdminLogsPage } from './pages/AdminLogsPage';
 import { MaintenancePage } from './pages/MaintenancePage';
+import { AboutPage } from './pages/AboutPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/ranking" element={<ProtectedRoute><RankingPage /></ProtectedRoute>} />
         <Route path="/auditoria" element={<ProtectedRoute><AdminLogsPage /></ProtectedRoute>} />
         <Route path="/manutencao" element={<ProtectedRoute><MaintenancePage /></ProtectedRoute>} />
+        <Route path="/sobre-app" element={<ProtectedRoute><AboutPage /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

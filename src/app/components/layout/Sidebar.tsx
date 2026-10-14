@@ -10,7 +10,8 @@ import {
   Trophy,
   Calendar,
   ShieldAlert,
-  Wrench
+  Wrench,
+  Info
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import logoFull from '../../../assets/images/logo-full.png';
@@ -93,6 +94,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       icon: <ShieldAlert size={19} />,
       label: 'Auditoria',
       path: 'auditoria'
+    },
+    {
+      icon: <Info size={19} />,
+      label: 'Sobre o App',
+      path: 'sobre-app'
     }
   ];
 
