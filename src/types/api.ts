@@ -29,6 +29,8 @@ export interface User {
 export interface Game {
   id: string;
   ludopediaId?: number;
+  // Id no BoardGameGeek: liga o jogo ao preço de mercado do ComparaJogos.
+  bggId?: number | null;
   title: string;
   description?: string;
   price: number;
