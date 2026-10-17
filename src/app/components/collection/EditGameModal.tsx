@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../../services/api';
 import { Game, GameTier } from '../../../types/api';
-import { X, Trash2, Save, Package, RefreshCw, Loader2, Tags, ChevronDown } from 'lucide-react';
+import { X, Trash2, Save, Package, RefreshCw, Loader2, Tags, ChevronDown, ExternalLink } from 'lucide-react';
 import { GameComponentsModal } from './GameComponentsModal';
 import { useMechanics } from '../../../hooks/useMechanics';
 import { toast } from 'sonner';
@@ -29,6 +29,7 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
   const [available, setAvailable] = useState(true);
   const [description, setDescription] = useState("");
   const [howToPlayUrl, setHowToPlayUrl] = useState("");
+  const [bggId, setBggId] = useState("");
   
   const [mechanicsInput, setMechanicsInput] = useState("");
   const [mechanicsList, setMechanicsList] = useState<string[]>([]);
@@ -50,6 +51,7 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
       setAvailable(game.available !== false);
       setDescription(game.description || "");
       setHowToPlayUrl(game.howToPlayUrl || "");
+      setBggId(game.bggId ? String(game.bggId) : "");
 
       const gameMechanics = (game as any).mechanics || [];
       const parsedMechanics = gameMechanics.map((m: any) => typeof m === 'string' ? m : m.namePt || m.name);
@@ -69,6 +71,11 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
 
   const handleSave = async () => {
     if (!game) return;
+    const parsedBggId = bggId.trim() ? Number(bggId.trim()) : null;
+    if (parsedBggId !== null && (!Number.isInteger(parsedBggId) || parsedBggId <= 0)) {
+      toast.error("ID do BoardGameGeek deve ser um número inteiro.");
+      return;
+    }
     setLoading(true);
     try {
       const numPrice = parseFloat(price.replace(',', '.'));
@@ -80,7 +87,9 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
         available,
         description,
         howToPlayUrl,
-        mechanics: validMechanics
+        mechanics: validMechanics,
+        // Só envia se mudou: trocar o vínculo refaz a consulta de preço.
+        ...(parsedBggId !== (game.bggId ?? null) && { bggId: parsedBggId }),
       });
 
       if (tier !== game.tier) {
@@ -233,6 +242,34 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
                 <label className="text-sm font-bold text-[#31358B]">Vídeo Tutorial (URL)</label>
                 <input type="text" value={howToPlayUrl} onChange={e => setHowToPlayUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold text-sm focus:ring-2 focus:ring-[#31358B]/20 transition-all" />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="bgg-id" className="text-sm font-bold text-[#31358B]">ID no BoardGameGeek</label>
+              <div className="flex gap-2">
+                <input
+                  id="bgg-id"
+                  type="text"
+                  inputMode="numeric"
+                  value={bggId}
+                  onChange={e => setBggId(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Ex.: 13"
+                  className="w-40 bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold focus:ring-2 focus:ring-[#31358B]/20 transition-all"
+                />
+                {bggId ? (
+                  <>
+                    <a href={`https://boardgamegeek.com/boardgame/${bggId}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 rounded-xl text-[12px] font-bold text-[#31358B] bg-[#F7F8FF] border border-[#31358B]/10 hover:bg-[#E2E6FF] transition">
+                      <ExternalLink size={14} /> Ver no BGG
+                    </a>
+                    <a href={`https://www.comparajogos.com.br/all?q=${encodeURIComponent(title)}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 rounded-xl text-[12px] font-bold text-[#31358B] bg-[#F7F8FF] border border-[#31358B]/10 hover:bg-[#E2E6FF] transition">
+                      <ExternalLink size={14} /> Ver no ComparaJogos
+                    </a>
+                  </>
+                ) : null}
+              </div>
+              <p className="text-xs text-gray-500">
+                Liga o jogo ao preço de mercado do ComparaJogos. É preenchido sozinho pela busca no BGG; corrija se o preço aparecer para o jogo errado. Vazio, o sistema tenta achar de novo.
+              </p>
             </div>
 
             <div className="space-y-2">
