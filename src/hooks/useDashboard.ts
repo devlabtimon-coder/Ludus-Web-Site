@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { dashboardService } from '../services';
+import { getErrorMessage } from '../services/api';
 
 interface DashboardMetrics {
   totalGames: number;
@@ -8,22 +9,25 @@ interface DashboardMetrics {
   activeUsers: number;
 }
 
+// `initialLoading` só vale para a primeira carga; nas seguintes (`refreshing`)
+// o painel continua na tela com os dados antigos até chegar a resposta.
 export function useDashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [recentRentals, setRecentRentals] = useState<any[]>([]);
   const [topGames, setTopGames] = useState<Array<{ name: string; rentals: number }>>([]);
   const [lateAlerts, setLateAlerts] = useState<any[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pendingRentalsTotal, setPendingRentalsTotal] = useState(0);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  const loadedOnce = useRef(false);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
-      setLoading(true);
+      if (loadedOnce.current) setRefreshing(true);
       setError(null);
 
       const data = await dashboardService.getDashboardData();
@@ -33,13 +37,21 @@ export function useDashboard() {
       setTopGames(data.topGames);
       setLateAlerts(data.lateAlerts);
       setPendingApprovals(data.pendingApprovals);
+      setPendingRentalsTotal(data.pendingRentalsTotal);
+      loadedOnce.current = true;
+      setHasLoaded(true);
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar dados do dashboard');
+      setError(getErrorMessage(err, 'Erro ao carregar dados do dashboard'));
       console.error('Erro ao carregar dashboard:', err);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   return {
     metrics,
@@ -47,7 +59,12 @@ export function useDashboard() {
     topGames,
     lateAlerts,
     pendingApprovals,
-    loading,
+    pendingRentalsTotal,
+    initialLoading,
+    refreshing,
+    hasLoaded,
+    // Compatibilidade: `loading` é só a primeira carga.
+    loading: initialLoading,
     error,
     refetch: loadDashboardData,
   };

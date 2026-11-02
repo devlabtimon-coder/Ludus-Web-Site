@@ -27,16 +27,18 @@ export function DashboardPage({ onLogout }: DashboardPageProps) {
     topGames,
     lateAlerts,
     pendingApprovals,
-    loading,
+    pendingRentalsTotal,
+    initialLoading,
+    hasLoaded,
     error,
     refetch,
   } = useDashboard();
 
-  if (loading) {
+  if (initialLoading) {
     return <Loading />;
   }
 
-  if (error) {
+  if (error && !hasLoaded) {
     return <ErrorMessage message={error} onRetry={refetch} />;
   }
 
@@ -49,7 +51,7 @@ export function DashboardPage({ onLogout }: DashboardPageProps) {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header 
-          notificationCount={pendingApprovals?.length || 0}
+          notificationCount={pendingRentalsTotal}
           onLogout={onLogout} 
           onMenuToggle={() => setIsSidebarOpen(true)} 
         />
@@ -58,6 +60,18 @@ export function DashboardPage({ onLogout }: DashboardPageProps) {
           <h1 className="text-2xl sm:text-3xl font-bold text-[#02096D] mb-6 sm:mb-8">
             Visão Geral
           </h1>
+
+          {error && hasLoaded && (
+            <div role="alert" className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <span className="font-semibold">{error}</span>
+              <button
+                onClick={refetch}
+                className="self-start sm:self-auto bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <MetricCard
