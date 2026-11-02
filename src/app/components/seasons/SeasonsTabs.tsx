@@ -5,6 +5,15 @@ import { toast } from 'sonner';
 import { ModalGerenciarTemporada } from './ModalGerenciarTemporada';
 import { useConfirmDialog } from '../shared/ConfirmDialog';
 import { formatSeasonDate } from './seasonDates';
+import {
+  COUPON_REWARD_LABEL,
+  COUPON_STATUS_CLASS,
+  COUPON_STATUS_LABEL,
+  formatDate,
+  formatShortDate,
+  normalizeCouponStatus,
+  normalizeRewardType,
+} from '../../../services/couponsService';
 
 export const NIVEL_ORDER = ['starter', 'family', 'expert', 'ultragamer'] as const;
 export type Nivel = typeof NIVEL_ORDER[number];
@@ -459,24 +468,46 @@ export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
   );
 }
 
+// Aceita o formato atual (tipo/valor/status em minúsculas) e o novo (rewardType, description, status em maiúsculas, usedAt).
+function toHistoryRow(c: any) {
+  const expiresAt: string | null = c.expiresAt ?? c.expiraEm ?? null;
+  const usedAt: string | null = c.usedAt ?? null;
+  const rewardType = normalizeRewardType(c.rewardType ?? c.type ?? c.tipo);
+  const description: string | null = c.description ?? c.descricao ?? null;
+  return {
+    id: c.id ?? c.code ?? c.codigo,
+    usuario: c.usuario ?? c.student?.name ?? c.user?.name ?? '—',
+    temporada: c.temporada ?? c.seasonName ?? c.season?.name ?? 'Avulso',
+    nivel: c.nivel ?? '—',
+    codigo: c.codigo ?? c.code,
+    tipoLabel: COUPON_REWARD_LABEL[rewardType],
+    // Sem descrição no formato antigo, cai no valor só quando não é o rótulo genérico de brinde.
+    recompensa: description ?? (c.valor && c.valor !== 'Item Físico' ? c.valor : null),
+    expiresAt,
+    usedAt,
+    status: normalizeCouponStatus(c.status, expiresAt, usedAt),
+  };
+}
+
 export function Tab4Historico({ couponsData }: { couponsData: any[] }) {
+  const rows = couponsData.map(toHistoryRow);
   return (
     <div className="overflow-x-auto scrollbar-hide rounded-xl border border-gray-100">
-      <table className="w-full text-[13px] min-w-[700px]">
+      <table className="w-full text-[13px] min-w-[860px]">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
-            {['Usuário', 'Temporada', 'Nível Atingido', 'Código', 'Valor', 'Status'].map(h => (
+            {['Usuário', 'Temporada', 'Nível Atingido', 'Código', 'Brinde', 'Validade', 'Status'].map(h => (
               <th key={h} className="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {couponsData.length === 0 ? (
+          {rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="py-8 text-center text-gray-500 font-medium">Nenhum cupom gerado no histórico.</td>
+              <td colSpan={7} className="py-8 text-center text-gray-500 font-medium">Nenhum cupom gerado no histórico.</td>
             </tr>
           ) : (
-            couponsData.map((c) => (
+            rows.map((c) => (
               <tr key={c.id} className="border-b border-gray-50 bg-white">
                 <td className="px-4 py-3 font-semibold text-gray-900">{c.usuario}</td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{c.temporada}</td>
@@ -486,10 +517,17 @@ export function Tab4Historico({ couponsData }: { couponsData: any[] }) {
                   </span>
                 </td>
                 <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-1 rounded-md font-mono text-xs">{c.codigo}</code></td>
-                <td className="px-4 py-3 font-bold text-[#04096D] whitespace-nowrap">{c.valor}</td>
+                <td className="px-4 py-3">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">{c.tipoLabel}</p>
+                  <p className="font-semibold text-[#04096D]">{c.recompensa ?? '—'}</p>
+                </td>
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                  {c.expiresAt ? formatDate(c.expiresAt) : 'Fim da próxima temporada'}
+                </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${c.status === 'ativo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {c.status.toUpperCase()}
+                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${COUPON_STATUS_CLASS[c.status]}`}>
+                    {COUPON_STATUS_LABEL[c.status]}
+                    {c.status === 'USADO' && c.usedAt ? ` em ${formatShortDate(c.usedAt)}` : ''}
                   </span>
                 </td>
               </tr>

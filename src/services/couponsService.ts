@@ -110,15 +110,23 @@ export function describeReward(c: { rewardType: CouponRewardType; description: s
   return 'Brinde da temporada';
 }
 
+// Datas sempre no fuso de São Paulo (o da biblioteca), não no de quem abre o painel.
+const TIME_ZONE = 'America/Sao_Paulo';
+
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  // "AAAA-MM-DD" (formato antigo da lista) já é o dia: não converte fuso para não voltar um dia.
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (dateOnly) return `${dateOnly[3]}/${dateOnly[2]}/${dateOnly[1]}`;
+  return new Date(iso).toLocaleDateString('pt-BR', { timeZone: TIME_ZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+export function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('pt-BR', { timeZone: TIME_ZONE, day: '2-digit', month: '2-digit' });
 }
 
 export function formatDeliveredAt(iso: string): string {
-  const d = new Date(iso);
-  const day = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  return `Entregue em ${day} às ${time}`;
+  const time = new Date(iso).toLocaleTimeString('pt-BR', { timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit' });
+  return `Entregue em ${formatShortDate(iso)} às ${time}`;
 }
 
 export function validityText(expiresAt: string | null): string {
