@@ -11,7 +11,8 @@ import {
   Calendar,
   ShieldAlert,
   Wrench,
-  Info
+  Info,
+  Gift
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import logoFull from '../../../assets/images/logo-full.png';
@@ -79,6 +80,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       icon: <Calendar size={19} />,
       label: 'Temporadas',
       path: 'temporadas'
+    },
+    {
+      icon: <Gift size={19} />,
+      label: 'Brindes',
+      path: 'brindes'
     },
     {
       icon: <Wrench size={19} />,
