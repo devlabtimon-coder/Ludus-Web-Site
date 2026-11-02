@@ -39,7 +39,7 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
       variant: blocking ? 'danger' : 'default',
       // Bloquear exige motivo (o botão só libera com texto); desbloquear não pede.
       reason: blocking
-        ? { label: 'Motivo do bloqueio', placeholder: 'Ex.: devolveu jogo com peças faltando e não respondeu aos contatos.' }
+        ? { label: 'Motivo do bloqueio', placeholder: 'Ex.: devolveu jogo com peças faltando e não respondeu aos contatos.', maxLength: 500 }
         : undefined,
       errorMessage: 'Erro ao alterar status de bloqueio.',
       onConfirm: async (reason) => {

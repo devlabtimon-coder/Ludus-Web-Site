@@ -19,6 +19,7 @@ export interface ConfirmReasonOptions {
   placeholder?: string;
   // Obrigatório por padrão: o botão de confirmar só libera com texto.
   required?: boolean;
+  maxLength?: number;
 }
 
 export interface ConfirmOptions {
@@ -115,6 +116,7 @@ export function ConfirmDialog({
                 value={reasonText}
                 onChange={(e) => setReasonText(e.target.value)}
                 placeholder={reason.placeholder}
+              maxLength={reason.maxLength}
                 rows={3}
                 disabled={submitting}
                 className="bg-white min-h-20"
