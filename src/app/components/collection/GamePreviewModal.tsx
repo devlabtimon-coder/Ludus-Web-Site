@@ -334,9 +334,9 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
         <div className="absolute bottom-0 inset-x-0 pb-[34px] pt-2 px-[18px] bg-transparent pointer-events-none">
           <div className="bg-white rounded-[22px] px-[18px] py-[14px] flex flex-row justify-between items-center shadow-[0_4px_25px_rgba(0,0,0,0.15)] pointer-events-auto">
             <div>
-              <p className="text-[22px] font-black text-[#2E7D32] leading-none">
-                R${(game.price || 0).toFixed(2)} <span className="text-[14px] font-bold text-[#777]">/ dia</span>
-              </p>
+              {/* O app não mostra preço: o aluguel é gratuito e a retirada e a devolução são no mesmo dia. */}
+              <p className="text-[16px] font-black text-[#2E7D32] leading-none">Grátis</p>
+              <p className="text-[12px] font-bold text-[#777] mt-1">Devolução no mesmo dia</p>
             </div>
             
             {isAvailable ? (

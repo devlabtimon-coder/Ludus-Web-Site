@@ -56,7 +56,7 @@ export function GamesCatalogTable({
                 <th className="text-left py-3 sm:py-4 px-4 sm:px-5 text-xs font-bold text-[#31358B] uppercase tracking-wide">Jogo</th>
                 <th className="text-left py-3 sm:py-4 px-4 sm:px-5 text-xs font-bold text-[#31358B] uppercase tracking-wide">Categoria</th>
                 <th className="text-left py-3 sm:py-4 px-4 sm:px-5 text-xs font-bold text-[#31358B] uppercase tracking-wide">Status</th>
-                <th className="text-left py-3 sm:py-4 px-4 sm:px-5 text-xs font-bold text-[#31358B] uppercase tracking-wide">Preço</th>
+                <th className="text-left py-3 sm:py-4 px-4 sm:px-5 text-xs font-bold text-[#31358B] uppercase tracking-wide" title="Valor interno: o aluguel é gratuito para os alunos">Valor ref. (interno)</th>
                 <th className="text-left py-3 sm:py-4 px-4 sm:px-5 text-xs font-bold text-[#31358B] uppercase tracking-wide">Ações</th>
               </tr>
             </thead>
@@ -102,7 +102,7 @@ export function GamesCatalogTable({
                     <td className="py-3 sm:py-4 px-4 sm:px-5"><CategoryBadge category={game.tier} /></td>
                     <td className="py-3 sm:py-4 px-4 sm:px-5"><StatusIndicator status={getStatus(game)} /></td>
                     <td className="py-3 sm:py-4 px-4 sm:px-5">
-                      <span className="text-sm font-bold text-[#04096D]">R$ {(game.price || 0).toFixed(2)}</span>
+                      <span className="text-sm font-medium text-gray-500">R$ {(game.price || 0).toFixed(2)}</span>
                     </td>
                     <td className="py-3 sm:py-4 px-4 sm:px-5">
                       <div className="flex items-center gap-2">

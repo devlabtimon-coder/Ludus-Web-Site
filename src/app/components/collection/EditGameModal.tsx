@@ -213,8 +213,9 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold focus:ring-2 focus:ring-[#31358B]/20 transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-[#31358B]">Preço (R$/dia)</label>
-                <input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold focus:ring-2 focus:ring-[#31358B]/20 transition-all" />
+                <label htmlFor="edit-game-reference-value" className="text-sm font-bold text-[#31358B]">Valor de referência (interno)</label>
+                <input id="edit-game-reference-value" type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} className="w-full bg-[#F0F2FF] rounded-xl px-4 py-3 outline-none text-[#222] font-semibold focus:ring-2 focus:ring-[#31358B]/20 transition-all" />
+                <p className="text-xs text-gray-500">Não aparece no app: o aluguel é gratuito.</p>
               </div>
             </div>
 
