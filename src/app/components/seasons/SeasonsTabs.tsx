@@ -4,6 +4,7 @@ import { api } from '../../../services/api';
 import { toast } from 'sonner';
 import { ModalGerenciarTemporada } from './ModalGerenciarTemporada';
 import { useConfirmDialog } from '../shared/ConfirmDialog';
+import { formatSeasonDate } from './seasonDates';
 
 export const NIVEL_ORDER = ['starter', 'family', 'expert', 'ultragamer'] as const;
 export type Nivel = typeof NIVEL_ORDER[number];
@@ -278,7 +279,7 @@ export function Tab1TodasTemporadas({ seasons, onGerarCupons, fetchSeasons, onSe
                     )}
                   </td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                    {new Date(t.startDate).toLocaleDateString('pt-BR')} até {new Date(t.endDate).toLocaleDateString('pt-BR')}
+                    {formatSeasonDate(t.startDate)} até {formatSeasonDate(t.endDate)}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
                   <td className="px-4 py-3 text-right">

@@ -12,6 +12,7 @@ import {
 } from '../components/seasons/SeasonsTabs';
 
 import { ModalGerenciarTemporada } from '../components/seasons/ModalGerenciarTemporada';
+import { formatSeasonDate } from '../components/seasons/seasonDates';
 
 function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -114,7 +115,7 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
 
   const shortName = temporadaSelecionada ? temporadaSelecionada.name : '—';
   const dateRange = temporadaSelecionada
-    ? `${new Date(temporadaSelecionada.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} – ${new Date(temporadaSelecionada.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
+    ? `${formatSeasonDate(temporadaSelecionada.startDate, { day: '2-digit', month: 'short' })} – ${formatSeasonDate(temporadaSelecionada.endDate, { day: '2-digit', month: 'short', year: 'numeric' })}`
     : '—';
 
   const isEncerrada = temporadaSelecionada?.status === 'encerrada';

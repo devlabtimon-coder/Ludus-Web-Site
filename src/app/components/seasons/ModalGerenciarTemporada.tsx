@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Save, Gift, Loader2 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
+import { toSaoPauloDateInput } from './seasonDates';
 
 const LEVELS = [2, 3, 4, 5];
 
@@ -20,8 +21,10 @@ export function ModalGerenciarTemporada({ isOpen, onClose, onSalvar, season }: a
       if (season) {
         setForm({
           nome: season.name || '',
-          dataInicio: season.startDate ? season.startDate.split('T')[0] : '',
-          dataFim: season.endDate ? season.endDate.split('T')[0] : '',
+          // O fim é salvo como 23:59:59 de São Paulo (02:59 UTC do dia seguinte): cortar o ISO
+          // mostraria o dia errado, então converte para o dia do calendário de São Paulo.
+          dataInicio: toSaoPauloDateInput(season.startDate),
+          dataFim: toSaoPauloDateInput(season.endDate),
         });
 
         const mappedRewards = { ...DEFAULT_REWARDS };
@@ -45,6 +48,12 @@ export function ModalGerenciarTemporada({ isOpen, onClose, onSalvar, season }: a
 
   if (!isOpen) return null;
 
+  // "AAAA-MM-DD" compara certo como texto.
+  const dateRangeError =
+    form.dataInicio && form.dataFim && form.dataFim < form.dataInicio
+      ? 'A data de encerramento não pode ser anterior à data de início.'
+      : null;
+
   const updateReward = (level: number, field: string, value: string) => {
     setRewards((prev: any) => ({
       ...prev,
@@ -57,6 +66,7 @@ export function ModalGerenciarTemporada({ isOpen, onClose, onSalvar, season }: a
     if (!form.nome || !form.dataInicio || !form.dataFim) {
       return toast.error("Preencha o nome e as datas da temporada.");
     }
+    if (dateRangeError) return;
 
     setLoading(true);
 
@@ -79,8 +89,9 @@ export function ModalGerenciarTemporada({ isOpen, onClose, onSalvar, season }: a
     try {
       const payload = {
         nome: form.nome,
-        dataInicio: new Date(`${form.dataInicio}T00:00:00-03:00`).toISOString(),
-        dataFim: new Date(`${form.dataFim}T23:59:59-03:00`).toISOString(),
+        // Dias do calendário puros: a API interpreta como início e fim do dia em São Paulo.
+        dataInicio: form.dataInicio,
+        dataFim: form.dataFim,
         recompensas: formattedRewards,
       };
 
@@ -154,11 +165,22 @@ export function ModalGerenciarTemporada({ isOpen, onClose, onSalvar, season }: a
                   <input
                     type="date"
                     value={form.dataFim}
+                    min={form.dataInicio || undefined}
                     onChange={(e) => setForm({ ...form, dataFim: e.target.value })}
-                    className="w-full mt-1.5 bg-[#F7F8FF] border border-transparent focus:border-[#04096D]/30 rounded-xl px-4 py-3 outline-none text-[#222] font-semibold text-sm transition-all"
+                    aria-invalid={!!dateRangeError}
+                    aria-describedby={dateRangeError ? 'season-date-error' : undefined}
+                    className={`w-full mt-1.5 bg-[#F7F8FF] border rounded-xl px-4 py-3 outline-none text-[#222] font-semibold text-sm transition-all ${
+                      dateRangeError ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-[#04096D]/30'
+                    }`}
                   />
                 </div>
               </div>
+              {dateRangeError && (
+                <p id="season-date-error" role="alert" className="text-sm font-semibold text-red-600 -mt-2">
+                  {dateRangeError}
+                </p>
+              )}
+              <p className="text-xs text-gray-500">As datas valem pelo horário de São Paulo: do início do primeiro dia ao fim do último.</p>
             </div>
 
             <div className="space-y-4 pt-4">
@@ -231,7 +253,7 @@ export function ModalGerenciarTemporada({ isOpen, onClose, onSalvar, season }: a
           <button
             type="submit"
             form="season-form"
-            disabled={loading}
+            disabled={loading || !!dateRangeError}
             className="flex-[2] flex items-center justify-center gap-2 bg-[#04096D] hover:bg-[#070e99] text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-[#04096D]/20 disabled:opacity-60 text-sm"
           >
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
