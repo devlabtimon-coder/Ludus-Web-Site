@@ -241,8 +241,8 @@ export function RegistrationDetailsPanel({
                 toast.error("Preencha o motivo para rejeitar!");
                 return;
               }
-              onReject(registration.id, reason);
-              setReason("");
+              // O motivo só é limpo ao trocar de cadastro: se a confirmação for cancelada, o texto fica.
+              onReject(registration.id, reason.trim());
             }}
             className="w-full sm:flex-1 bg-[#E62325] hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors text-xs sm:text-sm h-11 flex items-center justify-center shadow-sm"
           >
