@@ -4,9 +4,11 @@ import { Avatar } from '../shared/Avatar';
 import { RentalStatus } from '../../../types/api';
 import type { Rental as BaseRental } from '../../../types/api';
 import { ReturnChecklistModal } from './ReturnChecklistModal'; 
+import { toast } from 'sonner';
+import { getErrorMessage, useConfirmDialog } from '../shared/ConfirmDialog';
 
 export interface Rental extends BaseRental {
-  user: BaseRental['user'] & {
+  user?: NonNullable<BaseRental['user']> & {
     avatar?: string | null;
     picture?: string | null;
   };
@@ -14,23 +16,45 @@ export interface Rental extends BaseRental {
 
 interface RentalsTableProps {
   rentals: Rental[];
+  emptyMessage?: string;
  
-  onUpdateStatus?: (id: string, status: RentalStatus, extraData?: { applyPenalty: boolean; penaltyReason: string }) => void;
+  // Deve rejeitar a promise quando a API falhar, para os diálogos mostrarem o erro sem fechar.
+  onUpdateStatus?: (id: string, status: RentalStatus, extraData?: { applyPenalty: boolean; penaltyReason: string }) => Promise<void>;
 }
 
-export function RentalsTable({ rentals, onUpdateStatus }: RentalsTableProps) {
+export function RentalsTable({ rentals, emptyMessage = 'Nenhum empréstimo encontrado.', onUpdateStatus }: RentalsTableProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   
  
   const [returnModalRental, setReturnModalRental] = useState<Rental | null>(null);
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
-  const handleUpdate = async (id: string, status: RentalStatus, extraData?: any) => {
+  // Lança o erro para quem chamou (diálogos); a aprovação direta usa handleApprove, que só avisa.
+  const updateStatus = async (id: string, status: RentalStatus, extraData?: any) => {
     setLoadingId(id);
     try {
       await onUpdateStatus?.(id, status, extraData);
     } finally {
       setLoadingId(null);
     }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await updateStatus(id, 'ACTIVE');
+    } catch (error: any) {
+      toast.error(getErrorMessage(error, 'Erro ao atualizar o aluguel.'));
+    }
+  };
+
+  const handleReject = (rental: Rental) => {
+    requestConfirm({
+      title: 'Rejeitar retirada?',
+      description: `O empréstimo de "${rental.game?.title || rental.gameTitleSnapshot}" para ${rental.user?.name || 'o usuário'} será cancelado.`,
+      confirmLabel: 'Rejeitar retirada',
+      errorMessage: 'Erro ao atualizar o aluguel.',
+      onConfirm: () => updateStatus(rental.id, 'CANCELED'),
+    });
   };
 
   const getRentalStatusInfo = (rental: Rental) => {
@@ -93,6 +117,13 @@ export function RentalsTable({ rentals, onUpdateStatus }: RentalsTableProps) {
                 </tr>
               </thead>
               <tbody>
+                {rentals.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-10 text-center text-sm font-medium text-gray-500">
+                      {emptyMessage}
+                    </td>
+                  </tr>
+                )}
                 {rentals.map((rental) => {
                   const statusInfo = getRentalStatusInfo(rental);
                   const userName = rental.user?.name || 'Usuário Desconhecido';
@@ -126,7 +157,7 @@ export function RentalsTable({ rentals, onUpdateStatus }: RentalsTableProps) {
                             <>
                               <button 
                                 disabled={isLoading || tooEarly}
-                                onClick={() => handleUpdate(rental.id, 'ACTIVE')}
+                                onClick={() => handleApprove(rental.id)}
                                 title={tooEarly ? "A liberação ocorre 15 min antes do horário agendado." : "Aprovar retirada"}
                                 className={`text-xs px-3 py-1.5 rounded-full transition-all flex items-center gap-1 font-bold ${
                                   tooEarly || isLoading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -136,7 +167,7 @@ export function RentalsTable({ rentals, onUpdateStatus }: RentalsTableProps) {
                               </button>
                               <button 
                                 disabled={isLoading}
-                                onClick={() => handleUpdate(rental.id, 'CANCELED')}
+                                onClick={() => handleReject(rental)}
                                 className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-full hover:bg-red-100 transition-all flex items-center gap-1 font-bold"
                               >
                                 Rejeitar
@@ -170,12 +201,14 @@ export function RentalsTable({ rentals, onUpdateStatus }: RentalsTableProps) {
         isOpen={!!returnModalRental}
         onClose={() => setReturnModalRental(null)}
         rental={returnModalRental}
-        onConfirm={(applyPenalty, penaltyReason) => {
-      
-          handleUpdate(returnModalRental!.id, 'RETURNED', { applyPenalty, penaltyReason });
+        onConfirm={async (applyPenalty, penaltyReason) => {
+          if (!returnModalRental) return;
+          // Só fecha depois que a API confirmar; se falhar, o modal mostra o erro e continua aberto.
+          await updateStatus(returnModalRental.id, 'RETURNED', { applyPenalty, penaltyReason });
           setReturnModalRental(null);
         }}
       />
+      {confirmDialog}
     </>
   );
 }

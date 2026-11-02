@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { X, CheckCircle2, AlertTriangle, Loader2, Package } from 'lucide-react';
 import { api } from '../../../services/api';
-import { toast } from 'sonner';
+import { getErrorMessage } from '../shared/ConfirmDialog';
 
 interface ReturnChecklistModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (applyPenalty: boolean, penaltyReason: string) => void;
+  // Deve rejeitar a promise se a API falhar: o modal mostra o erro e deixa tentar de novo.
+  onConfirm: (applyPenalty: boolean, penaltyReason: string) => Promise<void>;
   rental: any;
 }
 
@@ -14,46 +15,87 @@ export function ReturnChecklistModal({ isOpen, onClose, onConfirm, rental }: Ret
   const [components, setComponents] = useState<any[]>([]);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const rentalId = rental?.id;
+  const gameId = rental?.game?.id;
+
+  // Cada abertura (ou troca de empréstimo) começa do zero: nada do checklist anterior fica para trás.
   useEffect(() => {
-    if (isOpen && rental?.game?.id) {
-      setLoading(true);
-      api.get(`/games/${rental.game.id}/components`)
-        .then(res => {
-          const fetchedComps = res.data || [];
-          setComponents(fetchedComps);
-          
-          
-          const initialChecks: Record<string, boolean> = {};
-          fetchedComps.forEach((c: any) => {
-            initialChecks[c.id] = true;
-          });
-          setCheckedItems(initialChecks);
-        })
-        .catch(() => toast.error("Não foi possível carregar os componentes do jogo."))
-        .finally(() => setLoading(false));
+    if (!isOpen || !rentalId) return;
+
+    setComponents([]);
+    setCheckedItems({});
+    setReason('');
+    setIsSubmitting(false);
+    setSubmitError(null);
+    setLoadError(false);
+
+    // Empréstimo de jogo já excluído não tem lista de peças: conferência visual.
+    if (!gameId) {
+      setLoading(false);
+      return;
     }
-  }, [isOpen, rental]);
+
+    let cancelled = false;
+    setLoading(true);
+    api.get(`/games/${gameId}/components`)
+      .then(res => {
+        if (cancelled) return;
+        const fetchedComps = res.data || [];
+        setComponents(fetchedComps);
+
+        const initialChecks: Record<string, boolean> = {};
+        fetchedComps.forEach((c: any) => {
+          initialChecks[c.id] = true;
+        });
+        setCheckedItems(initialChecks);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, rentalId, gameId, reloadKey]);
 
   if (!isOpen || !rental) return null;
 
   const allChecked = components.every(c => checkedItems[c.id] === true);
 
   const toggleItem = (id: string) => {
+    if (isSubmitting) return;
     setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleSubmit = () => {
+  const handleClose = () => {
+    if (isSubmitting) return;
+    onClose();
+  };
+
+  const handleSubmit = async () => {
     if (!allChecked && !reason.trim()) {
-      toast.error("Você marcou que faltam peças. Por favor, justifique nas observações.");
+      setSubmitError("Você marcou que faltam peças. Por favor, justifique nas observações.");
       return;
     }
-    
+
     setIsSubmitting(true);
-    
-    onConfirm(!allChecked, reason);
+    setSubmitError(null);
+    try {
+      await onConfirm(!allChecked, reason.trim());
+    } catch (error: any) {
+      setSubmitError(getErrorMessage(error, 'Erro ao registrar a devolução. Tente novamente.'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -65,7 +107,7 @@ export function ReturnChecklistModal({ isOpen, onClose, onConfirm, rental }: Ret
             <h2 className="text-xl font-bold text-[#04096D]">Checklist de Devolução</h2>
             <p className="text-sm font-semibold text-gray-500 mt-1 line-clamp-1">{rental.game?.title || rental.gameTitleSnapshot}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-400">
+          <button onClick={handleClose} disabled={isSubmitting} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-400 disabled:opacity-50">
             <X size={24} />
           </button>
         </div>
@@ -76,6 +118,19 @@ export function ReturnChecklistModal({ isOpen, onClose, onConfirm, rental }: Ret
             <div className="flex flex-col items-center justify-center py-10">
               <Loader2 className="animate-spin text-[#04096D] mb-3" size={32} />
               <p className="text-gray-500 font-semibold">Buscando manual do jogo...</p>
+            </div>
+          ) : loadError ? (
+            <div className="bg-white p-6 rounded-2xl border border-red-200 text-center shadow-sm">
+              <AlertTriangle className="text-[#E62325] mx-auto mb-3" size={32} />
+              <p className="text-gray-900 font-bold mb-1">Não foi possível carregar a lista de peças</p>
+              <p className="text-sm text-gray-500 mb-4">Tente de novo ou faça a conferência visual padrão da caixa.</p>
+              <button
+                type="button"
+                onClick={() => setReloadKey(k => k + 1)}
+                className="px-4 py-2 rounded-xl bg-[#04096D] hover:bg-[#070e99] text-white text-sm font-bold transition-colors"
+              >
+                Tentar novamente
+              </button>
             </div>
           ) : components.length === 0 ? (
             <div className="bg-white p-6 rounded-2xl border border-gray-200 text-center shadow-sm">
@@ -135,10 +190,18 @@ export function ReturnChecklistModal({ isOpen, onClose, onConfirm, rental }: Ret
           )}
         </div>
 
+        {submitError && (
+          <div role="alert" className="mx-6 mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            <AlertTriangle size={18} className="shrink-0" />
+            <span>{submitError}</span>
+          </div>
+        )}
+
         <div className="p-6 border-t border-gray-100 flex gap-3 bg-white">
           <button 
-            onClick={onClose}
-            className="flex-1 py-3.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-sm"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="flex-1 py-3.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-sm disabled:opacity-50"
           >
             Cancelar
           </button>
