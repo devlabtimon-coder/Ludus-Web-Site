@@ -22,6 +22,8 @@ export interface User {
   emailVerified: boolean;
   phoneVerified: boolean;
   isBlocked: boolean;
+  // Motivo informado pelo admin ao bloquear (só vem para usuários bloqueados).
+  blockReason?: string | null;
   registrationStatus?: RegistrationStatus;
   createdAt: string;
   updatedAt: string;

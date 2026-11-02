@@ -37,11 +37,18 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
         : `${user.name} volta a poder usar o app normalmente.`,
       confirmLabel: blocking ? 'Bloquear' : 'Desbloquear',
       variant: blocking ? 'danger' : 'default',
+      // Bloquear exige motivo (o botão só libera com texto); desbloquear não pede.
+      reason: blocking
+        ? { label: 'Motivo do bloqueio', placeholder: 'Ex.: devolveu jogo com peças faltando e não respondeu aos contatos.' }
+        : undefined,
       errorMessage: 'Erro ao alterar status de bloqueio.',
-      onConfirm: async () => {
+      onConfirm: async (reason) => {
         setLoadingBlockId(user.id);
         try {
-          await api.patch(`/admin/users/${user.id}/block`, { isBlocked: blocking });
+          await api.patch(
+            `/admin/users/${user.id}/block`,
+            blocking ? { isBlocked: true, reason } : { isBlocked: false },
+          );
           toast.success(blocking ? "Usuário bloqueado!" : "Usuário desbloqueado!");
           onRefresh();
         } finally {
@@ -78,6 +85,11 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
                       )}
                     </div>
                     <p className="text-xs sm:text-sm text-gray-500 truncate">{user.email}</p>
+                    {user.isBlocked && user.blockReason && (
+                      <p className="text-xs text-red-700 font-semibold truncate" title={user.blockReason}>
+                        Bloqueado: {user.blockReason}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -100,7 +112,9 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
                         onClick={() => handleToggleBlock(user)}
                         disabled={loadingBlockId === user.id}
                         className={`p-2 rounded-lg transition-colors border sm:border-transparent ${user.isBlocked ? 'text-red-600 bg-red-100 border-red-200' : 'text-gray-400 hover:text-red-500 bg-white sm:bg-transparent border-gray-200'}`}
-                        title={user.isBlocked ? "Desbloquear Usuário" : "Bloquear Usuário"}
+                        title={user.isBlocked
+                          ? `Desbloquear usuário${user.blockReason ? ` (bloqueado: ${user.blockReason})` : ''}`
+                          : "Bloquear usuário"}
                       >
                         {loadingBlockId === user.id ? <Loader2 size={16} className="animate-spin" /> : <Ban size={16} />}
                       </button>
