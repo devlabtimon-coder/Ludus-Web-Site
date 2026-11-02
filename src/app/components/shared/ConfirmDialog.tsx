@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { Textarea } from '../ui/textarea';
+import { getErrorMessage } from '../../../services/api';
 
 export interface ConfirmReasonOptions {
   label: string;
@@ -38,13 +39,7 @@ interface ConfirmDialogProps extends ConfirmOptions {
   onOpenChange: (open: boolean) => void;
 }
 
-// Mensagem da API quando houver; erro de rede/HTTP sem corpo usa o texto padrão (o do axios vem em inglês).
-export function getErrorMessage(error: any, fallback: string) {
-  const apiMessage = error?.response?.data?.error || error?.response?.data?.message;
-  if (typeof apiMessage === 'string' && apiMessage) return apiMessage;
-  if (error?.isAxiosError) return fallback;
-  return error?.message || fallback;
-}
+export { getErrorMessage };
 
 export function ConfirmDialog({
   open,

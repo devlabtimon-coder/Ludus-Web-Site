@@ -3,6 +3,7 @@
 export type ClientCategory = 'STARTER' | 'FAMILY' | 'EXPERT' | 'ULTRAGAMER';
 export type GameTier = 'LATAO' | 'BRONZE' | 'PRATA' | 'OURO' | 'DIAMANTE';
 export type RentalStatus = 'PENDING' | 'ACTIVE' | 'RETURNED' | 'CANCELED';
+export type RegistrationStatus = 'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface User {
   id: string;
@@ -21,6 +22,7 @@ export interface User {
   emailVerified: boolean;
   phoneVerified: boolean;
   isBlocked: boolean;
+  registrationStatus?: RegistrationStatus;
   createdAt: string;
   updatedAt: string;
 }
