@@ -1,6 +1,6 @@
 import { X, ArrowUpDown } from 'lucide-react';
 
-export type VisualRentalStatus = 'todos' | 'andamento' | 'atrasado' | 'pendente' | 'concluido';
+export type VisualRentalStatus = 'todos' | 'pendente' | 'andamento' | 'atrasado' | 'devolvido' | 'cancelado';
 export type SortOption = 'user-asc' | 'user-desc' | 'game-asc' | 'game-desc' | 'recent' | 'oldest' | 'due-soon';
 
 interface RentalsFiltersProps {
@@ -16,7 +16,8 @@ const statusFilters = [
   { value: 'andamento' as const, label: 'Em Andamento', color: 'bg-white text-blue-600 border-blue-500', borderColor: 'border-blue-500', dotColor: 'bg-blue-500', activeColor: 'bg-blue-500 text-white' },
   { value: 'atrasado' as const, label: 'Atrasado', color: 'bg-white text-red-600 border-red-500', borderColor: 'border-red-500', dotColor: 'bg-red-500', activeColor: 'bg-red-600 text-white' },
   { value: 'pendente' as const, label: 'Pendente', color: 'bg-white text-gray-600 border-gray-400', borderColor: 'border-gray-400', dotColor: 'bg-gray-500', activeColor: 'bg-gray-500 text-white' },
-  { value: 'concluido' as const, label: 'Concluído', color: 'bg-white text-green-600 border-green-500', borderColor: 'border-green-500', dotColor: 'bg-green-500', activeColor: 'bg-green-500 text-white' },
+  { value: 'devolvido' as const, label: 'Devolvido', color: 'bg-white text-green-600 border-green-500', borderColor: 'border-green-500', dotColor: 'bg-green-500', activeColor: 'bg-green-500 text-white' },
+  { value: 'cancelado' as const, label: 'Cancelado', color: 'bg-white text-red-800 border-red-800', borderColor: 'border-red-800', dotColor: 'bg-red-800', activeColor: 'bg-red-800 text-white' },
 ];
 
 const sortOptions = [
@@ -76,6 +77,8 @@ export function RentalsFilters({
           <ArrowUpDown className="text-gray-600" size={18} />
           <select
             value={selectedSort}
+            title="Ordena os empréstimos desta página"
+            aria-label="Ordenar empréstimos desta página"
             onChange={(e) => onSortChange(e.target.value as SortOption)}
             className="flex-1 md:w-auto bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-[#04096D]"
           >
@@ -98,7 +101,7 @@ export function RentalsFilters({
         )}
 
         <div className="md:ml-auto text-xs md:text-sm text-gray-500">
-          Exibindo <span className="font-semibold text-gray-700">{resultCount}</span> resultado{resultCount !== 1 ? 's' : ''}
+          <span className="font-semibold text-gray-700">{resultCount.toLocaleString('pt-BR')}</span> resultado{resultCount !== 1 ? 's' : ''} no total
         </div>
       </div>
     </div>

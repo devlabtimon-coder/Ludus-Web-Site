@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 import { RentalMetricCard } from '../components/rentals/RentalMetricCard';
@@ -7,8 +8,13 @@ import { RentalsFilters, VisualRentalStatus, SortOption } from '../components/re
 import { Loading } from '../components/shared/Loading';
 import { ErrorMessage } from '../components/shared/ErrorMessage';
 import { PlaySquare, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { SearchInput } from '../components/shared/SearchInput';
+import { PaginationControls } from '../components/shared/PaginationControls';
 
 import { useRentals } from '../../hooks';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import type { AdminRentalsQuery } from '../../services/rentalsService';
+import type { RentalStatus } from '../../types/api';
 import { api } from '../../services/api';
 import { toast } from 'sonner';
 
@@ -31,43 +37,60 @@ interface RentalsPageProps {
   onLogout?: () => void;
 }
 
+const PAGE_SIZE = 25;
+
+// Cada filtro visual vira um filtro da API, para valer sobre todos os empréstimos e não só a página carregada.
+const STATUS_QUERY: Record<VisualRentalStatus, Pick<AdminRentalsQuery, 'status' | 'overdue'>> = {
+  todos: { status: 'ALL' },
+  pendente: { status: 'PENDING' },
+  andamento: { status: 'ACTIVE' },
+  atrasado: { overdue: true },
+  devolvido: { status: 'RETURNED' },
+  cancelado: { status: 'CANCELED' },
+};
+
 export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
+  const [searchParams] = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<VisualRentalStatus>('todos');
   const [selectedSort, setSelectedSort] = useState<SortOption>('recent');
+  const [search, setSearch] = useState(() => searchParams.get('q') || '');
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
 
-  const { metrics, rentals, loading, error, refetch } = useRentals();
+  // A página volta para 1 sempre que o filtro ou a busca mudam (sem disparar uma consulta extra).
+  const filterKey = `${selectedStatus}|${debouncedSearch}`;
+  const [pageState, setPageState] = useState({ key: filterKey, page: 1 });
+  const page = pageState.key === filterKey ? pageState.page : 1;
 
-  const handleUpdateStatus = async (id: string, status: string, extraData?: any) => {
-    try {
-      await api.patch(`/admin/rentals/${id}/status`, { status, ...extraData });
-      toast.success('Status do aluguel atualizado com sucesso!');
-      refetch();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.error || 'Erro ao atualizar o aluguel.');
-    }
+  const query = useMemo<AdminRentalsQuery>(() => ({
+    ...STATUS_QUERY[selectedStatus],
+    q: debouncedSearch || undefined,
+    page,
+    limit: PAGE_SIZE,
+  }), [selectedStatus, debouncedSearch, page]);
+
+  const { metrics, rentals, total, totalPages, initialLoading, refreshing, hasLoaded, error, refetch } = useRentals(query);
+
+  const toggleStatus = (status: VisualRentalStatus) => {
+    setSelectedStatus(selectedStatus === status ? 'todos' : status);
   };
 
-  const filteredAndSortedRentals = useMemo(() => {
-    if (!rentals) return [];
-    
-    let filtered = [...rentals];
-    const now = new Date();
-
-    if (selectedStatus !== 'todos') {
-      filtered = filtered.filter(rental => {
-        const endDate = new Date(rental.endDate);
-        const isLate = (rental.status === 'ACTIVE' || rental.status === 'PENDING') && endDate < now;
-
-        if (selectedStatus === 'andamento') return rental.status === 'ACTIVE' && !isLate;
-        if (selectedStatus === 'atrasado') return isLate;
-        if (selectedStatus === 'pendente') return rental.status === 'PENDING' && !isLate;
-        if (selectedStatus === 'concluido') return rental.status === 'RETURNED' || rental.status === 'CANCELED';
-        return true;
-      });
+  const handleUpdateStatus = async (id: string, status: RentalStatus, extraData?: { applyPenalty: boolean; penaltyReason: string }) => {
+    try {
+      await api.patch(`/admin/rentals/${id}/status`, { status, ...extraData });
+    } catch (error) {
+      // A situação pode ter mudado (ex.: outro admin já agiu): recarrega e devolve o erro para o diálogo.
+      refetch();
+      throw error;
     }
+    toast.success('Status do aluguel atualizado com sucesso!');
+    refetch();
+  };
 
-    filtered.sort((a, b) => {
+  // A ordenação vale para a página exibida; a API já entrega do mais recente para o mais antigo.
+  const sortedRentals = useMemo(() => {
+    const sorted = [...rentals];
+    sorted.sort((a, b) => {
       const userA = a.user?.name || '';
       const userB = b.user?.name || '';
       const gameA = a.game?.title || a.gameTitleSnapshot || '';
@@ -84,12 +107,11 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
         default: return 0;
       }
     });
+    return sorted;
+  }, [rentals, selectedSort]);
 
-    return filtered;
-  }, [rentals, selectedStatus, selectedSort]);
-
-  if (loading) return <Loading />;
-  if (error) return <ErrorMessage message={error} onRetry={refetch} />;
+  if (initialLoading) return <Loading />;
+  if (error && !hasLoaded) return <ErrorMessage message={error} onRetry={refetch} />;
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -119,7 +141,7 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
               tag="Rodando"
               icon={<PlaySquare size={80} strokeWidth={1.5} />}
               variant="yellow"
-              onClick={() => setSelectedStatus(selectedStatus === 'andamento' ? 'todos' : 'andamento')}
+              onClick={() => toggleStatus('andamento')}
             />
             <RentalMetricCard
               title="Em Atraso"
@@ -127,7 +149,7 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
               tag="Ação necessária"
               icon={<AlertCircle size={80} strokeWidth={1.5} />}
               variant="white-red"
-              onClick={() => setSelectedStatus(selectedStatus === 'atrasado' ? 'todos' : 'atrasado')}
+              onClick={() => toggleStatus('atrasado')}
             />
             <RentalMetricCard
               title="Pendentes"
@@ -135,29 +157,62 @@ export function RentalsPage({ onNavigate, onLogout }: RentalsPageProps) {
               tag="Aguardando retirada"
               icon={<Clock size={80} strokeWidth={1.5} />}
               variant="dark-blue"
-              onClick={() => setSelectedStatus(selectedStatus === 'pendente' ? 'todos' : 'pendente')}
+              onClick={() => toggleStatus('pendente')}
             />
             <RentalMetricCard
               title="Devolvidos (Mês)"
               value={metrics?.returnedThisMonth || 0}
-              tag="Últimos 30 dias"
+              tag="Retirados neste mês"
               icon={<CheckCircle size={80} strokeWidth={1.5} />}
               variant="white-green"
-              onClick={() => setSelectedStatus(selectedStatus === 'concluido' ? 'todos' : 'concluido')}
+              onClick={() => toggleStatus('devolvido')}
             />
           </div>
+
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar por aluno, e-mail, jogo ou código do exemplar"
+            loading={refreshing && search.trim() !== '' && search.trim() === debouncedSearch}
+            className="mb-4"
+          />
 
           <RentalsFilters
             selectedStatus={selectedStatus}
             onStatusChange={setSelectedStatus}
             selectedSort={selectedSort}
             onSortChange={setSelectedSort}
-            resultCount={filteredAndSortedRentals.length}
+            resultCount={total}
           />
 
-          <RentalsTable 
-            rentals={filteredAndSortedRentals} 
-            onUpdateStatus={handleUpdateStatus} 
+          {error && hasLoaded && (
+            <div role="alert" className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <span className="font-semibold">{error}</span>
+              <button
+                onClick={refetch}
+                className="self-start sm:self-auto bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
+
+          <div className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+            <RentalsTable 
+              rentals={sortedRentals} 
+              onUpdateStatus={handleUpdateStatus} 
+              emptyMessage={debouncedSearch ? 'Nenhum empréstimo encontrado para esta busca.' : 'Nenhum empréstimo encontrado para este filtro.'}
+            />
+          </div>
+
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={PAGE_SIZE}
+            loading={refreshing}
+            onPageChange={(next) => setPageState({ key: filterKey, page: next })}
+            itemLabel={{ singular: 'empréstimo', plural: 'empréstimos' }}
           />
         </main>
       </div>
