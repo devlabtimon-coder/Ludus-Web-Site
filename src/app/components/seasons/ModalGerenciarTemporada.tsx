@@ -7,7 +7,7 @@ import { toSaoPauloDateInput } from './seasonDates';
 const LEVELS = [2, 3, 4, 5];
 
 const DEFAULT_REWARDS = LEVELS.reduce((acc, lvl) => {
-  acc[`nivel${lvl}`] = { tipo: 'percentual', valor: '', descricao: '' };
+  acc[`nivel${lvl}`] = { tipo: 'brinde', valor: '1', descricao: '' };
   return acc;
 }, {} as any);
 
@@ -73,13 +73,14 @@ export function ModalGerenciarTemporada({ isOpen, onClose, onSalvar, season }: a
     const formattedRewards: any = {};
     LEVELS.forEach((lvl) => {
       const rw = rewards[`nivel${lvl}`];
-      if (rw.valor && rw.descricao) {
+      // Recompensas são sempre brindes (decisão de produto); o valor é a quantidade.
+      if (rw.descricao?.trim()) {
         formattedRewards[`nivel${lvl}`] = {
           cuponsGerados: [
             {
-              tipo: rw.tipo,
-              valor: Number(rw.valor),
-              descricao: rw.descricao,
+              tipo: 'brinde',
+              valor: Number(rw.valor) || 1,
+              descricao: rw.descricao.trim(),
             },
           ],
         };
@@ -197,42 +198,19 @@ export function ModalGerenciarTemporada({ isOpen, onClose, onSalvar, season }: a
 
                     <div className="space-y-3">
                       <div>
-                        <label className="text-xs font-semibold text-gray-600">Descrição Visual (App)</label>
+                        <label className="text-xs font-semibold text-gray-600">Brinde (aparece no app)</label>
                         <input
                           type="text"
                           value={rw.descricao}
                           onChange={(e) => updateReward(lvl, "descricao", e.target.value)}
-                          placeholder="Ex: 15% OFF em qualquer aluguel"
+                          placeholder="Ex: Caneca do Ludus"
                           className="w-full mt-1 bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none text-[#222] text-sm"
                         />
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-semibold text-gray-600">Tipo de Recompensa</label>
-                          <select
-                            value={rw.tipo}
-                            onChange={(e) => updateReward(lvl, "tipo", e.target.value)}
-                            className="w-full mt-1 bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none text-[#222] text-sm cursor-pointer"
-                          >
-                            <option value="percentual">Percentual (%)</option>
-                            <option value="fixo">Valor Fixo (R$)</option>
-                            <option value="brinde">Vale-Brinde (Item Físico)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-gray-600">
-                            {rw.tipo === 'brinde' ? 'Quantidade (Itens)' : 'Valor Numérico'}
-                          </label>
-                          <input
-                            type="number"
-                            value={rw.valor}
-                            onChange={(e) => updateReward(lvl, "valor", e.target.value)}
-                            placeholder={rw.tipo === 'percentual' ? "Ex: 15" : rw.tipo === 'fixo' ? "Ex: 10" : "Ex: 1"}
-                            className="w-full mt-1 bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none text-[#222] text-sm"
-                          />
-                        </div>
-                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Recompensas são brindes: o aluno mostra o código na biblioteca e a equipe dá baixa em Brindes.
+                      </p>
                     </div>
                   </div>
                 );
