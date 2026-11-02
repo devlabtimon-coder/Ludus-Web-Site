@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { toast } from 'sonner';
 import { gamesService } from '../services';
+import { getErrorMessage } from '../services/api';
 import { Game } from '../types/api';
 
 interface CollectionMetrics {
@@ -14,22 +16,31 @@ export function useGames(filters?: {
   status?: 'ALL' | 'AVAILABLE' | 'RENTED';
 }) {
   const [games, setGames] = useState<Game[]>([]);
+  // `loading` é só a primeira carga; ao recarregar (`refreshing`) a lista antiga continua na tela,
+  // para não desmontar a página e os modais abertos (ex.: busca do "Adicionar jogo").
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadedOnce = useRef(false);
 
   // Usamos useCallback para que a função não seja recriada a cada renderização
   const loadGames = useCallback(async () => {
+    const isRefresh = loadedOnce.current;
     try {
-      setLoading(true);
-      setError(null);
+      if (isRefresh) setRefreshing(true);
+      else { setError(null); setLoading(true); }
 
       const gamesData = await gamesService.getGames(filters);
       setGames(gamesData);
+      loadedOnce.current = true;
+      setError(null);
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar jogos');
       console.error('Erro ao carregar jogos:', err);
+      if (isRefresh) toast.error(getErrorMessage(err, 'Erro ao atualizar a lista de jogos.'));
+      else setError(getErrorMessage(err, 'Erro ao carregar jogos'));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
     // Stringify garante que objetos com mesmos valores não acionem re-renders
   }, [JSON.stringify(filters || {})]); 
@@ -87,6 +98,7 @@ export function useGames(filters?: {
     games,
     total: games.length,
     loading,
+    refreshing,
     error,
     createGame,
     updateGame,
