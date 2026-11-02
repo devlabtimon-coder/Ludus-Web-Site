@@ -20,7 +20,8 @@ import { useConfirmDialog } from "../components/shared/ConfirmDialog";
 interface MaintenanceItem {
   id: string;
   originalId: string;
-  type: "GAME" | "COPY";
+  // ORIGINAL_BOX: caixa original avariada na devolução (aluguel sem exemplar).
+  type: "GAME" | "ORIGINAL_BOX" | "COPY";
   gameId?: string;
   title: string;
   cover: string | null;
@@ -28,6 +29,12 @@ interface MaintenanceItem {
   reason: string;
   date: string;
 }
+
+const TYPE_LABEL: Record<MaintenanceItem["type"], string> = {
+  GAME: "JOGO",
+  ORIGINAL_BOX: "CAIXA ORIGINAL",
+  COPY: "CÓPIA",
+};
 
 export function MaintenancePage({ onNavigate, onLogout }: any) {
   const [items, setItems] = useState<MaintenanceItem[]>([]);
@@ -71,6 +78,8 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
             isActive: true,
             isVisible: true,
           });
+        } else if (item.type === "ORIGINAL_BOX") {
+          await api.patch(`/games/${item.originalId}`, { available: true });
         } else {
           await api.patch(`/games/copies/${item.originalId}`, {
             available: true,
@@ -164,7 +173,7 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
                                   : "bg-orange-100 text-orange-700"
                               }`}
                             >
-                              {item.type === "GAME" ? "JOGO" : "CÓPIA"}
+                              {TYPE_LABEL[item.type]}
                             </span>
                             <span className="text-xs font-mono font-bold text-gray-500">
                               {item.code}
@@ -276,7 +285,7 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
                                           : "bg-orange-100 text-orange-700"
                                       }`}
                                     >
-                                      {item.type === "GAME" ? "JOGO" : "CÓPIA"}
+                                      {TYPE_LABEL[item.type]}
                                     </span>
                                     <span className="text-xs font-mono font-bold text-gray-500">
                                       {item.code}
