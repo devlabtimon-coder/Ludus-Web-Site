@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useGoogleLogin } from '@react-oauth/google';
 import { authService } from "../../services";
+import { isAdminUser } from "../../services/authService";
 
 import logoLudus from "../../assets/images/logo-full.png";
 import logoLudusDice from "../../assets/images/logo-dice.png";
@@ -45,14 +46,14 @@ export function LoginPage() {
         senha: cleanedPassword,
       });
 
-      if (response?.user?.role !== "ADMIN") {
+      if (!isAdminUser(response?.user) || !response?.token) {
+        authService.logout();
         setError("Acesso restrito. Apenas administradores têm permissão para acessar este painel.");
         setLoading(false);
         return;
       }
 
-      if (response?.token) localStorage.setItem("token", response.token);
-      if (response?.user) localStorage.setItem("user", JSON.stringify(response.user));
+      authService.saveSession(response.token, response.user);
       
       setLoading(false);
       navigate('/');
@@ -71,14 +72,14 @@ export function LoginPage() {
       try {
         const response = await authService.loginWithGoogle(codeResponse.access_token);
 
-        if (response?.user?.role !== "ADMIN") {
+        if (!isAdminUser(response?.user) || !response?.token) {
+          authService.logout();
           setError("Acesso restrito. Apenas administradores têm permissão para acessar este painel.");
           setIsGoogleLoading(false);
           return;
         }
 
-        if (response?.token) localStorage.setItem("token", response.token);
-        if (response?.user) localStorage.setItem("user", JSON.stringify(response.user));
+        authService.saveSession(response.token, response.user);
 
         navigate('/');
       } catch (err: any) {

@@ -14,10 +14,12 @@ import { RankingPage } from './pages/RankingPage';
 import { AdminLogsPage } from './pages/AdminLogsPage';
 import { MaintenancePage } from './pages/MaintenancePage';
 import { AboutPage } from './pages/AboutPage';
+import { authService } from '../services/authService';
 
+// Só entra quem tem token e usuário salvo com papel ADMIN; qualquer outra sessão é descartada.
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('token');
-  if (!token) {
+  if (!authService.hasAdminSession()) {
+    authService.logout();
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
