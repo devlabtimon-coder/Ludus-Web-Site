@@ -1,4 +1,5 @@
-import { MoreVertical } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Avatar } from "../shared/Avatar";
 import { Badge } from "../shared/Badge";
 
@@ -21,6 +22,13 @@ interface RecentRentalsProps {
 }
 
 export function RecentRentals({ rentals }: RecentRentalsProps) {
+  const navigate = useNavigate();
+
+  // Abre a tela de empréstimos já buscando pelo e-mail do aluno (ou pelo jogo, se não houver e-mail).
+  const openInRentals = (rental: Rental) => {
+    const term = rental.user?.email || rental.gameTitleSnapshot;
+    navigate(term ? `/emprestimos?q=${encodeURIComponent(term)}` : '/emprestimos');
+  };
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("pt-BR", {
@@ -99,8 +107,13 @@ export function RecentRentals({ rentals }: RecentRentalsProps) {
                     <Badge status={getStatusLabel(rental)} />
                   </td>
                   <td className="py-3 sm:py-4 px-2 sm:px-4 text-right">
-                    <button className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors inline-flex">
-                      <MoreVertical size={18} className="text-gray-400 hover:text-gray-700" />
+                    <button
+                      onClick={() => openInRentals(rental)}
+                      className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors inline-flex"
+                      title="Ver em Empréstimos"
+                      aria-label={`Ver empréstimos de ${rental.user?.name || "usuário"}`}
+                    >
+                      <ArrowRight size={18} className="text-gray-400 hover:text-gray-700" />
                     </button>
                   </td>
                 </tr>

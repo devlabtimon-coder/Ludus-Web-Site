@@ -215,14 +215,6 @@ export function LoginPage() {
               )}
             </button>
 
-            <div className="mt-6 sm:mt-8 text-center">
-              <p className="text-xs sm:text-sm text-[#666]">
-                Não possui uma conta?{' '}
-                <button className="font-bold text-[#31358B] underline-offset-4 hover:underline">
-                  Solicitar acesso
-                </button>
-              </p>
-            </div>
 
           </div>
         </div>

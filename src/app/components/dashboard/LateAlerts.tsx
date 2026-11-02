@@ -74,9 +74,6 @@ export function LateAlerts({ alerts }: LateAlertsProps) {
                   {daysLate} {daysLate === 1 ? 'dia' : 'dias'}
                 </span>
               </div>
-              <button className="w-full bg-[#E62325] hover:bg-red-700 text-white font-bold py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm transition-colors mt-1">
-                Notificar Aluno
-              </button>
             </div>
           );
         })}

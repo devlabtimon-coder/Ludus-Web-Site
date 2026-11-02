@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Filter, Download, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { RentalStatus } from '../../../types/api';
 import type { Rental as BaseRental } from '../../../types/api';
@@ -94,14 +94,6 @@ export function RentalsTable({ rentals, emptyMessage = 'Nenhum empréstimo encon
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-4 sm:mt-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">Gerenciamento de Empréstimos</h2>
-          <div className="flex gap-2 self-end sm:self-auto">
-            <button className="bg-[#0A1628] hover:bg-[#152745] text-white p-2 rounded-lg transition-colors">
-              <Filter size={18} />
-            </button>
-            <button className="bg-[#0A1628] hover:bg-[#152745] text-white p-2 rounded-lg transition-colors">
-              <Download size={18} />
-            </button>
-          </div>
         </div>
 
         <div className="rounded-xl border border-gray-100 overflow-hidden">

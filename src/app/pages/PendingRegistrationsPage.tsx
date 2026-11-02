@@ -4,7 +4,7 @@ import { Header } from '../components/layout/Header';
 import { RegistrationMetricCard } from '../components/pending-registrations/RegistrationMetricCard';
 import { PendingRegistrationCard } from '../components/pending-registrations/PendingRegistrationCard';
 import { RegistrationDetailsPanel } from '../components/pending-registrations/RegistrationDetailsPanel';
-import { Clock, FileText, AlertTriangle, Download, Filter, X, Loader2 } from 'lucide-react';
+import { Clock, FileText, AlertTriangle, Filter, X, Loader2 } from 'lucide-react';
 import { api, getErrorMessage } from '../../services/api';
 import { usersService } from '../../services/usersService';
 import { toast } from 'sonner';
@@ -273,11 +273,6 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
                   <h2 className="text-lg md:text-xl font-bold text-gray-900">
                     Cadastros Aguardando Aprovação ({selectedFilter === 'all' ? totalPending : filteredUsers.length})
                   </h2>
-                  <div className="flex gap-2">
-                    <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
-                      <Download className="text-gray-600" size={18} />
-                    </button>
-                  </div>
                 </div>
 
                 <div className="space-y-3 flex-1 overflow-y-auto pr-1">
