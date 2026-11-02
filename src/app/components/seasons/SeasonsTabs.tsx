@@ -453,7 +453,7 @@ export function Tab3Requisitos({ temporadaAtiva }: { temporadaAtiva: any }) {
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recompensa</p>
                 {rec.cuponsGerados?.map((cp: any, i: number) => (
                   <span key={i} className="inline-block text-[12px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 text-[#04096D] border border-blue-100 mr-2 mb-2">
-                    {cp.tipo === 'percentual' ? `${cp.valor}% OFF` : cp.tipo === 'fixo' ? `R$${cp.valor} OFF` : 'Vale-Brinde'} - {cp.descricao}
+                    Brinde - {cp.descricao}
                   </span>
                 ))}
                 {!rec.cuponsGerados && (

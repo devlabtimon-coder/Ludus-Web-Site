@@ -70,7 +70,7 @@ export function normalizeRewardType(raw: unknown): CouponRewardType {
 const text = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
-// Resposta de GET /admin/coupons?code=: aceita { coupon, student, season } ou tudo no mesmo objeto (ou lista).
+// Resposta de GET /admin/coupons/:code: aceita { coupon, student, season } ou tudo no mesmo objeto (ou lista).
 export function parseRedeemableCoupon(data: any): RedeemableCoupon | null {
   const raw = Array.isArray(data) ? data[0] : data?.coupon && typeof data.coupon === 'object' ? { ...data, ...data.coupon } : data;
   if (!raw || typeof raw !== 'object' || !text(raw.code ?? raw.codigo)) return null;
@@ -147,7 +147,7 @@ export function couponErrorMessage(error: any, fallback: string): string {
 
 export const couponsService = {
   async findByCode(code: string): Promise<RedeemableCoupon | null> {
-    const res = await api.get('/admin/coupons', { params: { code } });
+    const res = await api.get(`/admin/coupons/${encodeURIComponent(code)}`);
     return parseRedeemableCoupon(res.data);
   },
 
