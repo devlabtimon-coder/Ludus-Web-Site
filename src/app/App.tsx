@@ -14,6 +14,7 @@ import { RankingPage } from './pages/RankingPage';
 import { AdminLogsPage } from './pages/AdminLogsPage';
 import { MaintenancePage } from './pages/MaintenancePage';
 import { AboutPage } from './pages/AboutPage';
+import { BrindesPage } from './pages/BrindesPage';
 import { authService } from '../services/authService';
 
 // Só entra quem tem token e usuário salvo com papel ADMIN; qualquer outra sessão é descartada.
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/mecanicas" element={<ProtectedRoute><MechanicsPage /></ProtectedRoute>} />
         <Route path="/temporadas" element={<ProtectedRoute><TemporadasPage /></ProtectedRoute>} />
         <Route path="/ranking" element={<ProtectedRoute><RankingPage /></ProtectedRoute>} />
+        <Route path="/brindes" element={<ProtectedRoute><BrindesPage /></ProtectedRoute>} />
         <Route path="/auditoria" element={<ProtectedRoute><AdminLogsPage /></ProtectedRoute>} />
         <Route path="/manutencao" element={<ProtectedRoute><MaintenancePage /></ProtectedRoute>} />
         <Route path="/sobre-app" element={<ProtectedRoute><AboutPage /></ProtectedRoute>} />
