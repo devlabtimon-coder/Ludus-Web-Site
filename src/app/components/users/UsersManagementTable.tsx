@@ -7,6 +7,7 @@ import { EditCategoryModal } from './EditCategoryModal';
 import { UserDetailsModal } from './UserDetailsModal'; 
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '../shared/ConfirmDialog';
 
 interface UsersManagementTableProps {
   users: User[];
@@ -14,39 +15,56 @@ interface UsersManagementTableProps {
   currentUserId?: string;
   onUpdateCategory: (userId: string, category: ClientCategory) => Promise<void>;
   onRefresh: () => void;
+  emptyMessage?: string;
 }
 
-export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdateCategory, onRefresh }: UsersManagementTableProps) {
+export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdateCategory, onRefresh, emptyMessage = 'Nenhum usuário encontrado.' }: UsersManagementTableProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null); 
   const [detailsUser, setDetailsUser] = useState<User | null>(null);   
   const [loadingBlockId, setLoadingBlockId] = useState<string | null>(null);
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
-  const handleToggleBlock = async (user: User) => {
+  const handleToggleBlock = (user: User) => {
     if (currentUserId === user.id) {
       toast.error("Você não pode bloquear a si mesmo.");
       return;
     }
-    const action = user.isBlocked ? "desbloquear" : "bloquear";
-    const confirmed = window.confirm(`Tem certeza que deseja ${action} o usuário ${user.name}?`);
-    
-    if (!confirmed) return;
-
-    setLoadingBlockId(user.id);
-    try {
-      await api.patch(`/admin/users/${user.id}/block`, { isBlocked: !user.isBlocked });
-      toast.success(user.isBlocked ? "Usuário desbloqueado!" : "Usuário bloqueado!");
-      onRefresh();
-    } catch (err) {
-      toast.error("Erro ao alterar status de bloqueio.");
-    } finally {
-      setLoadingBlockId(null);
-    }
+    const blocking = !user.isBlocked;
+    requestConfirm({
+      title: blocking ? 'Bloquear usuário?' : 'Desbloquear usuário?',
+      description: blocking
+        ? `${user.name} perde o acesso ao app enquanto estiver bloqueado.`
+        : `${user.name} volta a poder usar o app normalmente.`,
+      confirmLabel: blocking ? 'Bloquear' : 'Desbloquear',
+      variant: blocking ? 'danger' : 'default',
+      // Bloquear exige motivo (o botão só libera com texto); desbloquear não pede.
+      reason: blocking
+        ? { label: 'Motivo do bloqueio', placeholder: 'Ex.: devolveu jogo com peças faltando e não respondeu aos contatos.', maxLength: 500 }
+        : undefined,
+      errorMessage: 'Erro ao alterar status de bloqueio.',
+      onConfirm: async (reason) => {
+        setLoadingBlockId(user.id);
+        try {
+          await api.patch(
+            `/admin/users/${user.id}/block`,
+            blocking ? { isBlocked: true, reason } : { isBlocked: false },
+          );
+          toast.success(blocking ? "Usuário bloqueado!" : "Usuário desbloqueado!");
+          onRefresh();
+        } finally {
+          setLoadingBlockId(null);
+        }
+      },
+    });
   };
 
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-4 sm:mt-0">
         <div className="space-y-3 sm:space-y-4">
+          {users.length === 0 && (
+            <p className="py-10 text-center text-sm font-medium text-gray-500">{emptyMessage}</p>
+          )}
           {users.map((user) => {
             const isCurrentUser = currentUserId === user.id;
             
@@ -67,6 +85,11 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
                       )}
                     </div>
                     <p className="text-xs sm:text-sm text-gray-500 truncate">{user.email}</p>
+                    {user.isBlocked && user.blockReason && (
+                      <p className="text-xs text-red-700 font-semibold truncate" title={user.blockReason}>
+                        Bloqueado: {user.blockReason}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -89,7 +112,9 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
                         onClick={() => handleToggleBlock(user)}
                         disabled={loadingBlockId === user.id}
                         className={`p-2 rounded-lg transition-colors border sm:border-transparent ${user.isBlocked ? 'text-red-600 bg-red-100 border-red-200' : 'text-gray-400 hover:text-red-500 bg-white sm:bg-transparent border-gray-200'}`}
-                        title={user.isBlocked ? "Desbloquear Usuário" : "Bloquear Usuário"}
+                        title={user.isBlocked
+                          ? `Desbloquear usuário${user.blockReason ? ` (bloqueado: ${user.blockReason})` : ''}`
+                          : "Bloquear usuário"}
                       >
                         {loadingBlockId === user.id ? <Loader2 size={16} className="animate-spin" /> : <Ban size={16} />}
                       </button>
@@ -120,6 +145,7 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
         isOpen={!!detailsUser}
         onClose={() => setDetailsUser(null)}
       />
+      {confirmDialog}
     </>
   );
 }

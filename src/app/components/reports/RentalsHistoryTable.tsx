@@ -1,4 +1,4 @@
-import { Eye, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { Badge } from '../shared/Badge';
 import { generateAdminReportPDF } from '../../../services/pdf.service';
@@ -76,7 +76,6 @@ export function RentalsHistoryTable({ rentals, total, fullReportData, periodCode
                 <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide">Devolução</th>
                 <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide">Tempo</th>
                 <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide">Status</th>
-                <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide text-center">Info</th>
               </tr>
             </thead>
             <tbody>
@@ -105,11 +104,6 @@ export function RentalsHistoryTable({ rentals, total, fullReportData, periodCode
                   </td>
                   <td className="py-3 px-4">
                     <Badge status={rental.status as any} />
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <button className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors inline-flex" title="Ver Detalhes">
-                      <Eye className="text-[#04096E]" size={18} />
-                    </button>
                   </td>
                 </tr>
               ))}

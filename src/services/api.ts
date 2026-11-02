@@ -1,7 +1,11 @@
 import axios from 'axios';
 
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://110.24.8.226:3000';
+// Sem endereço fixo de reserva: a URL da API vem só do ambiente (veja .env.example).
+const baseURL = import.meta.env.VITE_API_URL || '';
+if (!baseURL) {
+  console.error('VITE_API_URL não definida: configure a URL da API no .env (veja .env.example).');
+}
 
 export const api = axios.create({
   baseURL,
@@ -69,3 +73,11 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Mensagem da API quando houver; erro de rede/HTTP sem corpo usa o texto padrão (o do axios vem em inglês).
+export function getErrorMessage(error: any, fallback: string): string {
+  const apiMessage = error?.response?.data?.error || error?.response?.data?.message;
+  if (typeof apiMessage === 'string' && apiMessage) return apiMessage;
+  if (error?.isAxiosError) return fallback;
+  return error?.message || fallback;
+}

@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Trophy, Clock, Users, Ticket, CalendarPlus, ChevronDown } from 'lucide-react';
+import { Trophy, Clock, Users, Ticket, CalendarPlus, ChevronDown, Loader2, AlertTriangle } from 'lucide-react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
-import { api } from '../../services/api';
+import { api, getErrorMessage } from '../../services/api';
 import { toast } from 'sonner';
 
 import {
@@ -12,6 +12,23 @@ import {
 } from '../components/seasons/SeasonsTabs';
 
 import { ModalGerenciarTemporada } from '../components/seasons/ModalGerenciarTemporada';
+import { formatSeasonDate } from '../components/seasons/seasonDates';
+
+function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div role="alert" className="flex flex-col items-center justify-center text-center py-10 px-4">
+      <AlertTriangle className="text-red-500 mb-3" size={32} />
+      <p className="font-bold text-sm text-gray-900 mb-1">Não foi possível carregar os dados.</p>
+      <p className="text-sm text-gray-500 mb-4">{message}</p>
+      <button
+        onClick={onRetry}
+        className="px-4 py-2 rounded-xl bg-[#04096D] hover:bg-[#070e99] text-white text-sm font-bold transition-colors"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  );
+}
 
 interface TemporadasPageProps {
   onNavigate?: (page: string) => void;
@@ -30,25 +47,42 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [gerarCuponsTemporada, setGerarCuponsTemporada] = useState<any | null>(null);
 
+  const [seasonsLoading, setSeasonsLoading] = useState(true);
+  const [seasonsError, setSeasonsError] = useState<string | null>(null);
+  const [couponsError, setCouponsError] = useState<string | null>(null);
+
+  // O carregando só aparece na primeira busca; ao recarregar depois de salvar, a tabela continua na tela.
   const fetchData = async () => {
+    setSeasonsError(null);
     try {
       const res = await api.get('/admin/seasons');
-      setSeasons(res.data);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setSeasons(list);
       // Se não houver selecionada, seleciona a ativa ou a primeira da lista
-      if (res.data.length > 0 && !selectedSeasonId) {
-        const active = res.data.find((s: any) => s.status === 'ativa');
-        setSelectedSeasonId(active ? active.id : res.data[0].id);
+      if (list.length > 0 && !selectedSeasonId) {
+        const active = list.find((s: any) => s.status === 'ativa');
+        setSelectedSeasonId(active ? active.id : list[0].id);
       }
     } catch (e) {
-      toast.error("Erro ao carregar temporadas");
+      setSeasonsError(getErrorMessage(e, "Erro ao carregar temporadas."));
+    } finally {
+      setSeasonsLoading(false);
     }
   };
 
+  const retryFetchData = () => {
+    setSeasonsLoading(true);
+    fetchData();
+  };
+
   const fetchCoupons = async () => {
+    setCouponsError(null);
     try {
       const res = await api.get('/admin/seasons/coupons');
-      setCouponsData(res.data);
-    } catch (e) {}
+      setCouponsData(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      setCouponsError(getErrorMessage(e, "Erro ao carregar o histórico de cupons."));
+    }
   };
 
   useEffect(() => {
@@ -81,7 +115,7 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
 
   const shortName = temporadaSelecionada ? temporadaSelecionada.name : '—';
   const dateRange = temporadaSelecionada
-    ? `${new Date(temporadaSelecionada.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} – ${new Date(temporadaSelecionada.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
+    ? `${formatSeasonDate(temporadaSelecionada.startDate, { day: '2-digit', month: 'short' })} – ${formatSeasonDate(temporadaSelecionada.endDate, { day: '2-digit', month: 'short', year: 'numeric' })}`
     : '—';
 
   const isEncerrada = temporadaSelecionada?.status === 'encerrada';
@@ -217,7 +251,16 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
             </div>
 
             <div className="p-5">
-              {activeTab === 0 && (
+              {activeTab === 0 && seasonsLoading && (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-500">
+                  <Loader2 className="animate-spin text-[#04096D] mb-3" size={28} />
+                  <p className="font-semibold text-sm">Carregando temporadas...</p>
+                </div>
+              )}
+              {activeTab === 0 && !seasonsLoading && seasonsError && (
+                <LoadError message={seasonsError} onRetry={retryFetchData} />
+              )}
+              {activeTab === 0 && !seasonsLoading && !seasonsError && (
                 <Tab1TodasTemporadas
                   seasons={seasons}
                   selectedSeasonId={selectedSeasonId}
@@ -233,7 +276,9 @@ export function TemporadasPage({ onNavigate, onLogout }: TemporadasPageProps) {
                 />
               )}
               {activeTab === 2 && <Tab3Requisitos temporadaAtiva={temporadaSelecionada} />}
-              {activeTab === 3 && <Tab4Historico couponsData={couponsData} />}
+              {activeTab === 3 && (couponsError
+                ? <LoadError message={couponsError} onRetry={fetchCoupons} />
+                : <Tab4Historico couponsData={couponsData} />)}
             </div>
           </div>
         </main>

@@ -16,7 +16,7 @@ export function TopGames({ games }: TopGamesProps) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Jogos Mais Alugados</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-6">Jogos Mais Alugados <span className="text-sm font-semibold text-gray-500">(últimos 30 dias)</span></h2>
 
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData} margin={{ bottom: 20 }}>

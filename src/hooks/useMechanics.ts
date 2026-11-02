@@ -1,23 +1,33 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
+import { getErrorMessage } from '../services/api';
 import { mechanicService } from '../services/mechanicService';
 import { Mechanic } from '../types/api';
 
 export function useMechanics() {
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
+  // `loading` é só a primeira carga; ao recarregar (`refreshing`) a lista antiga continua na tela.
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadedOnce = useRef(false);
 
   const loadMechanics = useCallback(async () => {
+    const isRefresh = loadedOnce.current;
     try {
-      setLoading(true);
-      setError(null);
+      if (isRefresh) setRefreshing(true);
+      else { setError(null); setLoading(true); }
       const data = await mechanicService.getAllAdmin();
       setMechanics(data);
+      loadedOnce.current = true;
+      setError(null);
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar mecânicas');
       console.error('Erro ao carregar mecânicas:', err);
+      if (isRefresh) toast.error(getErrorMessage(err, 'Erro ao atualizar a lista de mecânicas.'));
+      else setError(getErrorMessage(err, 'Erro ao carregar mecânicas'));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -56,6 +66,7 @@ export function useMechanics() {
     mechanics,
     total: mechanics.length,
     loading,
+    refreshing,
     error,
     createMechanic,
     updateMechanic,

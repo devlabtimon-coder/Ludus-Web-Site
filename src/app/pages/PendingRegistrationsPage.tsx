@@ -4,20 +4,30 @@ import { Header } from '../components/layout/Header';
 import { RegistrationMetricCard } from '../components/pending-registrations/RegistrationMetricCard';
 import { PendingRegistrationCard } from '../components/pending-registrations/PendingRegistrationCard';
 import { RegistrationDetailsPanel } from '../components/pending-registrations/RegistrationDetailsPanel';
-import { Clock, FileText, AlertTriangle, Download, Filter, X } from 'lucide-react';
-import { api } from '../../services/api';
+import { Clock, FileText, AlertTriangle, Filter, X, Loader2 } from 'lucide-react';
+import { api, getErrorMessage } from '../../services/api';
+import { usersService } from '../../services/usersService';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '../components/shared/ConfirmDialog';
 
 interface PendingRegistrationsPageProps {
   onNavigate?: (page: any) => void;
   onLogout?: () => void;
 }
 
+const PAGE_SIZE = 50;
+
 export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegistrationsPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
+  const [totalPending, setTotalPending] = useState(0);
+  const [pagesLoaded, setPagesLoaded] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
@@ -26,27 +36,49 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
       ? !!(u.enrollmentProof && u.documentFile)
       : !!(u.documentFile && u.addressProof && u.selfieWithId);
 
-  const fetchUsers = async () => {
+  // Só cadastros PENDING, filtrados na API (mais antigos primeiro). Recarrega todas as páginas
+  // já abertas para a lista não "pular" itens depois de aprovar ou rejeitar alguém.
+  const fetchUsers = async (pages = pagesLoaded) => {
+    setError(null);
     try {
-      const res = await api.get('/admin/users');
-      
-      
-      const usersList = Array.isArray(res.data) ? res.data : (res.data.data || []);
-      
-      const pendings = usersList.filter((u: any) => u.registrationStatus === 'PENDING');
-      setPendingUsers(pendings);
-      
-      if (pendings.length > 0 && !selectedId) {
-        setSelectedId(pendings[0].id);
+      const collected: any[] = [];
+      let total = 0;
+      let lastPage = 1;
+      for (let page = 1; page <= pages; page++) {
+        const result = await usersService.getUsersPage({ registrationStatus: 'PENDING', page, limit: PAGE_SIZE });
+        // Garantia extra caso a API ainda não filtre por registrationStatus.
+        collected.push(...result.data.filter((u: any) => u.registrationStatus === 'PENDING'));
+        total = result.total;
+        lastPage = page;
+        if (page >= result.totalPages) break;
       }
-    } catch (error) {
-      console.error("Erro ao buscar usuários pendentes:", error);
+      const unique = collected.filter((u, i) => collected.findIndex((x) => x.id === u.id) === i);
+      setPendingUsers(unique);
+      setTotalPending(total);
+      setPagesLoaded(lastPage);
+    } catch (err: any) {
+      console.error("Erro ao buscar usuários pendentes:", err);
+      setError(getErrorMessage(err, "Não foi possível carregar os cadastros pendentes."));
     }
   };
 
+  const loadInitial = async () => {
+    setLoading(true);
+    await fetchUsers(1);
+    setLoading(false);
+  };
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    await fetchUsers(pagesLoaded + 1);
+    setLoadingMore(false);
+  };
+
   useEffect(() => {
-    fetchUsers();
+    loadInitial();
   }, []);
+
+  const hasMore = pendingUsers.length < totalPending;
 
   const completos = useMemo(() => {
     return pendingUsers.filter(checkIsComplete).length;
@@ -76,26 +108,63 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
     }
   }, [filteredUsers, selectedId]);
 
-  const handleApprove = async (id: string) => {
-    try {
-      await api.patch(`/admin/users/${id}/approve-docs`);
-      toast.success("Cadastro aprovado com sucesso!");
-      setSelectedId(null);
-      fetchUsers();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.error || "Erro ao aprovar cadastro.");
-    }
+  const approve = async (id: string) => {
+    await api.patch(`/admin/users/${id}/approve-docs`);
+    toast.success("Cadastro aprovado com sucesso!");
+    setSelectedId(null);
+    fetchUsers();
   };
 
-  const handleReject = async (id: string, reason: string) => {
-    try {
-      await api.patch(`/admin/users/${id}/reject-docs`, { reason });
-      toast.success("Cadastro rejeitado!");
-      setSelectedId(null);
-      fetchUsers();
-    } catch (error) {
-      toast.error("Erro ao rejeitar cadastro.");
+  const reject = async (id: string, reason: string) => {
+    await api.patch(`/admin/users/${id}/reject-docs`, { reason });
+    toast.success("Cadastro rejeitado!");
+    setSelectedId(null);
+    fetchUsers();
+  };
+
+  // Aprovar exige os documentos obrigatórios e confirmação com o nome da pessoa.
+  const handleApprove = (id: string) => {
+    const user = pendingUsers.find((u) => u.id === id);
+    if (!user) return;
+    if (!checkIsComplete(user)) {
+      toast.error("Este cadastro ainda não tem todos os documentos obrigatórios.");
+      return;
     }
+    requestConfirm({
+      title: 'Aprovar cadastro?',
+      description: `${user.name} (${user.email}) terá o cadastro aprovado e poderá alugar jogos.`,
+      confirmLabel: 'Aprovar cadastro',
+      variant: 'default',
+      errorMessage: 'Erro ao aprovar cadastro.',
+      onConfirm: () => approve(id),
+    });
+  };
+
+  // Rejeição pelo cartão: pede o motivo no próprio diálogo.
+  const handleRejectWithReason = (id: string) => {
+    const user = pendingUsers.find((u) => u.id === id);
+    if (!user) return;
+    requestConfirm({
+      title: 'Rejeitar cadastro?',
+      description: `O cadastro de ${user.name} (${user.email}) será rejeitado e a pessoa verá o motivo informado.`,
+      confirmLabel: 'Rejeitar cadastro',
+      reason: { label: 'Motivo da rejeição', placeholder: 'Ex.: documento ilegível, comprovante desatualizado...' },
+      errorMessage: 'Erro ao rejeitar cadastro.',
+      onConfirm: (reason) => reject(id, reason),
+    });
+  };
+
+  // Rejeição pelo painel de detalhes: o motivo já foi escrito lá; só confirma.
+  const handleReject = (id: string, reason: string) => {
+    const user = pendingUsers.find((u) => u.id === id);
+    if (!user) return;
+    requestConfirm({
+      title: 'Rejeitar cadastro?',
+      description: `O cadastro de ${user.name} (${user.email}) será rejeitado com o motivo: "${reason}".`,
+      confirmLabel: 'Rejeitar cadastro',
+      errorMessage: 'Erro ao rejeitar cadastro.',
+      onConfirm: () => reject(id, reason),
+    });
   };
 
   const handleRequestResendDoc = async (id: string, documentName: string) => {
@@ -142,7 +211,7 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
             <RegistrationMetricCard
               label="AGUARDANDO ANÁLISE"
-              value={pendingUsers.length.toString().padStart(2, '0')}
+              value={totalPending.toString().padStart(2, '0')}
               tag="Total na fila"
               icon={Clock}
               variant="dark"
@@ -155,7 +224,7 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
             <RegistrationMetricCard
               label="DOCUMENTOS ENVIADOS"
               value={completos.toString().padStart(2, '0')}
-              tag="Completos"
+              tag={hasMore ? `Completos (dos ${pendingUsers.length} carregados)` : "Completos"}
               icon={FileText}
               variant="white"
               tagColor="green"
@@ -169,7 +238,7 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
             <RegistrationMetricCard
               label="DOC. PENDENTES"
               value={incompletos.toString().padStart(2, '0')}
-              tag="Incompletos"
+              tag={hasMore ? `Incompletos (dos ${pendingUsers.length} carregados)` : "Incompletos"}
               icon={AlertTriangle}
               variant="yellow"
               tagColor="red"
@@ -202,17 +271,29 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 h-full min-h-[500px] flex flex-col">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6 gap-3">
                   <h2 className="text-lg md:text-xl font-bold text-gray-900">
-                    Cadastros Aguardando Aprovação ({filteredUsers.length})
+                    Cadastros Aguardando Aprovação ({selectedFilter === 'all' ? totalPending : filteredUsers.length})
                   </h2>
-                  <div className="flex gap-2">
-                    <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
-                      <Download className="text-gray-600" size={18} />
-                    </button>
-                  </div>
                 </div>
 
                 <div className="space-y-3 flex-1 overflow-y-auto pr-1">
-                  {filteredUsers.length === 0 ? (
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                      <Loader2 className="animate-spin text-[#04096E] mb-3" size={28} />
+                      <p className="font-bold text-sm">Carregando cadastros pendentes...</p>
+                    </div>
+                  ) : error ? (
+                    <div role="alert" className="flex flex-col items-center justify-center text-center py-12 px-4">
+                      <AlertTriangle className="text-[#E62325] mb-3" size={32} />
+                      <p className="font-bold text-sm text-gray-900 mb-1">Não foi possível carregar os cadastros.</p>
+                      <p className="text-sm text-gray-500 mb-4">{error}</p>
+                      <button
+                        onClick={loadInitial}
+                        className="px-4 py-2 rounded-xl bg-[#04096E] hover:bg-[#02065A] text-white text-sm font-bold transition-colors"
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  ) : filteredUsers.length === 0 ? (
                     <div className="text-center text-gray-500 py-12 font-bold text-sm">
                       {selectedFilter === 'all'
                         ? 'Nenhum cadastro pendente no momento! 🎉'
@@ -226,12 +307,20 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
                         isSelected={selectedId === user.id}
                         onSelect={() => setSelectedId(user.id)}
                         onApprove={() => handleApprove(user.id)}
-                        onReject={() => {
-                          const reason = window.prompt("Motivo da rejeição:");
-                          if (reason) handleReject(user.id, reason);
-                        }}
+                        onReject={() => handleRejectWithReason(user.id)}
                       />
                     ))
+                  )}
+
+                  {!loading && !error && hasMore && (
+                    <button
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-200 bg-white text-sm font-bold text-[#04096E] hover:bg-gray-50 transition-colors disabled:opacity-60"
+                    >
+                      {loadingMore && <Loader2 size={16} className="animate-spin" />}
+                      Carregar mais ({pendingUsers.length} de {totalPending})
+                    </button>
                   )}
                 </div>
               </div>
@@ -248,6 +337,7 @@ export function PendingRegistrationsPage({ onNavigate, onLogout }: PendingRegist
           </div>
         </main>
       </div>
+      {confirmDialog}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { Plus, BookOpen, Trophy, Gamepad2, X, Filter } from 'lucide-react';
 import { Mechanic } from '../../types/api';
 import { MechanicModal } from '../components/mechanics/MechanicModal';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '../components/shared/ConfirmDialog';
 
 import { MechanicCard } from '../components/mechanics/MechanicCard';
 
@@ -28,6 +29,7 @@ export function MechanicsPage() {
   } = useMechanics();
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMechanic, setEditingMechanic] = useState<Mechanic | null>(null);
 
@@ -71,10 +73,17 @@ export function MechanicsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteClick = async (mechanic: Mechanic) => {
-    if (window.confirm(`Tem certeza que deseja excluir a mecânica "${mechanic.namePt}"?\nEla será removida de todos os jogos vinculados.`)) {
-      await deleteMechanic(mechanic.id);
-    }
+  const handleDeleteClick = (mechanic: Mechanic) => {
+    requestConfirm({
+      title: 'Excluir mecânica?',
+      description: `A mecânica "${mechanic.namePt}" será excluída e removida de todos os jogos vinculados.`,
+      confirmLabel: 'Excluir mecânica',
+      errorMessage: 'Erro ao excluir mecânica.',
+      onConfirm: async () => {
+        await deleteMechanic(mechanic.id);
+        toast.success("Mecânica excluída.");
+      },
+    });
   };
 
   const handleSave = async (id: string | null, data: Partial<Mechanic>) => {
@@ -193,6 +202,7 @@ export function MechanicsPage() {
         mechanic={editingMechanic}
         onSave={handleSave}
       />
+      {confirmDialog}
     </div>
   );
 }

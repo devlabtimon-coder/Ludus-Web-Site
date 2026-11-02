@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../../../services/api';
 import { X, Search, CheckCircle2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface LudopediaGame {
   id: number;
@@ -33,7 +34,7 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
       const response = await api.get<LudopediaGame[]>(`/games/search-ludopedia?q=${encodeURIComponent(search)}`);
       setResults(response.data);
     } catch (error) {
-      alert("Erro ao buscar jogos na Ludopedia.");
+      toast.error("Erro ao buscar jogos na Ludopedia.");
     } finally {
       setLoading(false);
     }
@@ -50,9 +51,10 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
         price: 3, // Preço padrão inicial
       });
       setAddedGameIds((prev) => [...prev, game.id]);
+      toast.success(`"${game.name}" adicionado ao acervo.`);
       onAdded(); // Atualiza a tabela por trás
     } catch (error: any) {
-      alert(error?.response?.data?.error || "Erro ao adicionar jogo");
+      toast.error(error?.response?.data?.error || "Erro ao adicionar jogo");
     } finally {
       setAddingGameId(null);
     }

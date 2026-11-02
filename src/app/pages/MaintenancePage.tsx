@@ -15,11 +15,13 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 import { toast } from "sonner";
+import { useConfirmDialog } from "../components/shared/ConfirmDialog";
 
 interface MaintenanceItem {
   id: string;
   originalId: string;
-  type: "GAME" | "COPY";
+  // ORIGINAL_BOX: caixa original avariada na devolução (aluguel sem exemplar).
+  type: "GAME" | "ORIGINAL_BOX" | "COPY";
   gameId?: string;
   title: string;
   cover: string | null;
@@ -28,12 +30,19 @@ interface MaintenanceItem {
   date: string;
 }
 
+const TYPE_LABEL: Record<MaintenanceItem["type"], string> = {
+  GAME: "JOGO",
+  ORIGINAL_BOX: "CAIXA ORIGINAL",
+  COPY: "CÓPIA",
+};
+
 export function MaintenancePage({ onNavigate, onLogout }: any) {
   const [items, setItems] = useState<MaintenanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
   const fetchMaintenanceItems = async () => {
     setLoading(true);
@@ -56,31 +65,31 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
     setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleResolve = async (item: MaintenanceItem) => {
-    if (
-      !window.confirm(
-        `Deseja marcar "${item.title}" como resolvido e devolvê-lo ao acervo?`
-      )
-    )
-      return;
+  const handleResolve = (item: MaintenanceItem) => {
+    requestConfirm({
+      title: 'Marcar como resolvido?',
+      description: `"${item.title}" volta ao acervo e fica disponível para empréstimo.`,
+      confirmLabel: 'Marcar como resolvido',
+      variant: 'default',
+      errorMessage: 'Erro ao tentar resolver o problema.',
+      onConfirm: async () => {
+        if (item.type === "GAME") {
+          await api.patch(`/games/${item.originalId}`, {
+            isActive: true,
+            isVisible: true,
+          });
+        } else if (item.type === "ORIGINAL_BOX") {
+          await api.patch(`/games/${item.originalId}`, { available: true });
+        } else {
+          await api.patch(`/games/copies/${item.originalId}`, {
+            available: true,
+          });
+        }
 
-    try {
-      if (item.type === "GAME") {
-        await api.patch(`/games/${item.originalId}`, {
-          isActive: true,
-          isVisible: true,
-        });
-      } else {
-        await api.patch(`/games/copies/${item.originalId}`, {
-          available: true,
-        });
-      }
-
-      toast.success("Item resolvido e devolvido ao catálogo!");
-      fetchMaintenanceItems();
-    } catch (err) {
-      toast.error("Erro ao tentar resolver o problema.");
-    }
+        toast.success("Item resolvido e devolvido ao catálogo!");
+        fetchMaintenanceItems();
+      },
+    });
   };
 
   return (
@@ -164,7 +173,7 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
                                   : "bg-orange-100 text-orange-700"
                               }`}
                             >
-                              {item.type === "GAME" ? "JOGO" : "CÓPIA"}
+                              {TYPE_LABEL[item.type]}
                             </span>
                             <span className="text-xs font-mono font-bold text-gray-500">
                               {item.code}
@@ -276,7 +285,7 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
                                           : "bg-orange-100 text-orange-700"
                                       }`}
                                     >
-                                      {item.type === "GAME" ? "JOGO" : "CÓPIA"}
+                                      {TYPE_LABEL[item.type]}
                                     </span>
                                     <span className="text-xs font-mono font-bold text-gray-500">
                                       {item.code}
@@ -341,6 +350,7 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
           )}
         </main>
       </div>
+      {confirmDialog}
     </div>
   );
 }

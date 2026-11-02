@@ -80,6 +80,11 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
           <div className={`w-2 h-2 rounded-full ${user.isBlocked ? 'bg-red-500' : 'bg-green-500'}`} />
           {user.isBlocked ? 'Conta Bloqueada' : 'Conta Ativa'}
         </div>
+        {user.isBlocked && user.blockReason && (
+          <p className="mt-2 text-sm text-red-700 bg-red-50/60 rounded-xl px-4 py-3">
+            <span className="font-bold">Motivo do bloqueio:</span> {user.blockReason}
+          </p>
+        )}
 
       </div>
     </div>

@@ -18,10 +18,12 @@ export function PendingRegistrationCard({
 }: PendingRegistrationCardProps) {
   const isIfmaMode = import.meta.env.VITE_IFMA_MODE === 'true';
 
+  // Mesma regra do painel de detalhes: só aprova com todos os documentos obrigatórios.
+  const hasAllDocs = isIfmaMode
+    ? !!(user.enrollmentProof && user.documentFile)
+    : !!(user.documentFile && user.addressProof && user.selfieWithId);
+
   const getBorderColor = () => {
-    const hasAllDocs = isIfmaMode
-      ? user.enrollmentProof && user.documentFile
-      : user.documentFile && user.addressProof && user.selfieWithId;
     if (hasAllDocs) {
       return 'border-l-[#22C55E]';
     }
@@ -95,9 +97,15 @@ export function PendingRegistrationCard({
 
         <div className="flex gap-1.5 sm:gap-2">
           <button
-            onClick={(e) => { e.stopPropagation(); onApprove(); }}
-            className="p-2 bg-[#22C55E] hover:bg-green-600 text-white rounded-lg transition-colors"
-            title="Aprovar"
+            onClick={(e) => { e.stopPropagation(); if (hasAllDocs) onApprove(); }}
+            disabled={!hasAllDocs}
+            className={`p-2 rounded-lg transition-colors ${
+              hasAllDocs
+                ? 'bg-[#22C55E] hover:bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+            title={hasAllDocs ? 'Aprovar' : 'Faltam documentos obrigatórios para aprovar'}
+            aria-label={hasAllDocs ? `Aprovar cadastro de ${user.name}` : 'Faltam documentos obrigatórios para aprovar'}
           >
             <Check size={16} />
           </button>
@@ -105,6 +113,7 @@ export function PendingRegistrationCard({
             onClick={(e) => { e.stopPropagation(); onReject(); }}
             className="p-2 bg-[#E62325] hover:bg-red-600 text-white rounded-lg transition-colors"
             title="Rejeitar"
+            aria-label={`Rejeitar cadastro de ${user.name}`}
           >
             <X size={16} />
           </button>

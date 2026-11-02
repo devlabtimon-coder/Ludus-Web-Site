@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 import { api } from '../../services/api';
@@ -195,9 +195,6 @@ export function RankingPage({ onNavigate, onLogout }: RankingPageProps) {
                   onChange={setSelectedSeasonId} 
                 />
               )}
-              <button className="flex items-center gap-2 h-10 sm:h-9 px-4 sm:px-5 rounded-xl sm:rounded-lg font-bold text-xs sm:text-sm transition-all hover:bg-[#04096D] hover:text-white bg-white text-[#04096D] border border-[#04096D] shadow-xs">
-                <Download size={15} strokeWidth={2.5} /> Exportar
-              </button>
             </div>
           </div>
 

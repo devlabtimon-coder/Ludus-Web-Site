@@ -1,6 +1,7 @@
 import { User, Folder, FileText, Check, Upload, ExternalLink, X, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Avatar } from '../shared/Avatar';
+import { toast } from 'sonner';
 
 interface RegistrationDetailsPanelProps {
   registration: any | null;
@@ -236,9 +237,12 @@ export function RegistrationDetailsPanel({
           </button>
           <button
             onClick={() => {
-              if(!reason.trim()) return alert("Preencha o motivo para rejeitar!");
-              onReject(registration.id, reason);
-              setReason("");
+              if (!reason.trim()) {
+                toast.error("Preencha o motivo para rejeitar!");
+                return;
+              }
+              // O motivo só é limpo ao trocar de cadastro: se a confirmação for cancelada, o texto fica.
+              onReject(registration.id, reason.trim());
             }}
             className="w-full sm:flex-1 bg-[#E62325] hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors text-xs sm:text-sm h-11 flex items-center justify-center shadow-sm"
           >

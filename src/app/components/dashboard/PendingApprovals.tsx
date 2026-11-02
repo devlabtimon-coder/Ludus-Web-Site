@@ -3,6 +3,7 @@ import { Clock, Check, X, Loader2 } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '../shared/ConfirmDialog';
 
 interface PendingRental {
   id: string;
@@ -25,12 +26,14 @@ interface PendingApprovalsProps {
 export function PendingApprovals({ approvals, onActionComplete }: PendingApprovalsProps) {
   const [localApprovals, setLocalApprovals] = useState<PendingRental[]>(approvals);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     setLocalApprovals(approvals);
   }, [approvals]);
 
-  const handleStatusChange = async (id: string, status: 'ACTIVE' | 'CANCELED') => {
+  // Lança o erro: usada direto pelo diálogo de rejeição, que mostra a falha sem fechar.
+  const changeStatus = async (id: string, status: 'ACTIVE' | 'CANCELED') => {
     setLoadingId(id);
     try {
       await api.patch(`/admin/rentals/${id}/status`, { status });
@@ -38,11 +41,17 @@ export function PendingApprovals({ approvals, onActionComplete }: PendingApprova
       
       setLocalApprovals(prev => prev.filter(item => item.id !== id));
       if (onActionComplete) onActionComplete();
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleStatusChange = async (id: string, status: 'ACTIVE' | 'CANCELED') => {
+    try {
+      await changeStatus(id, status);
     } catch (error: any) {
       console.error("Erro ao atualizar status:", error);
       toast.error(error?.response?.data?.error || "Erro ao processar aluguel.");
-    } finally {
-      setLoadingId(null);
     }
   };
 
@@ -122,7 +131,13 @@ export function PendingApprovals({ approvals, onActionComplete }: PendingApprova
                   <span className="truncate">Aprovar</span>
                 </button>
                 <button 
-                  onClick={() => handleStatusChange(approval.id, 'CANCELED')}
+                  onClick={() => requestConfirm({
+                    title: 'Rejeitar retirada?',
+                    description: `O empréstimo de "${approval.gameTitleSnapshot}" para ${approval.user?.name || 'o usuário'} será cancelado.`,
+                    confirmLabel: 'Rejeitar retirada',
+                    errorMessage: 'Erro ao processar aluguel.',
+                    onConfirm: () => changeStatus(approval.id, 'CANCELED'),
+                  })}
                   disabled={loadingId === approval.id}
                   className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-600 disabled:opacity-50 px-2 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-colors"
                 >
@@ -134,6 +149,7 @@ export function PendingApprovals({ approvals, onActionComplete }: PendingApprova
           );
         })}
       </div>
+      {confirmDialog}
     </div>
   );
 }

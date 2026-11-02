@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { Search, Bell, Menu, LogOut, Settings, User, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Bell, Menu, LogOut, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { LogoutConfirmModal } from '../shared/LogoutConfirmModal';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -120,17 +120,6 @@ export function Header({ onMenuToggle }: HeaderProps) {
           </div>
         </div>
 
-        <div className="hidden md:block flex-1 max-w-xl">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Buscar jogos, usuários..."
-              className="w-full pl-11 pr-4 py-2.5 bg-[#F7F8FF] text-[#04096D] font-medium rounded-full placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#31358B]/20 transition-all border border-transparent focus:border-[#31358B]/20"
-            />
-          </div>
-        </div>
-
         <div className="flex items-center gap-3 md:gap-4 ml-auto">
           
           <Popover>
@@ -207,23 +196,6 @@ export function Header({ onMenuToggle }: HeaderProps) {
                   <p className="text-xs font-semibold text-gray-500 truncate">{userEmail}</p>
                 </div>
                 
-                <button 
-                  onClick={() => setIsDropdownOpen(false)} 
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <User size={18} className="text-gray-400" />
-                  Meu Perfil
-                </button>
-                
-                <button 
-                  onClick={() => setIsDropdownOpen(false)} 
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <Settings size={18} className="text-gray-400" />
-                  Configurações
-                </button>
-                
-                <div className="h-px bg-gray-100 my-1 mx-2"></div>
                 
                 <button 
                   onClick={() => {

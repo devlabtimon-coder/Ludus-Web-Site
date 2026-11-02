@@ -1,71 +1,64 @@
+import { api } from './api';
 import { gamesService } from './gamesService';
 import { rentalsService } from './rentalsService';
 import { usersService } from './usersService';
 
+// Os números do painel vêm do `total` de consultas filtradas na API (limit=1),
+// e não de contar uma página de 50 itens.
+async function getTopGames(): Promise<Array<{ name: string; rentals: number }>> {
+  try {
+    const res = await api.get('/admin/reports', { params: { period: 'month' } });
+    const top = Array.isArray(res.data?.topGames) ? res.data.topGames : [];
+    return top.map((g: any) => ({ name: g.name || 'Jogo não identificado', rentals: Number(g.count) || 0 }));
+  } catch (err) {
+    // Gráfico secundário: se o relatório falhar, o resto do painel continua.
+    console.error('Erro ao carregar jogos mais alugados:', err);
+    return [];
+  }
+}
+
 export const dashboardService = {
   getDashboardData: async () => {
-    const [games, rentals, users] = await Promise.all([
+    const [
+      games,
+      activeRentals,
+      pendingRegistrations,
+      notBlockedUsers,
+      rejectedNotBlockedUsers,
+      recentPage,
+      latePage,
+      pendingRentalsPage,
+      topGames,
+    ] = await Promise.all([
       gamesService.getGames(),
-      rentalsService.getAdminRentals(),
-      usersService.getUsers(),
+      rentalsService.countAdminRentals({ status: 'ACTIVE' }),
+      usersService.countUsers({ registrationStatus: 'PENDING' }),
+      usersService.countUsers({ blocked: false }),
+      usersService.countUsers({ blocked: false, registrationStatus: 'REJECTED' }),
+      rentalsService.getAdminRentalsPage({ status: 'ALL', page: 1, limit: 5 }),
+      rentalsService.getAdminRentalsPage({ overdue: true, page: 1, limit: 20 }),
+      rentalsService.getAdminRentalsPage({ status: 'PENDING', page: 1, limit: 20 }),
+      getTopGames(),
     ]);
 
-    const safeRentals = Array.isArray(rentals) ? rentals : [];
-    const safeUsers = Array.isArray(users) ? users : [];
     const safeGames = Array.isArray(games) ? games : [];
-
-    const totalGames = safeGames.length;
-
-   
-    const activeRentals = safeRentals.filter(r => r.status === 'ACTIVE').length;
-
-   
-    const pendingRegistrations = safeUsers.filter((u: any) => u.registrationStatus === 'PENDING').length;
-    const pendingRentals = safeRentals.filter(r => r.status === 'PENDING');
-    
-
-    const pendingApprovalsCount = pendingRegistrations > 0 
-      ? pendingRegistrations 
-      : pendingRentals.length;
-
-    
-    const activeUsers = safeUsers.filter((u: any) => 
-      !u.isBlocked && u.registrationStatus !== 'REJECTED' && (u.role === 'USER' || !u.role)
-    ).length;
-
-   
-    const recentRentals = [...safeRentals]
-      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-      .slice(0, 5);
-    const now = new Date();
-    const lateRentals = safeRentals.filter(r =>
-      (r.status === 'ACTIVE' || r.status === 'PENDING') &&
-      new Date(r.endDate) < now
-    );
-
-
-    const gameRentalCount = safeRentals.reduce((acc, rental) => {
-      const gameTitle = rental.game?.title || rental.gameTitleSnapshot || 'Jogo não identificado';
-      acc[gameTitle] = (acc[gameTitle] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const topGames = Object.entries(gameRentalCount)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 6)
-      .map(([name, rentals]) => ({ name, rentals }));
 
     return {
       metrics: {
-        totalGames,
+        totalGames: safeGames.length,
         activeRentals,
-        pendingApprovals: pendingApprovalsCount,
-        activeUsers,
+        // O cartão leva à fila de cadastros, então conta cadastros aguardando análise.
+        pendingApprovals: pendingRegistrations,
+        // Não bloqueados e sem cadastro rejeitado.
+        activeUsers: Math.max(0, notBlockedUsers - rejectedNotBlockedUsers),
       },
-      recentRentals,
+      // A API já entrega do mais recente para o mais antigo.
+      recentRentals: recentPage.data,
       topGames,
-      lateAlerts: lateRentals,
-      pendingApprovals: pendingRentals,
+      lateAlerts: latePage.data,
+      lateAlertsTotal: latePage.total,
+      pendingApprovals: pendingRentalsPage.data,
+      pendingRentalsTotal: pendingRentalsPage.total,
     };
   },
 };
