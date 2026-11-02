@@ -6,20 +6,13 @@ import { GameComponentsModal } from './GameComponentsModal';
 import { useMechanics } from '../../../hooks/useMechanics';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../shared/ConfirmDialog';
+import { TIERS } from './tiers';
 
 interface EditGameModalProps {
   game: Game | null;
   onClose: () => void;
   onSaved: () => void;
 }
-
-const TIERS: { value: GameTier; label: string; color: string }[] = [
-  { value: "LATAO", label: "Latão", color: "#8B7355" },
-  { value: "BRONZE", label: "Bronze", color: "#CD7F32" },
-  { value: "PRATA", label: "Prata", color: "#A0A0A0" },
-  { value: "OURO", label: "Ouro", color: "#FFD700" },
-  { value: "DIAMANTE", label: "Diamante", color: "#4FC3F7" },
-];
 
 export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
   const { mechanics: dbMechanics, loading: loadingAllMechanics } = useMechanics();

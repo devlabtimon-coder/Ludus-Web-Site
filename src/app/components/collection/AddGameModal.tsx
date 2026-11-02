@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { api } from '../../../services/api';
 import { X, Search, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { GameTier } from '../../../types/api';
+import { TIERS } from './tiers';
 
 interface LudopediaGame {
   id: number;
@@ -22,6 +24,8 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
   const [addingGameId, setAddingGameId] = useState<number | null>(null);
   const [addedGameIds, setAddedGameIds] = useState<number[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  // Sem padrão: a categoria precisa ser escolhida antes de adicionar.
+  const [tier, setTier] = useState<GameTier | null>(null);
 
   if (!isOpen) return null;
 
@@ -42,16 +46,23 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
 
   const handleAddGame = async (game: LudopediaGame) => {
     if (addingGameId !== null || addedGameIds.includes(game.id)) return;
+    if (!tier) {
+      toast.error("Escolha a categoria do jogo antes de adicionar.");
+      return;
+    }
     setAddingGameId(game.id);
     try {
       await api.post("/games", {
         ludopediaId: game.id,
         title: game.name,
         cover: game.image,
-        price: 3, // Preço padrão inicial
+        tier,
+        // Valor de referência interno (o aluguel é gratuito); o backend ainda exige o campo.
+        price: 3,
       });
       setAddedGameIds((prev) => [...prev, game.id]);
-      toast.success(`"${game.name}" adicionado ao acervo.`);
+      const tierLabel = TIERS.find((t) => t.value === tier)?.label ?? tier;
+      toast.success(`"${game.name}" adicionado ao acervo como ${tierLabel}.`);
       onAdded(); // Atualiza a tabela por trás
     } catch (error: any) {
       toast.error(error?.response?.data?.error || "Erro ao adicionar jogo");
@@ -72,6 +83,38 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400 hover:text-gray-600">
             <X size={24} />
           </button>
+        </div>
+
+        {/* Categoria */}
+        <div className="px-6 pt-5">
+          <p className="text-sm font-bold text-[#31358B]">
+            Categoria (Tier) <span className="text-[#E62325]">*</span>
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5 mb-2">
+            Obrigatória. Vale para os próximos jogos adicionados e pode ser trocada depois na edição.
+          </p>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Categoria do jogo">
+            {TIERS.map((t) => {
+              const selected = tier === t.value;
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setTier(t.value)}
+                  className="px-4 py-2 rounded-xl font-bold text-sm border-2 transition-all hover:bg-gray-50"
+                  style={{
+                    backgroundColor: selected ? t.color : 'transparent',
+                    borderColor: t.color,
+                    color: selected ? '#fff' : t.color,
+                  }}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Search */}
@@ -116,10 +159,11 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
                     </div>
                     <button
                       onClick={() => handleAddGame(item)}
-                      disabled={isAdded || isAddingThis}
+                      disabled={isAdded || isAddingThis || !tier}
+                      title={!tier && !isAdded ? 'Escolha a categoria primeiro' : undefined}
                       className={`min-w-[100px] h-10 flex items-center justify-center rounded-xl font-semibold text-sm transition-all ${
                         isAdded ? 'bg-green-100 text-green-700' : 'bg-[#FBBC04] text-[#31358B] hover:brightness-105'
-                      } disabled:opacity-70`}
+                      } disabled:opacity-70 disabled:cursor-not-allowed`}
                     >
                       {isAddingThis ? <Loader2 size={18} className="animate-spin" /> : isAdded ? <><CheckCircle2 size={16} className="mr-1"/> Adicionado</> : 'Adicionar'}
                     </button>
