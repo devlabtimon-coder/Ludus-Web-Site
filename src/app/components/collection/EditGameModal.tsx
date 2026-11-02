@@ -5,6 +5,7 @@ import { X, Trash2, Save, Package, RefreshCw, Loader2, Tags, ChevronDown, Extern
 import { GameComponentsModal } from './GameComponentsModal';
 import { useMechanics } from '../../../hooks/useMechanics';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '../shared/ConfirmDialog';
 
 interface EditGameModalProps {
   game: Game | null;
@@ -22,6 +23,7 @@ const TIERS: { value: GameTier; label: string; color: string }[] = [
 
 export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
   const { mechanics: dbMechanics, loading: loadingAllMechanics } = useMechanics();
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
   
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -106,21 +108,25 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!game) return;
-    if (window.confirm(`Tem certeza que deseja excluir "${game.title}"?`)) {
-      setLoading(true);
-      try {
-        await api.delete(`/games/${game.id}`);
-        toast.success("Jogo excluído.");
-        onSaved();
-        onClose();
-      } catch (e) {
-        toast.error("Erro ao excluir jogo.");
-      } finally {
-        setLoading(false);
-      }
-    }
+    requestConfirm({
+      title: 'Excluir jogo?',
+      description: `"${game.title}" será excluído do acervo. Esta ação não pode ser desfeita.`,
+      confirmLabel: 'Excluir jogo',
+      errorMessage: 'Erro ao excluir jogo.',
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await api.delete(`/games/${game.id}`);
+          toast.success("Jogo excluído.");
+          onSaved();
+          onClose();
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleRefetchDescription = async () => {
@@ -396,6 +402,7 @@ export function EditGameModal({ game, onClose, onSaved }: EditGameModalProps) {
       </div>
 
       <GameComponentsModal isOpen={isComponentsOpen} gameId={game.id} gameTitle={game.title} onClose={() => setIsComponentsOpen(false)} />
+      {confirmDialog}
     </>
   );
 }

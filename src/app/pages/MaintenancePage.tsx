@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 import { toast } from "sonner";
+import { useConfirmDialog } from "../components/shared/ConfirmDialog";
 
 interface MaintenanceItem {
   id: string;
@@ -34,6 +35,7 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
   const fetchMaintenanceItems = async () => {
     setLoading(true);
@@ -56,31 +58,29 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
     setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleResolve = async (item: MaintenanceItem) => {
-    if (
-      !window.confirm(
-        `Deseja marcar "${item.title}" como resolvido e devolvê-lo ao acervo?`
-      )
-    )
-      return;
+  const handleResolve = (item: MaintenanceItem) => {
+    requestConfirm({
+      title: 'Marcar como resolvido?',
+      description: `"${item.title}" volta ao acervo e fica disponível para empréstimo.`,
+      confirmLabel: 'Marcar como resolvido',
+      variant: 'default',
+      errorMessage: 'Erro ao tentar resolver o problema.',
+      onConfirm: async () => {
+        if (item.type === "GAME") {
+          await api.patch(`/games/${item.originalId}`, {
+            isActive: true,
+            isVisible: true,
+          });
+        } else {
+          await api.patch(`/games/copies/${item.originalId}`, {
+            available: true,
+          });
+        }
 
-    try {
-      if (item.type === "GAME") {
-        await api.patch(`/games/${item.originalId}`, {
-          isActive: true,
-          isVisible: true,
-        });
-      } else {
-        await api.patch(`/games/copies/${item.originalId}`, {
-          available: true,
-        });
-      }
-
-      toast.success("Item resolvido e devolvido ao catálogo!");
-      fetchMaintenanceItems();
-    } catch (err) {
-      toast.error("Erro ao tentar resolver o problema.");
-    }
+        toast.success("Item resolvido e devolvido ao catálogo!");
+        fetchMaintenanceItems();
+      },
+    });
   };
 
   return (
@@ -341,6 +341,7 @@ export function MaintenancePage({ onNavigate, onLogout }: any) {
           )}
         </main>
       </div>
+      {confirmDialog}
     </div>
   );
 }

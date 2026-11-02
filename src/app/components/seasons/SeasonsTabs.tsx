@@ -3,6 +3,7 @@ import { X, AlertCircle, Ticket, Trophy, Star, Edit, Trash2 } from 'lucide-react
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
 import { ModalGerenciarTemporada } from './ModalGerenciarTemporada';
+import { useConfirmDialog } from '../shared/ConfirmDialog';
 
 export const NIVEL_ORDER = ['starter', 'family', 'expert', 'ultragamer'] as const;
 export type Nivel = typeof NIVEL_ORDER[number];
@@ -224,22 +225,25 @@ export function ModalGerarCupons({ isOpen, onClose, temporada, progressData, onS
 export function Tab1TodasTemporadas({ seasons, onGerarCupons, fetchSeasons, onSelectSeason, selectedSeasonId }: any) {
   const [modalOpen, setModalOpen] = useState(false);
   const [seasonEdit, setSeasonEdit] = useState<any>(null);
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
   const openEdit = (season: any) => {
     setSeasonEdit(season);
     setModalOpen(true);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir a temporada "${name}"?`)) {
-      try {
+  const handleDelete = (id: string, name: string) => {
+    requestConfirm({
+      title: 'Excluir temporada?',
+      description: `A temporada "${name}" será excluída. Esta ação não pode ser desfeita.`,
+      confirmLabel: 'Excluir temporada',
+      errorMessage: 'Erro ao excluir a temporada.',
+      onConfirm: async () => {
         await api.delete(`/admin/seasons/${id}`);
         toast.success("Temporada excluída com sucesso.");
         if (fetchSeasons) fetchSeasons();
-      } catch (err: any) {
-        toast.error("Erro ao excluir a temporada.");
-      }
-    }
+      },
+    });
   };
 
   return (
@@ -325,6 +329,7 @@ export function Tab1TodasTemporadas({ seasons, onGerarCupons, fetchSeasons, onSe
         onSalvar={fetchSeasons}
         season={seasonEdit}
       />
+      {confirmDialog}
     </div>
   );
 }

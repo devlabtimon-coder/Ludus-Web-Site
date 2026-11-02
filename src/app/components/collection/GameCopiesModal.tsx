@@ -13,6 +13,7 @@ import {
   FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '../shared/ConfirmDialog';
 
 interface GameCopiesModalProps {
   isOpen: boolean;
@@ -67,6 +68,7 @@ export function GameCopiesModal({ isOpen, gameId, gameTitle, gameCover, onClose 
   const [isAvailable, setIsAvailable] = useState(true);
   const [observations, setObservations] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
   // Sincroniza os inputs quando entra no modo de edição
   useEffect(() => {
@@ -127,21 +129,26 @@ export function GameCopiesModal({ isOpen, gameId, gameTitle, gameCover, onClose 
     }
   };
 
-  const handleDeleteCopy = async (copyId: string, copyCode: string) => {
-    if (!window.confirm(`Tem certeza que deseja excluir permanentemente o exemplar ${copyCode}?`)) return;
-    
-    try {
-      await api.delete(`/games/copies/${copyId}`);
-      toast.success("Exemplar removido com sucesso.");
-      if (editingCopy?.id === copyId) setEditingCopy(null); // Cancela edição se apagou
-      setCopies(prev => prev.filter(c => c.id !== copyId));
-    } catch (err: any) {
-      if (err?.response?.status === 409) {
-        toast.error("Este exemplar possui histórico de aluguel e não pode ser excluído.");
-      } else {
-        toast.error("Erro ao excluir exemplar.");
-      }
-    }
+  const handleDeleteCopy = (copyId: string, copyCode: string) => {
+    requestConfirm({
+      title: 'Excluir exemplar?',
+      description: `O exemplar ${copyCode} será excluído permanentemente.`,
+      confirmLabel: 'Excluir exemplar',
+      errorMessage: 'Erro ao excluir exemplar.',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/games/copies/${copyId}`);
+        } catch (err: any) {
+          if (err?.response?.status === 409) {
+            throw new Error("Este exemplar possui histórico de aluguel e não pode ser excluído.");
+          }
+          throw err;
+        }
+        toast.success("Exemplar removido com sucesso.");
+        if (editingCopy?.id === copyId) setEditingCopy(null); // Cancela edição se apagou
+        setCopies(prev => prev.filter(c => c.id !== copyId));
+      },
+    });
   };
 
   const handleClose = () => {
@@ -152,6 +159,7 @@ export function GameCopiesModal({ isOpen, gameId, gameTitle, gameCover, onClose 
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-[24px] w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
         
@@ -390,5 +398,7 @@ export function GameCopiesModal({ isOpen, gameId, gameTitle, gameCover, onClose 
         </div>
       </div>
     </div>
+    {confirmDialog}
+    </>
   );
 }

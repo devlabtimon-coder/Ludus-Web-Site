@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../../services/api';
 import { X, Box, Plus, Minus, Trash2, Loader2, Edit3, Save } from 'lucide-react';
+import { useConfirmDialog } from '../shared/ConfirmDialog';
 
 interface ComponentItem {
   id: string;
@@ -23,6 +24,7 @@ export function GameComponentsModal({ isOpen, gameId, gameTitle, onClose }: Game
   const [error, setError] = useState<string | null>(null);
   
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     if (isOpen && gameId) {
@@ -100,19 +102,24 @@ export function GameComponentsModal({ isOpen, gameId, gameTitle, onClose }: Game
     }
   };
 
-  const handleDelete = async (id: string) => {
-    setItems(items.filter(item => item.id !== id));
-    if (editingItemId === id) cancelEdit();
-    try {
-      await api.delete(`/games/${gameId}/components/${id}`);
-    } catch {
-      loadComponents();
-    }
+  const handleDelete = (item: ComponentItem) => {
+    requestConfirm({
+      title: 'Excluir componente?',
+      description: `"${item.name}" (x${item.quantity}) sai da lista de componentes de ${gameTitle}.`,
+      confirmLabel: 'Excluir componente',
+      errorMessage: 'Erro ao excluir componente.',
+      onConfirm: async () => {
+        await api.delete(`/games/${gameId}/components/${item.id}`);
+        setItems(prev => prev.filter(i => i.id !== item.id));
+        if (editingItemId === item.id) cancelEdit();
+      },
+    });
   };
 
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-[24px] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200">
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
@@ -184,7 +191,7 @@ export function GameComponentsModal({ isOpen, gameId, gameTitle, onClose }: Game
                     <button onClick={() => handleEditClick(item)} className={`p-2.5 rounded-xl transition ${editingItemId === item.id ? 'bg-blue-100 text-blue-700' : 'bg-white hover:bg-blue-50 border border-gray-100 text-gray-400 hover:text-blue-600'}`}>
                       <Edit3 size={18} />
                     </button>
-                    <button onClick={() => handleDelete(item.id)} className="p-2.5 bg-white hover:bg-red-50 border border-gray-100 rounded-xl text-gray-400 hover:text-red-500 transition">
+                    <button onClick={() => handleDelete(item)} title="Excluir componente" className="p-2.5 bg-white hover:bg-red-50 border border-gray-100 rounded-xl text-gray-400 hover:text-red-500 transition">
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -195,5 +202,7 @@ export function GameComponentsModal({ isOpen, gameId, gameTitle, onClose }: Game
         </div>
       </div>
     </div>
+    {confirmDialog}
+    </>
   );
 }

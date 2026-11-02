@@ -7,6 +7,7 @@ import { EditCategoryModal } from './EditCategoryModal';
 import { UserDetailsModal } from './UserDetailsModal'; 
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '../shared/ConfirmDialog';
 
 interface UsersManagementTableProps {
   users: User[];
@@ -20,27 +21,33 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
   const [selectedUser, setSelectedUser] = useState<User | null>(null); 
   const [detailsUser, setDetailsUser] = useState<User | null>(null);   
   const [loadingBlockId, setLoadingBlockId] = useState<string | null>(null);
+  const { requestConfirm, confirmDialog } = useConfirmDialog();
 
-  const handleToggleBlock = async (user: User) => {
+  const handleToggleBlock = (user: User) => {
     if (currentUserId === user.id) {
       toast.error("Você não pode bloquear a si mesmo.");
       return;
     }
-    const action = user.isBlocked ? "desbloquear" : "bloquear";
-    const confirmed = window.confirm(`Tem certeza que deseja ${action} o usuário ${user.name}?`);
-    
-    if (!confirmed) return;
-
-    setLoadingBlockId(user.id);
-    try {
-      await api.patch(`/admin/users/${user.id}/block`, { isBlocked: !user.isBlocked });
-      toast.success(user.isBlocked ? "Usuário desbloqueado!" : "Usuário bloqueado!");
-      onRefresh();
-    } catch (err) {
-      toast.error("Erro ao alterar status de bloqueio.");
-    } finally {
-      setLoadingBlockId(null);
-    }
+    const blocking = !user.isBlocked;
+    requestConfirm({
+      title: blocking ? 'Bloquear usuário?' : 'Desbloquear usuário?',
+      description: blocking
+        ? `${user.name} perde o acesso ao app enquanto estiver bloqueado.`
+        : `${user.name} volta a poder usar o app normalmente.`,
+      confirmLabel: blocking ? 'Bloquear' : 'Desbloquear',
+      variant: blocking ? 'danger' : 'default',
+      errorMessage: 'Erro ao alterar status de bloqueio.',
+      onConfirm: async () => {
+        setLoadingBlockId(user.id);
+        try {
+          await api.patch(`/admin/users/${user.id}/block`, { isBlocked: blocking });
+          toast.success(blocking ? "Usuário bloqueado!" : "Usuário desbloqueado!");
+          onRefresh();
+        } finally {
+          setLoadingBlockId(null);
+        }
+      },
+    });
   };
 
   return (
@@ -120,6 +127,7 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
         isOpen={!!detailsUser}
         onClose={() => setDetailsUser(null)}
       />
+      {confirmDialog}
     </>
   );
 }
