@@ -1,7 +1,11 @@
 import axios from 'axios';
 
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://110.24.8.226:3000';
+// Sem endereço fixo de reserva: a URL da API vem só do ambiente (veja .env.example).
+const baseURL = import.meta.env.VITE_API_URL || '';
+if (!baseURL) {
+  console.error('VITE_API_URL não definida: configure a URL da API no .env (veja .env.example).');
+}
 
 export const api = axios.create({
   baseURL,
