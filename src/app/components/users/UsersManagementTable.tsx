@@ -15,9 +15,10 @@ interface UsersManagementTableProps {
   currentUserId?: string;
   onUpdateCategory: (userId: string, category: ClientCategory) => Promise<void>;
   onRefresh: () => void;
+  emptyMessage?: string;
 }
 
-export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdateCategory, onRefresh }: UsersManagementTableProps) {
+export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdateCategory, onRefresh, emptyMessage = 'Nenhum usuário encontrado.' }: UsersManagementTableProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null); 
   const [detailsUser, setDetailsUser] = useState<User | null>(null);   
   const [loadingBlockId, setLoadingBlockId] = useState<string | null>(null);
@@ -54,6 +55,9 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-4 sm:mt-0">
         <div className="space-y-3 sm:space-y-4">
+          {users.length === 0 && (
+            <p className="py-10 text-center text-sm font-medium text-gray-500">{emptyMessage}</p>
+          )}
           {users.map((user) => {
             const isCurrentUser = currentUserId === user.id;
             
