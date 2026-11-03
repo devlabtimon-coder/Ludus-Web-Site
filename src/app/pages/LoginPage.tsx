@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useGoogleLogin } from '@react-oauth/google';
+import { GOOGLE_LOGIN_ENABLED } from '../../config/google';
 import { authService } from "../../services";
 import { isAdminUser } from "../../services/authService";
 
@@ -63,36 +64,6 @@ export function LoginPage() {
       setLoading(false);
     }
   };
-
-  const loginWithGoogle = useGoogleLogin({
-    onSuccess: async (codeResponse) => {
-      setIsGoogleLoading(true);
-      setError("");
-      
-      try {
-        const response = await authService.loginWithGoogle(codeResponse.access_token);
-
-        if (!isAdminUser(response?.user) || !response?.token) {
-          authService.logout();
-          setError("Acesso restrito. Apenas administradores têm permissão para acessar este painel.");
-          setIsGoogleLoading(false);
-          return;
-        }
-
-        authService.saveSession(response.token, response.user);
-
-        navigate('/');
-      } catch (err: any) {
-        const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
-        setError(apiMessage || "Erro ao fazer login com o Google.");
-      } finally {
-        setIsGoogleLoading(false);
-      }
-    },
-    onError: () => {
-      setError("Falha ao comunicar com o Google.");
-    }
-  });
 
   return (
     <div className="flex min-h-screen w-full overflow-x-hidden bg-white">
@@ -193,32 +164,91 @@ export function LoginPage() {
               )}
             </form>
 
-            <div className="my-5 sm:my-7 flex items-center gap-4">
-              <div className="h-px flex-1 bg-[#e5e7eb]" />
-              <span className="text-xs sm:text-sm text-[#9ca3af]">ou</span>
-              <div className="h-px flex-1 bg-[#e5e7eb]" />
-            </div>
-
-            <button 
-              type="button"
-              onClick={() => loginWithGoogle()}
-              disabled={isGoogleLoading || loading}
-              className="flex h-12 sm:h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe3f2] bg-white text-sm sm:text-base font-semibold text-[#31358B] transition-all hover:bg-[#f8faff] disabled:opacity-60"
-            >
-              {isGoogleLoading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#31358B] border-t-transparent" />
-              ) : (
-                <>
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5 shrink-0" />
-                  <span>Continuar com Google</span>
-                </>
-              )}
-            </button>
+            {GOOGLE_LOGIN_ENABLED && (
+              <GoogleLoginButton
+                disabled={loading}
+                onLoadingChange={setIsGoogleLoading}
+                onError={setError}
+                onSuccess={() => navigate('/')}
+              />
+            )}
 
 
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// Só existe quando VITE_GOOGLE_CLIENT_ID está definida: sem ela o script do Google lança erro e derruba o painel.
+function GoogleLoginButton({
+  disabled,
+  onLoadingChange,
+  onError,
+  onSuccess,
+}: {
+  disabled: boolean;
+  onLoadingChange: (loading: boolean) => void;
+  onError: (message: string) => void;
+  onSuccess: () => void;
+}) {
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (codeResponse) => {
+      setGoogleLoading(true);
+      onLoadingChange(true);
+      onError("");
+
+      try {
+        const response = await authService.loginWithGoogle(codeResponse.access_token);
+
+        if (!isAdminUser(response?.user) || !response?.token) {
+          authService.logout();
+          onError("Acesso restrito. Apenas administradores têm permissão para acessar este painel.");
+          return;
+        }
+
+        authService.saveSession(response.token, response.user);
+
+        onSuccess();
+      } catch (err: any) {
+        const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
+        onError(apiMessage || "Erro ao fazer login com o Google.");
+      } finally {
+        setGoogleLoading(false);
+        onLoadingChange(false);
+      }
+    },
+    onError: () => {
+      onError("Falha ao comunicar com o Google.");
+    }
+  });
+
+  return (
+    <>
+      <div className="my-5 sm:my-7 flex items-center gap-4">
+        <div className="h-px flex-1 bg-[#e5e7eb]" />
+        <span className="text-xs sm:text-sm text-[#9ca3af]">ou</span>
+        <div className="h-px flex-1 bg-[#e5e7eb]" />
+      </div>
+
+      <button 
+        type="button"
+        onClick={() => loginWithGoogle()}
+        disabled={googleLoading || disabled}
+        className="flex h-12 sm:h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe3f2] bg-white text-sm sm:text-base font-semibold text-[#31358B] transition-all hover:bg-[#f8faff] disabled:opacity-60"
+      >
+        {googleLoading ? (
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#31358B] border-t-transparent" />
+        ) : (
+          <>
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5 shrink-0" />
+            <span>Continuar com Google</span>
+          </>
+        )}
+      </button>
+    </>
   );
 }
