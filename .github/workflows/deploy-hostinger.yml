@@ -1,9 +1,9 @@
-# Publica o painel na Hostinger a cada push na main: gera o build com as variáveis do repositório
-# e envia a pasta dist por FTP para a pasta do subdomínio admin.ludus.cocaistech.com.
+# Publica o painel na Hostinger a cada push na main: gera o build com as variáveis do repositório e grava
+# o resultado na branch deploy-hostinger. O Git da Hostinger (hPanel › Avançado › Git) puxa essa branch para a
+# pasta do subdomínio ludus-admin.cocaistech.com, avisado pelo webhook de implantação automática.
 #
-# Configuração (GitHub › Settings › Secrets and variables › Actions):
-#   Variables: VITE_API_URL, VITE_GOOGLE_CLIENT_ID, VITE_IFMA_MODE, HOSTINGER_FTP_DIR (pasta do subdomínio, terminando em /)
-#   Secrets:   HOSTINGER_FTP_SERVER, HOSTINGER_FTP_USERNAME, HOSTINGER_FTP_PASSWORD
+# Configuração (GitHub › Settings › Secrets and variables › Actions › Variables):
+#   VITE_API_URL, VITE_GOOGLE_CLIENT_ID, VITE_IFMA_MODE
 name: Deploy Hostinger
 
 on:
@@ -14,6 +14,9 @@ on:
 concurrency:
   group: deploy-hostinger
   cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   deploy:
@@ -32,10 +35,7 @@ jobs:
       - name: Conferir variáveis do build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
-          HOSTINGER_FTP_DIR: ${{ vars.HOSTINGER_FTP_DIR }}
-        run: |
-          test -n "$VITE_API_URL" || { echo "::error::Defina a variável VITE_API_URL no repositório"; exit 1; }
-          test -n "$HOSTINGER_FTP_DIR" || { echo "::error::Defina a variável HOSTINGER_FTP_DIR no repositório"; exit 1; }
+        run: test -n "$VITE_API_URL" || { echo "::error::Defina a variável VITE_API_URL no repositório"; exit 1; }
 
       - run: npm run build
         env:
@@ -43,11 +43,13 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           VITE_IFMA_MODE: ${{ vars.VITE_IFMA_MODE }}
 
-      - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
-          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
-          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: ./dist/
-          server-dir: ${{ vars.HOSTINGER_FTP_DIR }}
+      # Um commit só, sem histórico: a branch guarda apenas o build mais recente.
+      - name: Gravar o build na branch deploy-hostinger
+        working-directory: dist
+        run: |
+          git init -q -b deploy-hostinger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "build: ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" deploy-hostinger
