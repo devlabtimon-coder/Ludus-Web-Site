@@ -1,0 +1,53 @@
+# Publica o painel na Hostinger a cada push na main: gera o build com as variáveis do repositório
+# e envia a pasta dist por FTP para a pasta do subdomínio admin.ludus.cocaistech.com.
+#
+# Configuração (GitHub › Settings › Secrets and variables › Actions):
+#   Variables: VITE_API_URL, VITE_GOOGLE_CLIENT_ID, VITE_IFMA_MODE, HOSTINGER_FTP_DIR (pasta do subdomínio, terminando em /)
+#   Secrets:   HOSTINGER_FTP_SERVER, HOSTINGER_FTP_USERNAME, HOSTINGER_FTP_PASSWORD
+name: Deploy Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Sem a URL da API o painel abre mas não fala com o servidor: melhor falhar aqui do que publicar quebrado.
+      - name: Conferir variáveis do build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          HOSTINGER_FTP_DIR: ${{ vars.HOSTINGER_FTP_DIR }}
+        run: |
+          test -n "$VITE_API_URL" || { echo "::error::Defina a variável VITE_API_URL no repositório"; exit 1; }
+          test -n "$HOSTINGER_FTP_DIR" || { echo "::error::Defina a variável HOSTINGER_FTP_DIR no repositório"; exit 1; }
+
+      - run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          VITE_IFMA_MODE: ${{ vars.VITE_IFMA_MODE }}
+
+      - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
+          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./dist/
+          server-dir: ${{ vars.HOSTINGER_FTP_DIR }}
