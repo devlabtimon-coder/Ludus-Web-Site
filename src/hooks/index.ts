@@ -3,3 +3,4 @@ export { useGames } from './useGames';
 export { useRentals } from './useRentals';
 export { useUsers } from './useUsers';
 export { useMechanics } from './useMechanics';
+export { useAdminUser } from './useAdminUser';

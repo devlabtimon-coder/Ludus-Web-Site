@@ -6,6 +6,7 @@ export interface AdminUsersQuery {
   q?: string;
   registrationStatus?: RegistrationStatus;
   blocked?: boolean;
+  role?: 'USER' | 'ADMIN';
   page?: number;
   limit?: number;
 }
@@ -15,6 +16,7 @@ function buildParams(params?: AdminUsersQuery) {
   if (params?.q?.trim()) queryParams.q = params.q.trim();
   if (params?.registrationStatus) queryParams.registrationStatus = params.registrationStatus;
   if (params?.blocked !== undefined) queryParams.blocked = params.blocked ? 'true' : 'false';
+  if (params?.role) queryParams.role = params.role;
   queryParams.page = params?.page ?? 1;
   queryParams.limit = Math.min(params?.limit ?? 50, MAX_PAGE_LIMIT);
   return queryParams;

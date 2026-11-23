@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { dashboardService } from '../services';
 import { getErrorMessage } from '../services/api';
+import { authService } from '../services/authService';
+import { canAccessArea } from '../config/adminAreas';
 
+// null: a área do número não está liberada para este admin.
 interface DashboardMetrics {
-  totalGames: number;
-  activeRentals: number;
-  pendingApprovals: number;
-  activeUsers: number;
+  totalGames: number | null;
+  activeRentals: number | null;
+  pendingApprovals: number | null;
+  activeUsers: number | null;
 }
 
 // `initialLoading` só vale para a primeira carga; nas seguintes (`refreshing`)
@@ -30,7 +33,8 @@ export function useDashboard() {
       if (loadedOnce.current) setRefreshing(true);
       setError(null);
 
-      const data = await dashboardService.getDashboardData();
+      const user = authService.getStoredUser();
+      const data = await dashboardService.getDashboardData((area) => canAccessArea(user, area));
 
       setMetrics(data.metrics);
       setRecentRentals(data.recentRentals);
@@ -51,6 +55,21 @@ export function useDashboard() {
 
   useEffect(() => {
     loadDashboardData();
+  }, [loadDashboardData]);
+
+  // Recarrega só se as áreas mudaram (o usuário salvo é atualizado ao abrir o painel).
+  useEffect(() => {
+    const permissionsKey = () => {
+      const user = authService.getStoredUser();
+      return JSON.stringify([user?.isSuperAdmin, user?.adminAreas]);
+    };
+    let last = permissionsKey();
+    return authService.onUserUpdated(() => {
+      const next = permissionsKey();
+      if (next === last) return;
+      last = next;
+      loadDashboardData();
+    });
   }, [loadDashboardData]);
 
   return {

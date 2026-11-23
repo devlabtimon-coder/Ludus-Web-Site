@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, syncStoredUser, USER_UPDATED_EVENT } from './api';
 import { User } from '../types/api';
 
 interface LoginCredentials {
@@ -49,6 +49,14 @@ export const authService = {
   saveSession: (token: string, user: User) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
+  },
+
+  // Atualiza papel e áreas a partir da API (mudam sem novo login).
+  refreshStoredUser: () => syncStoredUser() as Promise<User>,
+
+  onUserUpdated: (callback: () => void) => {
+    window.addEventListener(USER_UPDATED_EVENT, callback);
+    return () => window.removeEventListener(USER_UPDATED_EVENT, callback);
   },
 
   // Sessão válida para o painel: token salvo e usuário salvo com papel ADMIN.
