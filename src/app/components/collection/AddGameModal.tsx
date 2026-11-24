@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api, getErrorMessage } from '../../../services/api';
 import { X, Search, CheckCircle2, Loader2, ArrowLeft, Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -35,8 +35,8 @@ interface ReviewForm {
   minPlayers: string;
   maxPlayers: string;
   minAge: string;
-  minTime: string;
-  maxTime: string;
+  // O app mostra uma duração só; o valor vai como mínima e máxima.
+  duration: string;
   mechanics: string[];
   howToPlayUrl: string;
 }
@@ -49,6 +49,8 @@ interface AddGameModalProps {
 
 const toText = (n: number | null | undefined) => (n === null || n === undefined ? '' : String(n));
 const toInt = (s: string) => (s.trim() === '' ? null : Number(s));
+// Mesma regra da API: só http(s); link sem protocolo ganha https:// lá.
+const isSafeLink = (url: string) => url === '' || /^https?:\/\//i.test(url) || !/^[a-z][a-z0-9+.-]*:/i.test(url);
 
 function validate(form: ReviewForm): string | null {
   if (!form.title.trim()) return 'Informe o título.';
@@ -56,14 +58,13 @@ function validate(form: ReviewForm): string | null {
   const minPlayers = toInt(form.minPlayers);
   const maxPlayers = toInt(form.maxPlayers);
   const minAge = toInt(form.minAge);
-  const minTime = toInt(form.minTime);
-  const maxTime = toInt(form.maxTime);
+  const duration = toInt(form.duration);
   const isInt = (n: number | null) => n === null || Number.isInteger(n);
-  if (minPlayers === null || !isInt(minPlayers) || minPlayers < 1) return 'Informe o mínimo de jogadores (1 ou mais).';
-  if (!isInt(maxPlayers) || (maxPlayers !== null && maxPlayers < minPlayers)) return 'O máximo de jogadores não pode ser menor que o mínimo.';
+  if (minPlayers === null || !isInt(minPlayers) || minPlayers < 1 || minPlayers > 100) return 'Informe o mínimo de jogadores (1 a 100).';
+  if (!isInt(maxPlayers) || (maxPlayers !== null && (maxPlayers < minPlayers || maxPlayers > 100))) return 'O máximo de jogadores precisa ficar entre o mínimo e 100.';
   if (minAge === null || !isInt(minAge) || minAge < 0 || minAge > 99) return 'Informe a idade mínima (0 a 99).';
-  if (minTime === null || !isInt(minTime) || minTime < 0) return 'Informe a duração mínima em minutos.';
-  if (!isInt(maxTime) || (maxTime !== null && maxTime < minTime)) return 'A duração máxima não pode ser menor que a mínima.';
+  if (duration === null || !isInt(duration) || duration < 0 || duration > 1440) return 'Informe a duração em minutos (0 a 1440).';
+  if (!isSafeLink(form.howToPlayUrl.trim())) return 'O link do vídeo precisa começar com http:// ou https://.';
   return null;
 }
 
@@ -83,6 +84,8 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
   const [newMechanic, setNewMechanic] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Trava síncrona: cliques seguidos chegam antes de o botão ficar desabilitado.
+  const savingRef = useRef(false);
 
   if (!isOpen) return null;
 
@@ -118,8 +121,7 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
         minPlayers: toText(data.minPlayers),
         maxPlayers: toText(data.maxPlayers),
         minAge: toText(data.minAge),
-        minTime: toText(data.minTime),
-        maxTime: toText(data.maxTime),
+        duration: toText(data.minTime || data.maxTime || 0),
         mechanics: data.mechanics ?? [],
         howToPlayUrl: '',
       });
@@ -156,12 +158,13 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
   };
 
   const handleSave = async () => {
-    if (!form || !draft || !selected || saving) return;
+    if (!form || !draft || !selected || savingRef.current) return;
     const error = validate(form);
     if (error) {
       setFormError(error);
       return;
     }
+    savingRef.current = true;
     setSaving(true);
     setFormError(null);
     try {
@@ -176,8 +179,8 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
         minPlayers: toInt(form.minPlayers),
         maxPlayers: toInt(form.maxPlayers),
         minAge: toInt(form.minAge),
-        minTime: toInt(form.minTime),
-        maxTime: toInt(form.maxTime),
+        minTime: toInt(form.duration),
+        maxTime: toInt(form.duration),
         mechanics: form.mechanics,
         bggId: draft.bggId,
         rating: draft.rating,
@@ -191,6 +194,7 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
     } catch (err) {
       setFormError(getErrorMessage(err, 'Erro ao adicionar jogo.'));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -277,8 +281,7 @@ export function AddGameModal({ isOpen, onClose, onAdded }: AddGameModalProps) {
                 <NumberField label="Jogadores (mín.)" value={form.minPlayers} onChange={(v) => update({ minPlayers: v })} min={1} className={inputClass} labelClass={labelClass} />
                 <NumberField label="Jogadores (máx.)" value={form.maxPlayers} onChange={(v) => update({ maxPlayers: v })} min={1} className={inputClass} labelClass={labelClass} placeholder="Opcional" />
                 <NumberField label="Idade mínima" value={form.minAge} onChange={(v) => update({ minAge: v })} min={0} className={inputClass} labelClass={labelClass} />
-                <NumberField label="Duração mín. (min)" value={form.minTime} onChange={(v) => update({ minTime: v })} min={0} className={inputClass} labelClass={labelClass} />
-                <NumberField label="Duração máx. (min)" value={form.maxTime} onChange={(v) => update({ maxTime: v })} min={0} className={inputClass} labelClass={labelClass} placeholder="Opcional" />
+                <NumberField label="Duração (min)" value={form.duration} onChange={(v) => update({ duration: v })} min={0} className={inputClass} labelClass={labelClass} />
               </div>
 
               <div className="space-y-2">

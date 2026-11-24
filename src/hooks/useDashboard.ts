@@ -27,14 +27,19 @@ export function useDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   const loadedOnce = useRef(false);
+  // Só a carga mais recente vale: uma feita com permissões antigas pode terminar depois.
+  const latestLoad = useRef(0);
 
   const loadDashboardData = useCallback(async () => {
+    const loadId = ++latestLoad.current;
+    const isStale = () => loadId !== latestLoad.current;
     try {
       if (loadedOnce.current) setRefreshing(true);
       setError(null);
 
       const user = authService.getStoredUser();
       const data = await dashboardService.getDashboardData((area) => canAccessArea(user, area));
+      if (isStale()) return;
 
       setMetrics(data.metrics);
       setRecentRentals(data.recentRentals);
@@ -45,11 +50,14 @@ export function useDashboard() {
       loadedOnce.current = true;
       setHasLoaded(true);
     } catch (err: any) {
+      if (isStale()) return;
       setError(getErrorMessage(err, 'Erro ao carregar dados do dashboard'));
       console.error('Erro ao carregar dashboard:', err);
     } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
+      if (!isStale()) {
+        setInitialLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
