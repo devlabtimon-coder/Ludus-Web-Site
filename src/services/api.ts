@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 
 
 // Sem endereço fixo de reserva: a URL da API vem só do ambiente (veja .env.example).
@@ -82,6 +83,8 @@ api.interceptors.response.use(
         localStorage.removeItem('user');
         window.location.href = '/login';
       } else if (code === 'ADMIN_AREA_FORBIDDEN') {
+        // As áreas mudaram com o painel aberto: avisa (uma vez só) e atualiza o menu e as rotas.
+        toast.error('Suas permissões de admin foram alteradas. O painel foi atualizado.', { id: 'admin-area-forbidden' });
         syncStoredUser().catch(() => undefined);
       }
     }

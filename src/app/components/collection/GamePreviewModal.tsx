@@ -26,7 +26,9 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
   const [componentsList, setComponentsList] = useState<any[]>([]);
   const [loadingComponents, setLoadingComponents] = useState(false);
 
-  const hasHowToPlay = !!((game as any)?.howToPlayUrl && (game as any).howToPlayUrl.trim());
+  // Só abre link http(s): um "javascript:" salvo no jogo rodaria código no painel.
+  const howToPlayLink = safeVideoLink((game as any)?.howToPlayUrl);
+  const hasHowToPlay = !!howToPlayLink;
 
   useEffect(() => {
     if (tab === 'howtoplay' && !hasHowToPlay) {
@@ -317,11 +319,11 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
                 <div>
                   <h3 className="text-base font-extrabold text-[#444] mb-2">Como jogar</h3>
                   <div className="w-full h-48 bg-black rounded-xl flex items-center justify-center relative overflow-hidden">
-                    <a href={(game as any).howToPlayUrl} target="_blank" rel="noreferrer" className="absolute inset-0 flex items-center justify-center hover:bg-white/10 transition-colors">
+                    <a href={howToPlayLink!} target="_blank" rel="noreferrer" className="absolute inset-0 flex items-center justify-center hover:bg-white/10 transition-colors">
                       <PlayCircle size={48} color="#fff" className="opacity-80" />
                     </a>
                   </div>
-                  <a href={(game as any).howToPlayUrl} target="_blank" rel="noreferrer" className="mt-3 bg-[#F0F2FF] h-12 rounded-xl flex items-center justify-center">
+                  <a href={howToPlayLink!} target="_blank" rel="noreferrer" className="mt-3 bg-[#F0F2FF] h-12 rounded-xl flex items-center justify-center">
                     <span className="text-[#31358B] font-bold">Abrir no YouTube</span>
                   </a>
                 </div>
@@ -356,4 +358,12 @@ export function GamePreviewModal({ isOpen, onClose, game }: GamePreviewModalProp
       </div>
     </div>
   );
+}
+
+function safeVideoLink(url: unknown): string | null {
+  if (typeof url !== 'string' || !url.trim()) return null;
+  const clean = url.trim();
+  if (/^https?:\/\//i.test(clean)) return clean;
+  // Link antigo sem protocolo ("youtube.com/..."); qualquer outro protocolo é recusado.
+  return /^[a-z][a-z0-9+.-]*:/i.test(clean) ? null : `https://${clean}`;
 }
