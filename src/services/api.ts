@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 
 
 // Sem endereço fixo de reserva: a URL da API vem só do ambiente (veja .env.example).
@@ -29,6 +30,25 @@ api.interceptors.request.use(
 );
 
 
+const NOT_ADMIN_MESSAGE = 'Acesso negado. Apenas administradores.';
+export const USER_UPDATED_EVENT = 'ludus:user-updated';
+
+// Busca o perfil (papel e áreas) e atualiza o usuário salvo; o menu e as rotas
+// escutam USER_UPDATED_EVENT.
+export async function syncStoredUser() {
+  const { data } = await api.get('/users/me');
+  let stored = {};
+  try {
+    stored = JSON.parse(localStorage.getItem('user') || '{}') || {};
+  } catch {
+    stored = {};
+  }
+  const user = { ...stored, ...data };
+  localStorage.setItem('user', JSON.stringify(user));
+  window.dispatchEvent(new Event(USER_UPDATED_EVENT));
+  return user;
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -55,6 +75,20 @@ api.interceptors.response.use(
     }
 
     
+    // Permissão mudou com o painel aberto: deixou de ser admin (sai) ou perdeu
+    // a área (atualiza o usuário salvo para o menu e as rotas acompanharem).
+    if (status === 403 && !isLoginRequest && localStorage.getItem('token')) {
+      if (error?.response?.data?.error === NOT_ADMIN_MESSAGE) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else if (code === 'ADMIN_AREA_FORBIDDEN') {
+        // As áreas mudaram com o painel aberto: avisa (uma vez só) e atualiza o menu e as rotas.
+        toast.error('Suas permissões de admin foram alteradas. O painel foi atualizado.', { id: 'admin-area-forbidden' });
+        syncStoredUser().catch(() => undefined);
+      }
+    }
+
     if (status === 403 && !isVerifyRelated) {
       const storedUser = localStorage.getItem('user');
       const user = storedUser ? JSON.parse(storedUser) : null;

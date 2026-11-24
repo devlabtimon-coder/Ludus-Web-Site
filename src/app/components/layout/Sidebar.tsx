@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import logoFull from '../../../assets/images/logo-full.png';
+import { useAdminUser } from '../../../hooks';
+import { PAGE_AREA, canAccessArea } from '../../../config/adminAreas';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -31,6 +33,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useAdminUser();
 
 
   const currentPath = location.pathname.replace('/', '') || 'dashboard';
@@ -40,7 +43,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     onClose?.();
   };
 
-  const menuItems: MenuItem[] = [
+  const allMenuItems: MenuItem[] = [
     {
       icon: <LayoutDashboard size={19} />,
       label: 'Dashboard',
@@ -107,6 +110,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       path: 'sobre-app'
     }
   ];
+
+  // Só as áreas liberadas para este admin aparecem no menu.
+  const menuItems = allMenuItems.filter((item) => canAccessArea(user, PAGE_AREA[item.path] ?? null));
 
   const sidebarContent = (
     <>

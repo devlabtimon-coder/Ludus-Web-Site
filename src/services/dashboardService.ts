@@ -2,6 +2,7 @@ import { api } from './api';
 import { gamesService } from './gamesService';
 import { rentalsService } from './rentalsService';
 import { usersService } from './usersService';
+import type { AdminArea } from '../types/api';
 
 // Os números do painel vêm do `total` de consultas filtradas na API (limit=1),
 // e não de contar uma página de 50 itens.
@@ -17,8 +18,18 @@ async function getTopGames(): Promise<Array<{ name: string; rentals: number }>> 
   }
 }
 
+type CanAccess = (area: AdminArea) => boolean;
+
+const EMPTY_PAGE = { data: [] as any[], total: 0 };
+
+// Cada bloco só é buscado com a área liberada (a API recusaria o resto):
+// Acervo → jogos; Empréstimos → aluguéis; Usuários → cadastros e usuários;
+// Relatórios → mais alugados. Sem a área, o valor vem null e o bloco some.
 export const dashboardService = {
-  getDashboardData: async () => {
+  getDashboardData: async (can: CanAccess) => {
+    const when = <T,>(area: AdminArea, load: () => Promise<T>): Promise<T | null> =>
+      can(area) ? load() : Promise.resolve(null);
+
     const [
       games,
       activeRentals,
@@ -30,35 +41,39 @@ export const dashboardService = {
       pendingRentalsPage,
       topGames,
     ] = await Promise.all([
-      gamesService.getGames(),
-      rentalsService.countAdminRentals({ status: 'ACTIVE' }),
-      usersService.countUsers({ registrationStatus: 'PENDING' }),
-      usersService.countUsers({ blocked: false }),
-      usersService.countUsers({ blocked: false, registrationStatus: 'REJECTED' }),
-      rentalsService.getAdminRentalsPage({ status: 'ALL', page: 1, limit: 5 }),
-      rentalsService.getAdminRentalsPage({ overdue: true, page: 1, limit: 20 }),
-      rentalsService.getAdminRentalsPage({ status: 'PENDING', page: 1, limit: 20 }),
-      getTopGames(),
+      when('CATALOG', () => gamesService.getGames()),
+      when('RENTALS', () => rentalsService.countAdminRentals({ status: 'ACTIVE' })),
+      when('USERS', () => usersService.countUsers({ registrationStatus: 'PENDING' })),
+      when('USERS', () => usersService.countUsers({ blocked: false })),
+      when('USERS', () => usersService.countUsers({ blocked: false, registrationStatus: 'REJECTED' })),
+      when('RENTALS', () => rentalsService.getAdminRentalsPage({ status: 'ALL', page: 1, limit: 5 })),
+      when('RENTALS', () => rentalsService.getAdminRentalsPage({ overdue: true, page: 1, limit: 20 })),
+      when('RENTALS', () => rentalsService.getAdminRentalsPage({ status: 'PENDING', page: 1, limit: 20 })),
+      when('REPORTS', getTopGames),
     ]);
 
-    const safeGames = Array.isArray(games) ? games : [];
+    const late = latePage ?? EMPTY_PAGE;
+    const pendingRentals = pendingRentalsPage ?? EMPTY_PAGE;
 
     return {
       metrics: {
-        totalGames: safeGames.length,
+        totalGames: games === null ? null : Array.isArray(games) ? games.length : 0,
         activeRentals,
         // O cartão leva à fila de cadastros, então conta cadastros aguardando análise.
         pendingApprovals: pendingRegistrations,
         // Não bloqueados e sem cadastro rejeitado.
-        activeUsers: Math.max(0, notBlockedUsers - rejectedNotBlockedUsers),
+        activeUsers:
+          notBlockedUsers === null || rejectedNotBlockedUsers === null
+            ? null
+            : Math.max(0, notBlockedUsers - rejectedNotBlockedUsers),
       },
       // A API já entrega do mais recente para o mais antigo.
-      recentRentals: recentPage.data,
-      topGames,
-      lateAlerts: latePage.data,
-      lateAlertsTotal: latePage.total,
-      pendingApprovals: pendingRentalsPage.data,
-      pendingRentalsTotal: pendingRentalsPage.total,
+      recentRentals: recentPage?.data ?? [],
+      topGames: topGames ?? [],
+      lateAlerts: late.data,
+      lateAlertsTotal: late.total,
+      pendingApprovals: pendingRentals.data,
+      pendingRentalsTotal: pendingRentals.total,
     };
   },
 };

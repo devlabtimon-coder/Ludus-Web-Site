@@ -4,6 +4,8 @@ export type ClientCategory = 'STARTER' | 'FAMILY' | 'EXPERT' | 'ULTRAGAMER';
 export type GameTier = 'LATAO' | 'BRONZE' | 'PRATA' | 'OURO' | 'DIAMANTE';
 export type RentalStatus = 'PENDING' | 'ACTIVE' | 'RETURNED' | 'CANCELED';
 export type RegistrationStatus = 'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+// Áreas do painel liberadas por admin (veja config/adminAreas).
+export type AdminArea = 'CATALOG' | 'RENTALS' | 'USERS' | 'SEASONS' | 'REPORTS' | 'ABOUT';
 
 export interface User {
   id: string;
@@ -15,6 +17,10 @@ export interface User {
   points: number;
   level: number;
   role: string;
+  // Administrador geral: todas as áreas e gestão de admins.
+  isSuperAdmin?: boolean;
+  // Áreas liberadas para um admin que não é Administrador geral.
+  adminAreas?: AdminArea[];
   matricula?: string | null;
   isAcademicVerified: boolean;
   clientCategory: ClientCategory;

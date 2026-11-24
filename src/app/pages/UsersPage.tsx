@@ -7,8 +7,8 @@ import { CategoryProgressionCard } from "../components/users/CategoryProgression
 import { UsersManagementTable } from "../components/users/UsersManagementTable";
 import { Loading } from "../components/shared/Loading";
 import { ErrorMessage } from "../components/shared/ErrorMessage";
-import { Users, Star, UserPlus, Filter, X } from "lucide-react";
-import { useUsers } from "../../hooks";
+import { Users, Star, UserPlus, Filter, X, ShieldCheck } from "lucide-react";
+import { useAdminUser, useUsers } from "../../hooks";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { SearchInput } from "../components/shared/SearchInput";
 import { PaginationControls } from "../components/shared/PaginationControls";
@@ -31,14 +31,17 @@ export function UsersPage() {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'ultragamer' | 'recent'>('all');
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
+  const [onlyAdmins, setOnlyAdmins] = useState(false);
+  const currentUser = useAdminUser();
 
-  // A página volta para 1 sempre que a busca muda (sem disparar uma consulta extra).
-  const [pageState, setPageState] = useState({ key: debouncedSearch, page: 1 });
-  const page = pageState.key === debouncedSearch ? pageState.page : 1;
+  // A página volta para 1 sempre que a busca ou o filtro de admins muda (sem disparar uma consulta extra).
+  const pageKey = `${debouncedSearch}|${onlyAdmins}`;
+  const [pageState, setPageState] = useState({ key: pageKey, page: 1 });
+  const page = pageState.key === pageKey ? pageState.page : 1;
 
   const query = useMemo(
-    () => ({ q: debouncedSearch || undefined, page, limit: PAGE_SIZE }),
-    [debouncedSearch, page],
+    () => ({ q: debouncedSearch || undefined, role: onlyAdmins ? ('ADMIN' as const) : undefined, page, limit: PAGE_SIZE }),
+    [debouncedSearch, onlyAdmins, page],
   );
 
   const {
@@ -155,13 +158,29 @@ export function UsersPage() {
 
           <CategoryProgressionCard />
 
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar por nome, e-mail, matrícula ou telefone"
-            loading={refreshing && search.trim() !== '' && search.trim() === debouncedSearch}
-            className="mb-4"
-          />
+          <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar por nome, e-mail, matrícula ou telefone"
+              loading={refreshing && search.trim() !== '' && search.trim() === debouncedSearch}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setOnlyAdmins((v) => !v);
+                setSelectedFilter('all');
+              }}
+              aria-pressed={onlyAdmins}
+              className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold transition-colors whitespace-nowrap ${
+                onlyAdmins ? 'border-[#04096D] bg-[#04096D] text-white' : 'border-gray-200 bg-white text-[#04096D] hover:border-[#04096D]/40'
+              }`}
+            >
+              <ShieldCheck size={16} />
+              Só administradores
+            </button>
+          </div>
 
           {error && hasLoaded && (
             <div role="alert" className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -179,9 +198,11 @@ export function UsersPage() {
             <UsersManagementTable
               users={cardFilteredUsers ?? users}
               totalUsers={cardFilteredUsers ? cardFilteredUsers.length : total}
+              currentUserId={currentUser?.id}
+              canManageAdmins={!!currentUser?.isSuperAdmin}
               onUpdateCategory={handleUpdateCategory}
               onRefresh={refetch}
-              emptyMessage={debouncedSearch ? 'Nenhum usuário encontrado para esta busca.' : 'Nenhum usuário encontrado.'}
+              emptyMessage={debouncedSearch ? 'Nenhum usuário encontrado para esta busca.' : onlyAdmins ? 'Nenhum administrador encontrado.' : 'Nenhum usuário encontrado.'}
             />
           </div>
 
@@ -197,7 +218,7 @@ export function UsersPage() {
               total={total}
               pageSize={PAGE_SIZE}
               loading={refreshing}
-              onPageChange={(next) => setPageState({ key: debouncedSearch, page: next })}
+              onPageChange={(next) => setPageState({ key: pageKey, page: next })}
               itemLabel={{ singular: 'usuário', plural: 'usuários' }}
             />
           )}

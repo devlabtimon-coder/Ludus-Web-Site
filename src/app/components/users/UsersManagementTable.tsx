@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Ban, MoreVertical, Loader2 } from 'lucide-react'; 
+import { Ban, MoreVertical, Loader2, ShieldPlus, ShieldCheck, ShieldOff } from 'lucide-react'; 
 import { User, ClientCategory } from '../../../types/api';
 import { Avatar } from '../shared/Avatar';
 import { UserCategoryBadge } from './UserCategoryBadge';
 import { EditCategoryModal } from './EditCategoryModal';
 import { UserDetailsModal } from './UserDetailsModal'; 
+import { AdminAccessModal } from './AdminAccessModal';
+import { adminAccessLabel } from '../../../config/adminAreas';
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../shared/ConfirmDialog';
@@ -13,15 +15,18 @@ interface UsersManagementTableProps {
   users: User[];
   totalUsers?: number;
   currentUserId?: string;
+  // Só o Administrador geral promove, muda permissões e remove admins.
+  canManageAdmins?: boolean;
   onUpdateCategory: (userId: string, category: ClientCategory) => Promise<void>;
   onRefresh: () => void;
   emptyMessage?: string;
 }
 
-export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdateCategory, onRefresh, emptyMessage = 'Nenhum usuário encontrado.' }: UsersManagementTableProps) {
+export function UsersManagementTable({ users, totalUsers, currentUserId, canManageAdmins = false, onUpdateCategory, onRefresh, emptyMessage = 'Nenhum usuário encontrado.' }: UsersManagementTableProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null); 
   const [detailsUser, setDetailsUser] = useState<User | null>(null);   
   const [loadingBlockId, setLoadingBlockId] = useState<string | null>(null);
+  const [accessUser, setAccessUser] = useState<User | null>(null);
   const { requestConfirm, confirmDialog } = useConfirmDialog();
 
   const handleToggleBlock = (user: User) => {
@@ -58,6 +63,21 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
     });
   };
 
+  const handleRemoveAdmin = (user: User) => {
+    requestConfirm({
+      title: 'Remover admin?',
+      description: `${user.name} perde o acesso ao painel e a conta volta a ser de aluno.`,
+      confirmLabel: 'Remover admin',
+      variant: 'danger',
+      errorMessage: 'Erro ao remover o acesso de administrador.',
+      onConfirm: async () => {
+        await api.delete(`/admin/users/${user.id}/admin-access`);
+        toast.success(`${user.name} não é mais admin.`);
+        onRefresh();
+      },
+    });
+  };
+
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mt-4 sm:mt-0">
@@ -67,6 +87,7 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
           )}
           {users.map((user) => {
             const isCurrentUser = currentUserId === user.id;
+            const isAdmin = user.role === 'ADMIN';
             
             return (
               <div key={user.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border transition-all gap-4 sm:gap-0 ${user.isBlocked ? 'bg-red-50 border-red-200' : 'bg-[#F7F8FF] border-transparent hover:border-[#31358B]/10'}`}>
@@ -95,7 +116,17 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
 
                 <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-6 border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-200 sm:border-transparent">
                   <div className="sm:block">
-                    <UserCategoryBadge category={user.clientCategory} />
+                    {isAdmin ? (
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full bg-[#04096D] px-3 py-1 text-[11px] font-bold text-white max-w-[220px] truncate"
+                        title={adminAccessLabel(user)}
+                      >
+                        <ShieldCheck size={13} className="shrink-0 text-[#FBBC04]" />
+                        <span className="truncate">{adminAccessLabel(user)}</span>
+                      </span>
+                    ) : (
+                      <UserCategoryBadge category={user.clientCategory} />
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-2">
@@ -120,12 +151,42 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
                       </button>
                     )}
                     
-                    <button 
-                      onClick={() => setSelectedUser(user)}
-                      className="bg-white border border-[#31358B] text-[#31358B] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#31358B] hover:text-white transition-colors whitespace-nowrap"
-                    >
-                      Alterar Categoria
-                    </button>
+                    {canManageAdmins && !isCurrentUser && !isAdmin && (
+                      <button
+                        onClick={() => setAccessUser(user)}
+                        className="p-2 rounded-lg text-gray-400 hover:text-[#04096D] bg-white sm:bg-transparent border sm:border-transparent border-gray-200 transition-colors"
+                        title="Promover a admin"
+                      >
+                        <ShieldPlus size={16} />
+                      </button>
+                    )}
+
+                    {canManageAdmins && !isCurrentUser && isAdmin && (
+                      <>
+                        <button
+                          onClick={() => handleRemoveAdmin(user)}
+                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 bg-white sm:bg-transparent border sm:border-transparent border-gray-200 transition-colors"
+                          title="Remover admin"
+                        >
+                          <ShieldOff size={16} />
+                        </button>
+                        <button
+                          onClick={() => setAccessUser(user)}
+                          className="bg-white border border-[#04096D] text-[#04096D] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#04096D] hover:text-white transition-colors whitespace-nowrap"
+                        >
+                          Permissões
+                        </button>
+                      </>
+                    )}
+
+                    {!isAdmin && (
+                      <button 
+                        onClick={() => setSelectedUser(user)}
+                        className="bg-white border border-[#31358B] text-[#31358B] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#31358B] hover:text-white transition-colors whitespace-nowrap"
+                      >
+                        Alterar Categoria
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -144,6 +205,12 @@ export function UsersManagementTable({ users, totalUsers, currentUserId, onUpdat
         user={detailsUser}
         isOpen={!!detailsUser}
         onClose={() => setDetailsUser(null)}
+      />
+      <AdminAccessModal
+        user={accessUser}
+        isOpen={!!accessUser}
+        onClose={() => setAccessUser(null)}
+        onSaved={onRefresh}
       />
       {confirmDialog}
     </>
